@@ -1,0 +1,7 @@
+- routes:
+    - /
+  template: foobar.html
+  bootstrap:
+    title: "Board"
+    meta:
+      - charset: "utf-8"

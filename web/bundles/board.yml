@@ -1,0 +1,4 @@
+- routes:
+    - /board/new
+    - /board/{board_id}
+    - /board/{board_id}/{note_id}

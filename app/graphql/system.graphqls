@@ -1,0 +1,14 @@
+extend type Query {
+  system: System
+}
+
+# extend type Mutation{
+# }
+#
+type System {
+  version: String!
+  uptime: String!
+  memory: Int!
+  processes: Int!
+}
+

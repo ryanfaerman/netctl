@@ -1,0 +1,13 @@
+# type Query {}
+#
+# type Mutation {}
+#
+# type Subscription {}
+
+scalar Date
+
+type Metadata {
+  createdAt: Date!
+  updatedAt: Date!
+  deletedAt: Date
+}

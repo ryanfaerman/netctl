@@ -1,0 +1,17 @@
+extend type Query {
+  config(uri: String!): Config!
+  configs: [Config!]!
+
+  flag(uri: String!): Boolean
+  flags: [Flag!]!
+}
+
+type Config {
+  uri: String!
+  value: String
+}
+
+type Flag {
+  uri: String!
+  value: Boolean!
+}

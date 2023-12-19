@@ -1,0 +1,22 @@
+extend type Query {
+  categories: [Category!]!
+  category(id: ID!): Category!
+}
+
+extend type Mutation {
+  createCategory(name: String!): Category!
+}
+
+extend type Subscription {
+  category: Category!
+}
+
+type Category {
+  id: ID!
+
+  createdAt: Date!
+  updatedAt: Date!
+  deletedAt: Date
+
+  name: String!
+}
