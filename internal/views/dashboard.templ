@@ -1,0 +1,23 @@
+package views
+
+import "github.com/ryanfaerman/netctl/web/named"
+
+type Dashboard struct {
+	session Session
+}
+
+templ (v Dashboard) Authenticated() {
+	@Page() {
+		<h1>Welcome Back!</h1>
+		<a href={ templ.URL(named.URLFor("session-destroy")) } class="button">
+			Logout
+		</a>
+	}
+}
+
+templ (v Dashboard) Anonymous() {
+	@Page() {
+		<h1>Hello world</h1>
+		@v.session.Login()
+	}
+}

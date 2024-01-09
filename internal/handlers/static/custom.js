@@ -1,4 +1,4 @@
-
+htmx.config.defaultSwapStyle = "morph:innerHTML";
 document.body.addEventListener('htmx:afterRequest', function (evt) {
     const errorTarget = document.getElementById("htmx-alert")
     if (evt.detail.successful) {

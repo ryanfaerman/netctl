@@ -1,6 +1,6 @@
 module github.com/ryanfaerman/netctl
 
-go 1.20
+go 1.21
 
 require (
 	github.com/99designs/gqlgen v0.17.36
@@ -16,6 +16,7 @@ require (
 	github.com/go-loremipsum/loremipsum v1.1.3
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/jellydator/ttlcache/v3 v3.1.1
@@ -95,6 +96,7 @@ require (
 	google.golang.org/grpc v1.57.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.24.1 // indirect

@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/ryanfaerman/netctl/app"
 	"github.com/ryanfaerman/netctl/config"
-	"github.com/ryanfaerman/netctl/frontend"
 	"github.com/ryanfaerman/netctl/health"
 	"github.com/ryanfaerman/netctl/hook"
 
@@ -53,9 +52,6 @@ var (
 			app.Register()
 
 			// ui.Register()
-
-			frontend.Register()
-
 		},
 	}
 )
@@ -68,6 +64,7 @@ func init() {
 		cmdWeb,
 		cmdConfig,
 		cmdGui,
+		cmdService,
 	)
 }
 

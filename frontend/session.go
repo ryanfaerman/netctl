@@ -129,7 +129,7 @@ func (f *Frontend) SessionVerifyHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	f.session.Put(r.Context(), "authenticated", true)
-	http.Redirect(w, r, named.URLFor("root"), http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	spew.Dump(payload)
 }

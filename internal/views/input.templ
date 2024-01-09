@@ -1,4 +1,6 @@
-package ui
+package views
+
+import "github.com/ryanfaerman/netctl/internal/services"
 
 type InputType string
 
@@ -31,19 +33,14 @@ func (a InputAttrs) HasHelpText() bool    { return len(a.HelpText) > 0 }
 func (a InputAttrs) HasPlaceholder() bool { return len(a.Placeholder) > 0 }
 func (a InputAttrs) HasError() bool       { return len(a.Error) > 0 }
 
-func csrf_token(ctx context.Context) string {
-	if token, ok := ctx.Value(ctxToken).(string); ok {
-		return token
-	}
-	return ""
-}
-
 type FormAttrs struct {
 	Action string
 	Method string
 
 	DisableHTMX bool
 	DisableCSRF bool
+
+	HX templ.Attributes
 }
 
 func (a FormAttrs) HasAction() bool { return len(a.Action) > 0 }
@@ -62,12 +59,13 @@ templ Form(id string, attrs FormAttrs) {
 		}
  		if !attrs.DisableHTMX && attrs.HasAction() {
 			hx-post={ attrs.Action }
-			hx-swap="morph:innerHTML"
 			hx-swap-oob="true"
 		}
+
+    { attrs.HX... }
 	>
 		if !attrs.DisableCSRF {
-			<input type="hidden" name="csrf_token" value={ csrf_token(ctx) }/>
+			<input type="hidden" name="csrf_token" value={ services.CSRF.GetToken(ctx) }/>
 		}
 		{ children... }
 	</form>
@@ -103,6 +101,10 @@ templ Input(kind InputType, name string, attrs InputAttrs) {
 
 templ InputText(name string, attrs InputAttrs) {
 	@Input(InputTypeText, name, attrs)
+}
+
+templ (i InputAttrs) Input(name string) {
+	@Input(InputTypePassword, name, i)
 }
 
 templ InputEmail(name string, attrs InputAttrs) {

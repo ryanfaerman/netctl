@@ -1,4 +1,4 @@
-package ui
+package handlers
 
 import (
 	"github.com/go-playground/locales/en"

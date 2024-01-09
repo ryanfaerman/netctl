@@ -1,0 +1,70 @@
+package views
+
+import "github.com/ryanfaerman/netctl/web/named"
+
+type Session struct{}
+
+type SessionCreateInput struct {
+	Email string `validate:"required,email"`
+}
+
+type SessionCreateErrors struct {
+	Email string
+}
+
+templ (v Session) Register() {
+	<div id="session-register" class="grid-container thirds">
+		<div></div>
+		<div>
+			@Form("magic-link-form", FormAttrs{
+          Action: named.URLFor("user-login-create"),
+        }) {
+				@InputText("callsign", InputAttrs{
+            Label: "Callsign",
+            HelpText: "Your FCC callsign",
+        })
+				@InputEmail("email", InputAttrs{
+            Label: "Email",
+            HelpText: "Enter your email address",
+        })
+				@InputSubmit(InputAttrs{
+            Value: "Send Magic Link",
+        })
+			}
+		</div>
+		<div></div>
+	</div>
+}
+
+templ (v Session) Login() {
+	@v.LoginWithErrors(SessionCreateInput{}, SessionCreateErrors{})
+}
+
+templ (v Session) LoginWithErrors(values SessionCreateInput, errs SessionCreateErrors) {
+	<div id="session-login" class="grid-container thirds">
+		<div></div>
+		<div>
+			@Form("magic-link-form", FormAttrs{
+          Action: named.URLFor("session-create"),
+          HX: templ.Attributes{
+              "hx-swap": "outerHTML",
+            },
+        }) {
+				@InputEmail("email", InputAttrs{
+            Value: values.Email,
+            Label: "Email Address",
+            HelpText: "The primary email address you use for your account",
+            Error: errs.Email,
+        })
+				@InputSubmit(InputAttrs{
+            Value: "Send Magic Link",
+        })
+			}
+		</div>
+		<div></div>
+	</div>
+}
+
+templ (v Session) Created() {
+	<p>Check your email for a magic link to log in.</p>
+}
