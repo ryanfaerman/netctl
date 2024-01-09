@@ -23,8 +23,13 @@ type MagicLinkErrors struct {
 }
 
 func MagicLinkNewHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(session.GetString(r.Context(), "flash"))
-	fmt.Println("authenticed?", session.GetBool(r.Context(), "authenticated"))
+	ctx, err := session.Load(r.Context(), r.Header.Get("X-Session"))
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	fmt.Println(session.GetString(ctx, "flash"))
+	fmt.Println("authenticed?", session.GetBool(ctx, "authenticated"))
 	render(Index())(w, r)
 }
 

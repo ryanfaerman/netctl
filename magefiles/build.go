@@ -106,7 +106,8 @@ func Build() error {
 		binaryPath := filepath.Join("./bin", command)
 		sourcePath := filepath.Join(module.Path(), "/cmd", command)
 
-		lds := ldflags() + `-s -w -extldflags '-static'`
+		// lds := ldflags() + `-s -w -extldflags '-static'`
+		lds := ldflags() + `-s -w`
 
 		log.Info("Building application", "command", command, "target", target.Local(), "source", sourcePath)
 		if err := sh.Run(goexe, "build",

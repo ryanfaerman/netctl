@@ -25,6 +25,7 @@ type Checkin struct {
 	Traffic      int    `json:"traffic"`
 	Announcement bool   `json:"announcement"`
 	Acknowledged bool   `json:"acknowledged"`
+	Role         string `json:"role"`
 }
 
 type Config struct {

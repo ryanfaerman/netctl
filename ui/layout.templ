@@ -17,7 +17,7 @@ templ Layout() {
 		<body>
 			<div id="htmx-alert" class="alert alert-warning sticky-top" hidden></div>
 			<div id="main" class="container">
-				@logo()
+				<!-- @logo() -->
 				{ children... }
 			</div>
 			<script src="/static/htmx.min.js"></script>
@@ -30,7 +30,7 @@ templ Layout() {
 templ NetSession() {
 	@Layout() {
 		@checkForm(CheckinErrors{})
-		<main id="checkin-records" hx-ext="morph" hx-sse="connect:/net/sse?stream=messages swap:message">
+		<main id="checkin-records" hx-ext="morph" hx-sse="connect:/net/sse?stream=messages swap:message" hx-swap="morph:innerHTML">
 			@netrecord(records)
 		</main>
 	}
@@ -97,7 +97,7 @@ templ checkForm(errors CheckinErrors) {
 }
 
 templ netrecord(records []Record) {
-	<table class="u-full-width" hx-trigger="sse:checkin">
+	<table class="u-full-width">
 		<thead>
 			<tr>
 				<th class="center">#</th>

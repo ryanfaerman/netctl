@@ -11,6 +11,7 @@ import (
 	"github.com/a-h/templ"
 	scs "github.com/alexedwards/scs/v2"
 	branca "github.com/essentialkaos/branca/v2"
+	"github.com/go-chi/chi"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/justinas/nosurf"
 	sse "github.com/r3labs/sse/v2"
@@ -57,17 +58,30 @@ func Register() {
 		brc = br
 	}
 
+	session = scs.New()
+	session.Cookie.Name = config.Get("session.name")
+	session.Cookie.Path = "/"
+
 	web.HookServerRoutes.Register(func(e hook.Event[web.Router]) {
-		e.Payload.Routes().Get(named.Route("net-session", "/net"), render(NetSession()))
 
-		e.Payload.Routes().Get(named.Route("index", "/"), MagicLinkNewHandler)
-		e.Payload.Routes().Post(named.Route("magic-link-create", "/magic_link/create"), MagicLinkCreateHandler)
-		e.Payload.Routes().Get(named.Route("magic-link-sent", "/magic_link/sent"), render(MagicLinkSent()))
-		e.Payload.Routes().Get(named.Route("magic-link-verify", "/magic_link/verify"), MagicLinkVerifyHandler)
+		e.Payload.Routes().Group(func(r chi.Router) {
+			r.Use(session.LoadAndSave)
 
-		e.Payload.Routes().Get("/token", tokenHandler)
+			r.Get(named.Route("net-session", "/net"), render(NetSession()))
 
-		e.Payload.Routes().Post(named.Route("receive-checkin", "/net/checkin"), checkinHandler)
+			r.Get(named.Route("index", "/"), MagicLinkNewHandler)
+			r.Post(named.Route("magic-link-create", "/magic_link/create"), MagicLinkCreateHandler)
+			r.Get(named.Route("magic-link-sent", "/magic_link/sent"), render(MagicLinkSent()))
+			r.Get(named.Route("magic-link-verify", "/magic_link/verify"), MagicLinkVerifyHandler)
+
+			r.Get("/token", tokenHandler)
+
+			r.Post(named.Route("receive-checkin", "/net/checkin"), checkinHandler)
+
+			r.Route("/beta", func(r chi.Router) {
+				r.Get(named.Route("beta-magic-link-new", "/"), render(MagicLinkIndex()))
+			})
+		})
 
 		static, _ := fs.Sub(staticFS, "static")
 		e.Payload.Routes().Handle(
@@ -78,10 +92,10 @@ func Register() {
 		sseServer.CreateStream("messages")
 		e.Payload.Routes().Handle(named.Route("net-sse-src", "/net/sse"), sseServer)
 	})
-
-	web.HookServerStart.Register(func(e hook.Event[web.ServerStartPayload]) {
-		session = e.Payload.Server.Session()
-	})
+	//
+	// web.HookServerStart.Register(func(e hook.Event[web.ServerStartPayload]) {
+	// 	// session = e.Payload.Server.Session()
+	// })
 
 	web.HookServerStop.Register(func(e hook.Event[web.ServerStopPayload]) {
 		sseServer.Close()

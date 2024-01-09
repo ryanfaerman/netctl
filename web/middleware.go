@@ -9,9 +9,7 @@ import (
 	"net/http"
 
 	"github.com/charmbracelet/log"
-	"github.com/chmike/securecookie"
 	"github.com/justinas/nosurf"
-	"github.com/ryanfaerman/netctl/config"
 	"github.com/unrolled/render"
 )
 
@@ -37,38 +35,6 @@ func Dropper(paths ...string) func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func Session(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		obj, err := securecookie.New(
-			config.Get("session.name"), []byte(config.Get("random.key")),
-			securecookie.Params{
-				Path:     "/",
-				MaxAge:   86400,
-				Secure:   false,
-				SameSite: securecookie.Lax,
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
-
-		if err := obj.SetValue(w, []byte("foo")); err != nil {
-			panic(err)
-		}
-
-		val, err := obj.GetValue(nil, r)
-		if err != nil {
-			fmt.Println("error getting value", err)
-		}
-
-		fmt.Println("session value", string(val))
-
-		ctx := context.WithValue(r.Context(), ctxSession, string(val))
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
 
 type key int

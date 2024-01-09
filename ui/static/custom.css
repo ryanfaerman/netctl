@@ -8,6 +8,10 @@ html {
   --danger-bg-color: #fce4e4;
 }
 
+body {
+  font-size: 1.4rem;
+}
+
 
 .center {
   text-align: center;
@@ -86,4 +90,15 @@ html {
 	border: 1px solid var(--danger-color);
 	background-color: var(--danger-bg-color);
 	border-radius: 3px;
+}
+
+
+.graybg {
+  background: var(--background-color-softer);
+  border-radius: 0.4rem;
+}
+
+.grid-container.split {
+  grid-template-columns: 5fr 2fr;
+
 }

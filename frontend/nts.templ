@@ -1,0 +1,333 @@
+package frontend
+
+templ (h HTML) NetIndex() {
+	@h.Page() {
+		<!--
+		@h.Announcement("Welcome to the new website!", "This is a test announcement.")
+    -->
+		@h.AppHeader()
+		<div class="grid-container split">
+			<div>
+				<div class="sticky mast-head-form">
+					@Form("check-in-form", FormAttrs{}) {
+						<div class="grid-container quarters">
+							@InputText("call-sign", InputAttrs{Label: "Callsign", HelpText:"Enter the callsign"})
+							@InputText("name", InputAttrs{Label: "Name", HelpText: "Override the FCC Listing"})
+							@Select("traffic", InputAttrs{
+              Label: "Traffic Type",
+              Options: []string{
+                "Routine",
+                "Priority",
+                "Welfare",
+                "Emergency",
+                "Traffic",
+                "Question",
+                "Announcement",
+                "Comment",
+                },
+              })
+							@InputSubmit(InputAttrs{Value: "Check In"})
+						</div>
+					}
+					<div class="mast-head-divider"></div>
+				</div>
+				@h.TrafficTable("checkin-list", TableAttrs{
+          Caption: "hello there",
+          Headers: []string{
+            "#",
+            "Role",
+            "Traffic",
+            "Callsign",
+            "Name",
+            "Location",
+            "Time In",
+          },
+        }) {
+					@h.CheckinRow("4")
+					@h.CheckinRow("5")
+					@h.CheckinRow("6")
+					@h.CheckinRow("7")
+					@h.CheckinRow("8")
+				}
+				<!--
+				<table class="traffic-data u-full-width">
+					<caption>
+						<ul>
+							<li><strong>Net Control:</strong> W4BUG</li>
+							<li><strong>Net Manager:</strong> W4BUG</li>
+							<li><strong>Net Liaison:</strong> W4BUG</li>
+							<li><strong>Net Liaison:</strong> W4BUG</li>
+						</ul>
+					</caption>
+					<thead>
+						<tr>
+							<th class="center">#</th>
+							<th>Role</th>
+							<th>Traffic</th>
+							<th>Callsign</th>
+							<th>Name</th>
+							<th>Location</th>
+							<th>Time In</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="" id="view-row" hx-get="/v2/net" hx-trigger="dblclick" hx-select="#edit-row" hx-swap="outerHTML">
+							<td>1</td>
+							<td>Net Control</td>
+							<td>Routine</td>
+							<td>W4BUG</td>
+							<td hx>Arthur McCallister</td>
+							<td>Coral Springs, FL</td>
+							<td>16:20:13</td>
+						</tr>
+						<tr class="">
+							<td>2</td>
+							<td>Regional Liason</td>
+							<td>Traffic</td>
+							<td>W4BUG</td>
+							<td>Arthur McCallister</td>
+							<td>Coral Springs, FL</td>
+							<td>16:20:13</td>
+						</tr>
+						<tr class="">
+							<td>3</td>
+							<td></td>
+							<td>Question</td>
+							<td>W4BUG</td>
+							<td>Arthur McCallister</td>
+							<td>Coral Springs, FL</td>
+							<td>16:20:13</td>
+						</tr>
+						@h.CheckinRow("4")
+						@h.CheckinRow("5")
+						@h.CheckinRow("6")
+						@h.CheckinRow("7")
+						@h.CheckinRow("8")
+						<tr id="edit-row" hx-get="/v2/net" hx-trigger="dblclick" hx-select="#view-row" hx-swap="outerHTML">
+							<td>1</td>
+							<td>EDITABLE</td>
+							<td>EDITABLE</td>
+							<td>EDITABLE</td>
+							<td>EDITABLE</td>
+							<td>EDITABLE</td>
+							<td>
+								EDITABLE
+							</td>
+						</tr>
+					</tbody>
+				</table>-->
+				<h3>Timeline</h3>
+				<div class="timeline">
+					@h.TimelineItem("play")
+					@h.TimelineItem("check")
+					@h.TimelineItem("triangle-exclamation")
+					@h.TimelineItem("question")
+					@h.TimelineItem("bell")
+					@h.TimelineItem("envelope")
+					@h.TimelineItem("check")
+					@h.TimelineItem("check")
+					@h.TimelineItem("stop")
+				</div>
+				<h3>Net Report</h3>
+				<div class="net-report">
+					<dl class="net-report-header">
+						<dt>Number</dt>
+						<dd>31415</dd>
+						<dt>Precedence</dt>
+						<dd>R</dd>
+						<dt>HX</dt>
+						<dd>W</dd>
+						<dt>Station of Origin</dt>
+						<dd>W4BUG</dd>
+						<dt>Check</dt>
+						<dd>13</dd>
+						<dt>Time Filed</dt>
+						<dd>16:20:13</dd>
+						<dt>Date Filed</dt>
+						<dd>2021-01-01</dd>
+					</dl>
+					<div class="net-report-address grid-container halves">
+						<div>
+							<dl class="mailing-address">
+								<dt>To</dt>
+								<dd>W4BUG - Todd Clark</dd>
+								<dd>1234 Main St</dd>
+								<dd>Anytown, FL 12345</dd>
+							</dl>
+							<dl class="contact-methods">
+								<dt>Phone Number</dt>
+								<dd>123-456-7890</dd>
+								<dt>Email</dt>
+								<dd>example@example.com</dd>
+							</dl>
+						</div>
+						<div>
+							<span>THIS MESSAGE WAS RECEIVED AT</span>
+							<dl>
+								<dt>Amateur Station</dt>
+								<dd>W4BUG</dd>
+								<dt>Phone</dt>
+								<dd>123-456-7890</dd>
+								<dt>Name</dt>
+								<dd>Arthur McCallister</dd>
+								<dt>Street Address</dt>
+								<dd>1234 Main St</dd>
+								<dt>City, State, Zip</dt>
+								<dd>Coral Springs, FL 33065</dd>
+							</dl>
+						</div>
+					</div>
+					<div class="net-report-body">
+						SEFTN Report November 02 x Stations 12 Traffic 2 Time 31 minutes 73
+					</div>
+				</div>
+				<!--
+				<div class="ipsum">
+					@templ.Raw(h.Paragraphs(8))
+				</div>
+        -->
+			</div>
+			<div class="sidebar">
+				<div class="sidebar-item">
+					<h4>SEFTN</h4>
+				</div>
+				<div class="sidebar-item">
+					<details open>
+						<summary>
+							Description
+						</summary>
+						@templ.Raw(h.Paragraphs(1))
+						<dl>
+							<dt>Manager</dt>
+							<dd>Ken Polkerson [W44BUG]</dd>
+							<dt>Regional Liasons</dt>
+							<dd>Arthur McCallister [W4BUG]</dd>
+							<dd>Arthur McCallister [W4BUG]</dd>
+							<dd>Arthur McCallister [W4BUG]</dd>
+							<dt>Controllers</dt>
+							<dd>Arthur McCallister [W4BUG]</dd>
+							<dd>Arthur McCallister [W4BUG]</dd>
+							<dd>Arthur McCallister [W4BUG]</dd>
+							<dd>Arthur McCallister [W4BUG]</dd>
+						</dl>
+					</details>
+				</div>
+				<div class="sidebar-item">
+					<details open>
+						<summary>
+							Schedule
+						</summary>
+						<dl>
+							<dt>Monday</dt>
+							<dd>18:00 EST</dd>
+							<dt>Tuesday</dt>
+							<dd>18:00 EST</dd>
+							<dt>Wednesday</dt>
+							<dd>18:00 EST</dd>
+							<dt>Thursday</dt>
+							<dd>18:00 EST</dd>
+							<dt>Friday</dt>
+							<dd>18:00 EST</dd>
+							<dt>Sat - Sun</dt>
+							<dd>NO NET</dd>
+						</dl>
+					</details>
+				</div>
+				<div class="sidebar-item">
+					<details>
+						<summary>
+							Radio Settings
+						</summary>
+						<dl>
+							<dt>Type</dt>
+							<dd>Primary</dd>
+							<dt>Frequency</dt>
+							<dd>
+								@h.IconSolid("arrow-down")
+								146.610
+							</dd>
+							<dd>
+								@h.IconSolid("arrow-up")
+								146.010
+							</dd>
+							<dt>Tone</dt>
+							<dd>110.9</dd>
+						</dl>
+						<dl>
+							<dt>Type</dt>
+							<dd>Backup</dd>
+							<dt>Frequency</dt>
+							<dd>
+								@h.IconSolid("arrow-down")
+								146.610
+							</dd>
+							<dd>
+								@h.IconSolid("arrow-up")
+								146.010
+							</dd>
+							<dt>Tone</dt>
+							<dd>110.9</dd>
+						</dl>
+						<dl>
+							<dt>Type</dt>
+							<dd>DMR</dd>
+							<dt>Frequency</dt>
+							<dd>
+								@h.IconSolid("arrow-down")
+								146.610
+							</dd>
+							<dd>
+								@h.IconSolid("arrow-up")
+								146.010
+							</dd>
+							<dt>Color Code</dt>
+							<dd>1</dd>
+							<dt>DMR ID</dt>
+							<dd>311294</dd>
+						</dl>
+					</details>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ (h HTML) CheckinRow(i string) {
+	<tr class="">
+		<td>{ i }</td>
+		<td></td>
+		<td>Routine</td>
+		<td>W4BUG</td>
+		<td>Arthur McCallister</td>
+		<td>Coral Springs, FL</td>
+		<td>16:20:13</td>
+		<!-- <td>
+			<ul class="actions">
+				<li>
+					<a href="#" class="action-item">
+						@h.IconRegular("pen-to-square")
+						Edit
+					</a>
+				</li>
+			</ul>
+		</td> -->
+	</tr>
+}
+
+templ (h HTML) TimelineItem(icon string) {
+	<div class="timeline-item">
+		<div class="timeline-badge">
+			@h.Icon(icon)
+		</div>
+		<div class="timeline-body">
+			<div class="event">
+				<a href="#" class="subject">W4BUG</a>
+				checked in by
+				<a href="#" class="author">W4BUG</a>
+			</div>
+			<div class="timestamp">
+				<code>16:20:13</code>
+			</div>
+		</div>
+	</div>
+}

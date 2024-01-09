@@ -4,18 +4,21 @@ go 1.20
 
 require (
 	github.com/99designs/gqlgen v0.17.36
-	github.com/a-h/templ v0.2.476
+	github.com/a-h/templ v0.2.513
 	github.com/alexedwards/scs/v2 v2.7.0
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/charmbracelet/log v0.2.3
 	github.com/chmike/securecookie v1.3.5
 	github.com/davecgh/go-spew v1.1.1
 	github.com/essentialkaos/branca/v2 v2.0.1
 	github.com/glebarez/go-sqlite v1.21.2
 	github.com/go-chi/chi v1.5.4
+	github.com/go-loremipsum/loremipsum v1.1.3
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/jellydator/ttlcache/v3 v3.1.1
 	github.com/justinas/nosurf v1.1.1
 	github.com/magefile/mage v1.15.0
 	github.com/pkg/errors v0.9.1
@@ -27,6 +30,7 @@ require (
 	github.com/unrolled/render v1.6.0
 	github.com/vearutop/statigz v1.4.0
 	github.com/vektah/gqlparser/v2 v2.5.8
+	github.com/webview/webview_go v0.0.0-20230901181450-5a14030a9070
 	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -58,7 +62,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

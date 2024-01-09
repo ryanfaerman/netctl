@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	webAddr = ":8090"
+	webAddr = "127.0.0.1:8090"
 
 	bindErr = errors.New("unable to bind to address")
 
@@ -46,22 +46,22 @@ var (
 			}
 			defer l.Close()
 
-			// TODO: remove the socket before starting
-			socket, err := net.Listen("unix", "./tmp/retro.sock")
-			if err != nil {
-				return errors.Join(err, bindErr)
-			}
-			defer socket.Close()
+			// // TODO: remove the socket before starting
+			// socket, err := net.Listen("unix", "./tmp/retro.sock")
+			// if err != nil {
+			// 	return errors.Join(err, bindErr)
+			// }
+			// defer socket.Close()
 
 			if err := s.Start(l); err != nil {
 				logger.Error("could not start", "err", err)
 				return err
 			}
 
-			if err := s.Start(socket); err != nil {
-				logger.Error("could not start", "err", err)
-				return err
-			}
+			// if err := s.Start(socket); err != nil {
+			// 	logger.Error("could not start", "err", err)
+			// 	return err
+			// }
 
 			signalCh := make(chan os.Signal, 10)
 			signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGPIPE)

@@ -1,0 +1,184 @@
+package frontend
+
+templ (h HTML) Page() {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>{ h.title }</title>
+			<meta charset="utf-8"/>
+			<meta name="description" content={ h.description }/>
+			<meta name="author" content={ h.description }/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<link rel="stylesheet" href="/static/normalize.css"/>
+			<link rel="stylesheet" href="/static/barebones.css"/>
+			<link rel="stylesheet" href="/static/custom.css"/>
+			<link href="/static/fontawesome/css/fontawesome.css" rel="stylesheet"/>
+			<link href="/static/fontawesome/css/all.min.css" rel="stylesheet"/>
+		</head>
+		<body>
+			<div id="htmx-alert" class="alert alert-warning sticky-top" hidden></div>
+			if h.hasFlashMessage(ctx) {
+				<div id="flash-message" class="flash-message">
+					@h.Flash()
+				</div>
+			}
+			{ children... }
+			<script src="/static/htmx.min.js"></script>
+			<script src="/static/idiomorph-ext.min.js"></script>
+			<script src="/static/custom.js"></script>
+			<script>
+      htmx.config
+      </script>
+		</body>
+	</html>
+}
+
+templ (h HTML) Unsupported() {
+	@h.Page() {
+		<div class="unsupported">
+			<h1>Unsupported Browser</h1>
+			<p>
+				Javascript Required or your browser is not supported. Please enabled javascript and use a modern browser such as
+				<a href="https://www.google.com/chrome/">Google Chrome</a> or
+				<a href="https://www.mozilla.org/en-US/firefox/new/">Mozilla Firefox</a>.
+			</p>
+		</div>
+	}
+}
+
+templ (h HTML) Icon(name string) {
+	@h.IconSolid(name)
+}
+
+templ (h HTML) IconSolid(name string) {
+	<i class={ "fa-solid fa-" + name }></i>
+}
+
+templ (h HTML) IconRegular(name string) {
+	<i class={ "fa-regular fa-" + name }></i>
+}
+
+type TableAttrs struct {
+	Caption string
+	Headers []string
+}
+
+func (t TableAttrs) HasCaption() bool { return t.Caption != "" }
+func (t TableAttrs) HasHeader() bool  { return len(t.Headers) > 0 }
+
+templ (h HTML) TrafficTable(id string, attrs TableAttrs) {
+	<table id={ id } class="traffic-data u-full-width">
+		if attrs.HasCaption() {
+			<caption>{ attrs.Caption }</caption>
+		}
+		if attrs.HasHeader() {
+			<thead>
+				<tr>
+					for _, header := range attrs.Headers {
+						<th>{ header }</th>
+					}
+				</tr>
+			</thead>
+		}
+		<tbody>
+			{ children... }
+		</tbody>
+	</table>
+}
+
+templ (h HTML) TrafficRow() {
+}
+
+templ (h HTML) AppHeader() {
+	<header class="app-header">
+		@h.GlobalBar()
+		@h.LocalBar()
+	</header>
+}
+
+templ (h HTML) GlobalBar() {
+	<div class="global-bar">
+		<div class="global-bar-start">
+			<a href="/">
+				<img src="/static/icons8-radio-tower-48.png" class="logo-img"/>
+			</a>
+			<div class="app-context">
+				<nav role="navigation">
+					<ul>
+						<li>
+							<a href="#" class="context-item button">Southeast Florida Traffic Net</a>
+							<span class="context-item-separator">/</span>
+						</li>
+						<li>
+							<a href="#" class="context-item button">Current Net</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		</div>
+		<div class="global-bar-end">
+			<a href="#" class="button">
+				@h.Icon("user")
+				Account
+			</a>
+		</div>
+	</div>
+}
+
+templ (h HTML) LocalBar() {
+	<div class="local-bar">
+		<nav>
+			<ul>
+				<li>
+					<a href="#" class="active">
+						@h.Icon("file-lines")
+						Preamble
+					</a>
+				</li>
+				<li>
+					<a href="#" class="tab">
+						@h.Icon("list-check")
+						Check Ins
+					</a>
+				</li>
+				<li>
+					<a href="#" class="tab">
+						@h.Icon("receipt")
+						Reports
+					</a>
+				</li>
+				<li>
+					<a href="#" class="tab">
+						@h.Icon("sliders")
+						Settings
+					</a>
+				</li>
+			</ul>
+		</nav>
+	</div>
+}
+
+templ (h HTML) Announcement(title, body string) {
+	<div class="announcement">
+		<div class="announcement-content">
+			<strong>{ title }:</strong> { body }
+		</div>
+	</div>
+}
+
+templ (h HTML) SplitLayout(main, sidebar templ.Component) {
+	<div class="grid-container split">
+		<div>
+			@main
+		</div>
+		<div>
+			@sidebar
+		</div>
+	</div>
+}
+
+templ (h HTML) Timeline() {
+	<div class="timeline">
+		{ children... }
+	</div>
+}

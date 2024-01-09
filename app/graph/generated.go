@@ -52,6 +52,7 @@ type ComplexityRoot struct {
 		Location     func(childComplexity int) int
 		Name         func(childComplexity int) int
 		Remarks      func(childComplexity int) int
+		Role         func(childComplexity int) int
 		Time         func(childComplexity int) int
 		Traffic      func(childComplexity int) int
 	}
@@ -225,6 +226,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Checkin.Remarks(childComplexity), true
+
+	case "Checkin.role":
+		if e.complexity.Checkin.Role == nil {
+			break
+		}
+
+		return e.complexity.Checkin.Role(childComplexity), true
 
 	case "Checkin.time":
 		if e.complexity.Checkin.Time == nil {
@@ -791,6 +799,9 @@ type Net {
   channels: [Channel!]!
 
   controllers: [Controller!]!
+
+  # occurences?
+  # kind? directed, open, ragchew?
 }
 
 type NetMeeting {
@@ -818,6 +829,7 @@ type Checkin {
   traffic: Int!
   announcement: Boolean!
   acknowledged: Boolean!
+  role: String!
 }
 
 interface Channel {
@@ -1384,6 +1396,50 @@ func (ec *executionContext) fieldContext_Checkin_acknowledged(ctx context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Checkin_role(ctx context.Context, field graphql.CollectedField, obj *model.Checkin) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Checkin_role(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Role, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Checkin_role(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Checkin",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2524,6 +2580,8 @@ func (ec *executionContext) fieldContext_NetMeeting_checkins(ctx context.Context
 				return ec.fieldContext_Checkin_announcement(ctx, field)
 			case "acknowledged":
 				return ec.fieldContext_Checkin_acknowledged(ctx, field)
+			case "role":
+				return ec.fieldContext_Checkin_role(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Checkin", field.Name)
 		},
@@ -6003,6 +6061,11 @@ func (ec *executionContext) _Checkin(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "acknowledged":
 			out.Values[i] = ec._Checkin_acknowledged(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "role":
+			out.Values[i] = ec._Checkin_role(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

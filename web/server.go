@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	scs "github.com/alexedwards/scs/v2"
 	"github.com/charmbracelet/log"
 	"github.com/ryanfaerman/netctl/config"
 	"github.com/ryanfaerman/netctl/web/named"
@@ -26,8 +25,6 @@ type Server struct {
 	mux    *chi.Mux
 	logger *log.Logger
 	ln     net.Listener
-
-	session *scs.SessionManager
 
 	servers []*http.Server
 	mw      []func(http.Handler) http.Handler
@@ -66,11 +63,7 @@ func NewServer(options ...Optioner) (*Server, error) {
 		render: render.New(render.Options{
 			IndentJSON: true,
 		}),
-		session: scs.New(),
 	}
-
-	srv.session.Cookie.Name = config.Get("session.name")
-	srv.session.Cookie.Path = "/"
 
 	for _, o := range options {
 		if err := o.Apply(&srv); err != nil {
@@ -80,20 +73,16 @@ func NewServer(options ...Optioner) (*Server, error) {
 
 	srv.mw = append(srv.mw, srv.logging)
 	srv.mw = append(srv.mw, Nosurfing)
-	srv.mw = append(srv.mw, srv.session.LoadAndSave)
 	srv.mw = append(srv.mw, middleware.Recoverer)
 	srv.mw = append(srv.mw, middleware.URLFormat)
 	srv.mw = append(srv.mw, middleware.StripSlashes)
 	srv.mw = append(srv.mw, WithRender(srv.render))
-	// srv.mw = append(srv.mw, cache.Middleware)
 
 	for _, mw := range srv.mw {
 		srv.mux.Use(mw)
 	}
 
 	HookServerRoutes.Dispatch(context.Background(), &srv)
-
-	// srv.setupStatic()
 
 	if config.Flag.Get("web.debug", false) {
 		srv.mux.Get("/.well-known/routes", srv.debugRoutes)
@@ -122,14 +111,6 @@ func (s *Server) debugRoutes(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Routes() chi.Router {
 	return s.mux
 }
-
-func (s *Server) Session() *scs.SessionManager {
-	return s.session
-}
-
-// func (s *Server) Mount(pattern string, resource Resource) {
-// 	s.mux.Mount(pattern, resource.Routes())
-// }
 
 // Start the server listening on the given listener. This will not block and
 // will continue to service requests untill the listener closes or there is a
