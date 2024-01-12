@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -20,8 +19,7 @@ const (
 )
 
 type Session struct {
-	view    views.Session
-	service services.Session
+	view views.Session
 }
 
 func init() {
@@ -29,7 +27,7 @@ func init() {
 }
 
 func (h Session) Routes(r chi.Router) {
-	r.Use(h.service.Middleware)
+	r.Use(services.Session.Middleware)
 
 	r.Get(named.Route("user-login", "/session/new"), h.Create)
 
@@ -65,9 +63,8 @@ func (h Session) Create(w http.ResponseWriter, r *http.Request) {
 		h.view.LoginWithErrors(input, inputErrs).Render(ctx, w)
 	}
 
-	if err := h.service.SendEmailVerification(r.Context(), input.Email); err != nil {
-		fmt.Println(err)
-		panic("at the disco")
+	if err := services.Session.SendEmailVerification(r.Context(), input.Email); err != nil {
+		views.Errors{}.GeneralError(err).Render(r.Context(), w)
 	} else {
 		h.view.Created().Render(r.Context(), w)
 	}
@@ -76,8 +73,16 @@ func (h Session) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h Session) Verify(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
-	if err := h.service.Verify(r.Context(), token); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := services.Session.Verify(r.Context(), token); err != nil {
+		switch err {
+		case services.ErrTokenInvalid,
+			services.ErrTokenExpired,
+			services.ErrTokenMismatch,
+			services.ErrTokenDecode:
+			h.view.VerificationFailed(err).Render(r.Context(), w)
+		default:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 		return
 	}
 
@@ -85,6 +90,6 @@ func (h Session) Verify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Session) Destroy(w http.ResponseWriter, r *http.Request) {
-	h.service.Destroy(r.Context())
+	services.Session.Destroy(r.Context())
 	http.Redirect(w, r, "/", http.StatusFound)
 }

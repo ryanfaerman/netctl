@@ -2,14 +2,17 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/ryanfaerman/netctl/internal/handlers"
+	"github.com/ryanfaerman/netctl/internal/models"
 	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/web"
 	"github.com/spf13/cobra"
@@ -21,8 +24,26 @@ var (
 		Args: cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 
-			services.SetDatabase(nil)
-			handlers.Register()
+			userCacheDir, err := os.UserCacheDir()
+			if err != nil {
+				panic(err.Error())
+			}
+			db, err := sql.Open("sqlite", filepath.Join(userCacheDir, "netctl", "netctl.db")+"?_pragma=journal_mode(WAL)&_pragma=foreign_keys(on)")
+			if err != nil {
+				return err
+			}
+
+			if err := models.Setup(logger, db); err != nil {
+				return err
+			}
+
+			if err := services.Setup(logger, db); err != nil {
+				return err
+			}
+
+			if err := handlers.Setup(logger, db); err != nil {
+				return err
+			}
 
 			s, err := web.NewServer(web.WithLogger(logger))
 			if err != nil {

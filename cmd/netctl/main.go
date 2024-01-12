@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
-	"github.com/ryanfaerman/netctl/app"
 	"github.com/ryanfaerman/netctl/config"
 	"github.com/ryanfaerman/netctl/health"
 	"github.com/ryanfaerman/netctl/hook"
@@ -46,10 +45,8 @@ var (
 
 			health.Logger = logger.With("service", "health")
 			hook.Logger = logger.With("service", "hook")
-			app.Logger = logger.With("service", "board")
 
 			health.Register()
-			app.Register()
 
 			// ui.Register()
 		},

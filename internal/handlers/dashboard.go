@@ -10,10 +10,7 @@ import (
 )
 
 type Dashboard struct {
-	views    views.Dashboard
-	services struct {
-		session services.Session
-	}
+	views views.Dashboard
 }
 
 func init() {
@@ -21,7 +18,7 @@ func init() {
 }
 
 func (h Dashboard) Routes(r chi.Router) {
-	r.Use(h.services.session.Middleware)
+	r.Use(services.Session.Middleware)
 
 	r.Get(named.Route("dashboard-index", "/"), h.Index)
 }
@@ -29,8 +26,13 @@ func (h Dashboard) Routes(r chi.Router) {
 func (h Dashboard) Index(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
 
-	if h.services.session.IsAuthenticated(ctx) {
-		h.views.Authenticated().Render(ctx, w)
+	if services.Session.IsAuthenticated(ctx) {
+		user := services.Session.MustGetUser(ctx)
+		v := views.Dashboard{
+			User:  user,
+			Ready: user.Ready(),
+		}
+		v.Authenticated().Render(ctx, w)
 	} else {
 		h.views.Anonymous().Render(ctx, w)
 	}

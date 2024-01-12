@@ -1,23 +1,87 @@
 package views
 
 import "github.com/ryanfaerman/netctl/web/named"
+import "github.com/ryanfaerman/netctl/internal/models"
+import "errors"
 
 type Dashboard struct {
 	session Session
+
+	User  *models.User
+	Ready error
 }
 
 templ (v Dashboard) Authenticated() {
 	@Page() {
-		<h1>Welcome Back!</h1>
-		<a href={ templ.URL(named.URLFor("session-destroy")) } class="button">
-			Logout
-		</a>
+		if v.Ready != nil {
+			@v.SetupUser()
+		} else {
+			<h1>Welcome Back { v.User.Name }!</h1>
+			<a href={ templ.URL(named.URLFor("session-destroy")) } class="button">
+				Logout
+			</a>
+		}
 	}
+}
+
+templ (v Dashboard) SetupUser() {
+	<div id="user-setup" class="modal">
+		<div class="modal-header">
+			<h1>Share a bit about yourself.</h1>
+		</div>
+		<div class="modal-body">
+			@Form("user-setup-form", FormAttrs{
+          DisableHTMX: true,
+      }) {
+				<p>
+					Nice to meet you! This is a one-time setup process to get you
+					going. You'll be able to change this information later too.
+				</p>
+				if errors.Is(v.Ready, models.ErrUserNeedsName) {
+					@InputText("name", InputAttrs{
+              Label: "Name",
+              HelpText: "What should we call you?",
+          })
+				}
+				if errors.Is(v.Ready, models.ErrUserNeedsCallsign) {
+					@InputText("callsign", InputAttrs{
+              Label: "Callsign",
+              Placeholder: "Callsign",
+              HelpText: "Your amateur radio callsign",
+          })
+				}
+				@InputSubmit(InputAttrs{
+            Value: "Save your info",
+        })
+			}
+		</div>
+		<div class="modal-footer">
+			<p>
+				Or if you'd rather not share this information, you can
+			</p>
+			<p>
+				<a href={ templ.URL(named.URLFor("session-destroy")) } class="button">
+					Cancel and Do this another time
+				</a>
+			</p>
+		</div>
+	</div>
 }
 
 templ (v Dashboard) Anonymous() {
 	@Page() {
-		<h1>Hello world</h1>
-		@v.session.Login()
+		<div class="modal">
+			<div class="modal-header">
+				<h1>It's nice to see you again.</h1>
+			</div>
+			<div class="modal-body">
+				@v.session.Login()
+			</div>
+			<div class="modal-footer">
+				Your email address is only used to identify you to the system
+				and notifications. It will <strong>never</strong> be shared or sold
+				to third parties.
+			</div>
+		</div>
 	}
 }

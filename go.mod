@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/99designs/gqlgen v0.17.36
 	github.com/a-h/templ v0.2.513
+	github.com/alexedwards/scs/sqlite3store v0.0.0-20231113091146-cef4b05350c8
 	github.com/alexedwards/scs/v2 v2.7.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/charmbracelet/log v0.2.3
@@ -16,12 +17,11 @@ require (
 	github.com/go-loremipsum/loremipsum v1.1.3
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.16.0
-	github.com/gorilla/websocket v1.5.0
 	github.com/jellydator/ttlcache/v3 v3.1.1
 	github.com/justinas/nosurf v1.1.1
 	github.com/magefile/mage v1.15.0
+	github.com/mrz1836/postmark v1.6.1
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.14.0
 	github.com/r3labs/sse/v2 v2.10.0
@@ -30,7 +30,6 @@ require (
 	github.com/sqlc-dev/sqlc v1.20.0
 	github.com/unrolled/render v1.6.0
 	github.com/vearutop/statigz v1.4.0
-	github.com/vektah/gqlparser/v2 v2.5.8
 	github.com/webview/webview_go v0.0.0-20230901181450-5a14030a9070
 	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -55,7 +54,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/cel-go v0.17.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
@@ -66,7 +64,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/pganalyze/pg_query_go/v4 v4.2.1 // indirect
@@ -80,6 +77,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/urfave/cli/v2 v2.25.5 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
@@ -96,7 +94,6 @@ require (
 	google.golang.org/grpc v1.57.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.24.1 // indirect

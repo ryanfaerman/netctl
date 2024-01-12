@@ -1,4 +1,4 @@
-package resolver
+package sql
 
 import "github.com/charmbracelet/log"
 

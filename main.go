@@ -1,36 +1,28 @@
 package main
 
 import (
-	"context"
+	"errors"
+	"fmt"
+)
 
-	"github.com/ryanfaerman/netctl/hamdb"
+var (
+	ErrNeedsCallsign = errors.New("user needs a callsign")
+	ErrNeedsName     = errors.New("user needs a name")
 )
 
 func main() {
+	err := someFunc()
 
-	// user, err := hamdb.Lookup(context.Background(), "abcdefg")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	//
-	// spew.Dump(user)
-	// fmt.Println(user.Class)
-	// user, err = hamdb.Lookup(context.Background(), "abcdefg")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	//
-	// spew.Dump(user)
-	// fmt.Println(user.Class)
-	//
-	hamdb.Lookup(context.Background(), "abcdefg")
-	hamdb.Lookup(context.Background(), "abcdefg")
-	hamdb.Lookup(context.Background(), "abcdefg")
-	hamdb.Lookup(context.Background(), "abcdefg")
-	hamdb.Lookup(context.Background(), "abcdefg")
-	hamdb.Lookup(context.Background(), "abcdefg")
-	hamdb.Lookup(context.Background(), "kq4jxi")
-	hamdb.Lookup(context.Background(), "kq4jxi")
-	hamdb.Lookup(context.Background(), "kq4jxi")
-	hamdb.Lookup(context.Background(), "kq4jxi")
+	if errors.Is(err, ErrNeedsCallsign) {
+		fmt.Println("please provide a callsign")
+	}
+
+	if errors.Is(err, ErrNeedsName) {
+		fmt.Println("please provide a name")
+	}
+
+}
+
+func someFunc() error {
+	return errors.Join(ErrNeedsCallsign, ErrNeedsName)
 }

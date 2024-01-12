@@ -1,22 +1,27 @@
 package handlers
 
 import (
-	"net/http"
+	"database/sql"
+	"sync"
 
-	scs "github.com/alexedwards/scs/v2"
+	"github.com/charmbracelet/log"
 	"github.com/go-chi/chi"
 	sse "github.com/r3labs/sse/v2"
-	"github.com/ryanfaerman/netctl/config"
 
 	"github.com/ryanfaerman/netctl/hook"
 	"github.com/ryanfaerman/netctl/web"
 )
 
-var global struct {
+var global = struct {
 	events   *sse.Server
-	session  *scs.SessionManager
 	handlers []routable
+	log      *log.Logger
+	db       *sql.DB
+}{
+	log: log.With("pkg", "handlers"),
 }
+
+func ogger(l *log.Logger) { global.log = l.With("pkg", "handlers") }
 
 type routable interface {
 	Routes(r chi.Router)
@@ -30,35 +35,31 @@ func registerRoutableFunc(r routableFunc) {
 	global.handlers = append(global.handlers, r)
 }
 
-func Register() {
-	global.events = sse.New()
-	global.session = scs.New()
+var setupOnce sync.Once
 
-	global.session.Cookie.Name = config.Get("session.name", "_session")
-	global.session.Cookie.Path = config.Get("session.path", "/")
+func Setup(logger *log.Logger, db *sql.DB) error {
+	var err error
 
-	web.HookServerRoutes.Register(func(e hook.Event[web.Router]) {
-		for _, h := range global.handlers {
-			e.Payload.Routes().Group(h.Routes)
-		}
+	setupOnce.Do(func() {
+		global.log = logger.With("pkg", "handlers")
 
+		global.log.Debug("running setup tasks")
+		global.db = db
+
+		global.events = sse.New()
+
+		web.HookServerRoutes.Register(func(e hook.Event[web.Router]) {
+			for _, h := range global.handlers {
+				e.Payload.Routes().Group(h.Routes)
+			}
+		})
+
+		web.HookServerStop.Register(func(e hook.Event[web.ServerStopPayload]) {
+			global.events.Close()
+		})
 	})
 
-	web.HookServerStop.Register(func(e hook.Event[web.ServerStopPayload]) {
-		global.events.Close()
-	})
-
-}
-
-func htmxOnly(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("HX-Request") == "" {
-			web.LogWith(r.Context(), "hx", "true")
-			// f.html.Unsupported().Render(r.Context(), w)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+	return err
 }
 
 // func (f *Frontend) Render(c templ.Component) func(w http.ResponseWriter, r *http.Request) {

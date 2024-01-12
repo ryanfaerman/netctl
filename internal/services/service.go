@@ -2,48 +2,71 @@ package services
 
 import (
 	"database/sql"
+	"sync"
 
 	scs "github.com/alexedwards/scs/v2"
+
+	"github.com/alexedwards/scs/sqlite3store"
+
 	branca "github.com/essentialkaos/branca/v2"
 	"github.com/ryanfaerman/netctl/config"
+	"github.com/ryanfaerman/netctl/internal/dao"
+	"github.com/ryanfaerman/netctl/internal/models"
 
 	"github.com/charmbracelet/log"
+	_ "github.com/glebarez/go-sqlite"
 )
 
 var global = struct {
 	session *scs.SessionManager
 	db      *sql.DB
+	dao     *dao.Queries
 	log     *log.Logger
 	brc     branca.Branca
 }{
 	session: scs.New(),
-	log:     log.With("service", "session"),
+	log:     log.With("pkg", "services"),
 }
 
-func brc() branca.Branca {
-	if global.brc == nil {
-		if br, err := branca.NewBranca([]byte(config.Get("random_key"))); err != nil {
-			panic(err)
-		} else {
-			global.brc = br
-
-		}
-	}
-	return global.brc
+func init() {
+	config.Define("service.email.account.token")
+	config.Define("service.email.server.token")
+	config.Define("service.email.product.name", "Net Control")
+	config.Define("service.email.product.url", "http://localhost:8090")
 }
 
 type ctxKey int
 
 const (
 	ctxKeyCSRF ctxKey = iota
+	ctxKeyUser
 )
 
-func SetDatabase(db *sql.DB) { global.db = db }
+var setupOnce sync.Once
 
-func RunMigrations() error {
-	return nil
+func Setup(logger *log.Logger, db *sql.DB) error {
+	var err error
+
+	setupOnce.Do(func() {
+		global.log = log.With("pkg", "services")
+		global.log.Debug("running setup tasks")
+
+		global.db = db
+		global.dao = dao.New(global.db)
+
+		global.brc, err = branca.NewBranca([]byte(config.Get("random_key")))
+		if err != nil {
+			return
+		}
+
+		err = models.Setup(logger, db)
+
+		global.session.Store = sqlite3store.New(global.db)
+
+		global.session.Cookie.Name = config.Get("session.name", "_session")
+		global.session.Cookie.Path = config.Get("session.path", "/")
+
+	})
+
+	return err
 }
-
-func SetLogger(log *log.Logger) { global.log = log }
-
-func ConfigureSessionManager(fn func(*scs.SessionManager)) { fn(global.session) }

@@ -602,7 +602,7 @@ func InputSubmit(attrs InputAttrs) templ.Component {
 			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"input-group\"><input type=\"submit\" class=\"button-primary u-full-width\" value=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"button-group\"><input type=\"submit\" class=\"button-primary u-full-width\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

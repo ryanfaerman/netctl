@@ -1,6 +1,8 @@
 package views
 
 import "github.com/ryanfaerman/netctl/web/named"
+import "github.com/ryanfaerman/netctl/internal/services"
+import "errors"
 
 type Session struct{}
 
@@ -13,26 +15,22 @@ type SessionCreateErrors struct {
 }
 
 templ (v Session) Register() {
-	<div id="session-register" class="grid-container thirds">
-		<div></div>
-		<div>
-			@Form("magic-link-form", FormAttrs{
+	<div id="session-register" class="">
+		@Form("magic-link-form", FormAttrs{
           Action: named.URLFor("user-login-create"),
         }) {
-				@InputText("callsign", InputAttrs{
+			@InputText("callsign", InputAttrs{
             Label: "Callsign",
             HelpText: "Your FCC callsign",
         })
-				@InputEmail("email", InputAttrs{
+			@InputEmail("email", InputAttrs{
             Label: "Email",
             HelpText: "Enter your email address",
         })
-				@InputSubmit(InputAttrs{
+			@InputSubmit(InputAttrs{
             Value: "Send Magic Link",
         })
-			}
-		</div>
-		<div></div>
+		}
 	</div>
 }
 
@@ -41,30 +39,59 @@ templ (v Session) Login() {
 }
 
 templ (v Session) LoginWithErrors(values SessionCreateInput, errs SessionCreateErrors) {
-	<div id="session-login" class="grid-container thirds">
-		<div></div>
-		<div>
-			@Form("magic-link-form", FormAttrs{
+	<div id="session-login">
+		@Form("magic-link-form", FormAttrs{
           Action: named.URLFor("session-create"),
           HX: templ.Attributes{
               "hx-swap": "outerHTML",
             },
         }) {
-				@InputEmail("email", InputAttrs{
+			<p>
+				No need for passwords or complicated sign-on buttons. We'll email you a magic
+				link that'll get you taken care of.
+			</p>
+			@InputEmail("email", InputAttrs{
             Value: values.Email,
             Label: "Email Address",
-            HelpText: "The primary email address you use for your account",
+            HelpText: "The email address you use for your account",
             Error: errs.Email,
         })
-				@InputSubmit(InputAttrs{
+			@InputSubmit(InputAttrs{
             Value: "Send Magic Link",
         })
-			}
-		</div>
-		<div></div>
+		}
 	</div>
 }
 
 templ (v Session) Created() {
 	<p>Check your email for a magic link to log in.</p>
+}
+
+templ (v Session) VerificationFailed(reason error) {
+	@Page() {
+		<div class="modal">
+			<div class="modal-header">
+				<h1>That didn't work.</h1>
+			</div>
+			<div class="modal-body">
+				if errors.Is(reason, services.ErrTokenInvalid) {
+					<p>Sorry, we couldn't verify your magic link.</p>
+				}
+				if errors.Is(reason, services.ErrTokenExpired) {
+					<p>Sorry, your magic link expired.</p>
+				}
+				if errors.Is(reason, services.ErrTokenMismatch) {
+					<p>Sorry, your magic link was created in another browser or session.</p>
+				}
+				if errors.Is(reason, services.ErrTokenDecode) {
+					<p>Sorry, we couldn't verify your magic link. It seems malformed.</p>
+				}
+				<p>
+					<a href={ templ.URL(named.URLFor("dashboard-index")) } class="button">
+						I'd like to try again
+					</a>
+				</p>
+			</div>
+		</div>
+	}
 }

@@ -53,7 +53,7 @@ func New(name, path string) *config {
 		},
 		loadStatus: make(chan bool),
 	}
-	c.log.SetLevel(log.DebugLevel)
+	// c.log.SetLevel(log.DebugLevel)
 
 	return c
 }

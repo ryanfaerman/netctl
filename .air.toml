@@ -3,13 +3,14 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = ["web"]
+  # args_bin = ["web"]
+  args_bin = ["service"]
   bin = "./bin/netctl"
   cmd = "mage build"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "magefiles"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "magefiles", "internal/dao"]
   exclude_file = []
-  exclude_regex = ["_test.go", "magefile_*.go", "_templ.go"]
+  exclude_regex = ["_test.go", "magefile_*.go", "_templ.go", "_string.go"]
   exclude_unchanged = false
   follow_symlink = false
   full_bin = ""

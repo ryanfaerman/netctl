@@ -97,7 +97,7 @@ func init() {
 }
 
 func Build() error {
-	mg.SerialDeps(ensureDirs, Vendor, GenerateTempl)
+	mg.SerialDeps(ensureDirs, Vendor, Generate, GenerateTempl)
 
 	log.Info("Building for local use")
 
@@ -125,7 +125,7 @@ func Build() error {
 }
 
 func Release() error {
-	mg.SerialDeps(ensureDirs, Vendor, GenerateTempl)
+	mg.SerialDeps(ensureDirs, Vendor, Generate, GenerateTempl)
 
 	log.Info("Building for release")
 
@@ -175,6 +175,13 @@ func Release() error {
 func Vendor() {
 	log.Info("Updating dependencies")
 	sh.Run(goexe, "mod", "tidy")
+}
+
+func Generate() error {
+	log.Info("Generating components")
+	output, err := sh.Output("go", "generate", "./...")
+	log.Info("Generated components", "results", output)
+	return err
 }
 
 func GenerateTempl() error {
