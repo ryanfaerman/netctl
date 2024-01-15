@@ -79,7 +79,7 @@ body {
 	position: relative;
 	width: 100%;
 	max-width: 960px;
-	margin: 10 auto;
+	margin: 10px auto;
 	padding: 5px 20px;
 	box-sizing: border-box;
 	border: 1px solid var(--danger-color);
@@ -424,8 +424,8 @@ html {
 }
 
 .traffic-data tbody tr:last-child {
-  background: red;
-  display: none;
+  /* background: red; */
+  /* display: none; */
 }
 
 .traffic-data .actions {
@@ -730,4 +730,10 @@ html {
 
 .modal-body .input-group {
   margin-bottom: 3rem;
+}
+
+input[type=submit]:disabled {
+  background-color: var(--border-color-softer);
+  border-color: var(--border-color);
+  color: var(--text-color-softer);
 }

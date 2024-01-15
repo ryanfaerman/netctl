@@ -64,6 +64,7 @@ func WithBaseURL(url string) OptionFunc {
 func WithLogger(l *log.Logger) OptionFunc {
 	// WithLogger defines the logger used by the hamdb client.
 	return func(h *Client) {
+		Logger = l
 		h.log = l
 	}
 }

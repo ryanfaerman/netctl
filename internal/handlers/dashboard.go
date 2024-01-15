@@ -27,10 +27,10 @@ func (h Dashboard) Index(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
 
 	if services.Session.IsAuthenticated(ctx) {
-		user := services.Session.MustGetUser(ctx)
+		account := services.Session.MustGetAccount(ctx)
 		v := views.Dashboard{
-			User:  user,
-			Ready: user.Ready(),
+			Account: account,
+			Ready:   account.Ready(),
 		}
 		v.Authenticated().Render(ctx, w)
 	} else {

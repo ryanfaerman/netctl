@@ -1,0 +1,89 @@
+package views
+
+import "github.com/ryanfaerman/netctl/internal/models"
+
+type Net struct {
+	Net    *models.Net
+	Stream models.EventStream
+}
+
+templ (n Net) SingleNetSession(streamID string) {
+	@Page() {
+		<div class="grid-container split">
+			<div>
+				<div class="sticky mast-head-form">
+					<h1>{ n.Net.Name }</h1>
+					@Form("check-in-form", FormAttrs{}) {
+						<div class="grid-container quarters">
+							@InputText("call-sign", InputAttrs{Label: "Callsign", HelpText:"Enter the callsign"})
+							@InputText("name", InputAttrs{Label: "Name", HelpText: "Override the FCC Listing"})
+							@Select("traffic", InputAttrs{
+              Label: "Traffic Type",
+              Options: []string{
+                "Routine",
+                "Priority",
+                "Welfare",
+                "Emergency",
+                "Traffic",
+                "Question",
+                "Announcement",
+                "Comment",
+                },
+              })
+							@InputSubmit(InputAttrs{Value: "Check In"})
+						</div>
+					}
+					<div class="mast-head-divider"></div>
+				</div>
+				@TrafficTable("checkin-list", TableAttrs{
+          Caption: "Checkins for " + streamID,
+          Headers: []string{
+              "Callsign",
+              "Name",
+              "Location",
+              "Time In",
+            },
+        }) {
+					for _, checkin := range n.Net.Sessions["asdf"].Checkins {
+						@n.CheckinRow(checkin)
+					}
+				}
+				<h3>Timeline</h3>
+				<div class="timeline">
+					for _, event := range n.Stream {
+						@n.TimelineItem(event)
+					}
+				</div>
+			</div>
+			<div></div>
+		</div>
+	}
+}
+
+templ (n Net) CheckinRow(checkin models.NetCheckin) {
+	<tr>
+		<td>{ checkin.Callsign }</td>
+		<td>TBD</td>
+		<td>UNKNOWN</td>
+		<td>{ checkin.At.Format("15:04:05") }</td>
+	</tr>
+}
+
+templ (n Net) TimelineItem(event models.Event[any]) {
+	<div class="timeline-item">
+		<div class="timeline-badge">
+			@Icon("play")
+		</div>
+		<div class="timeline-body">
+			<div class="event">
+				<a href="#" class="subject">W4BUG</a>
+				checked in by
+				<a href="#" class="author">W4BUG</a>
+				{ event.Name }
+			</div>
+			<div class="timestamp">
+				<code>{ event.At.Format("15:04:15") }</code>
+			</div>
+		</div>
+	</div>
+}

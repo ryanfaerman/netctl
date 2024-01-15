@@ -2,21 +2,20 @@ package views
 
 import "github.com/ryanfaerman/netctl/web/named"
 import "github.com/ryanfaerman/netctl/internal/models"
-import "errors"
 
 type Dashboard struct {
 	session Session
 
-	User  *models.User
-	Ready error
+	Account *models.Account
+	Ready   error
 }
 
 templ (v Dashboard) Authenticated() {
 	@Page() {
 		if v.Ready != nil {
-			@v.SetupUser()
+			@v.SetupAccount()
 		} else {
-			<h1>Welcome Back { v.User.Name }!</h1>
+			<h1>Welcome Back { v.Account.Name }!</h1>
 			<a href={ templ.URL(named.URLFor("session-destroy")) } class="button">
 				Logout
 			</a>
@@ -24,32 +23,51 @@ templ (v Dashboard) Authenticated() {
 	}
 }
 
-templ (v Dashboard) SetupUser() {
+type SetupAccountInput struct {
+	Name     string `validate:"required"`
+	Callsign string `validate:"required,alphanum,max=8"`
+}
+
+type SetupAccountErrors struct {
+	Name     string
+	Callsign string
+}
+
+templ (v Dashboard) SetupAccount() {
+	@v.SetupAccountWithErrors(SetupAccountInput{}, SetupAccountErrors{})
+}
+
+templ (v Dashboard) SetupAccountWithErrors(input SetupAccountInput, errs SetupAccountErrors) {
 	<div id="user-setup" class="modal">
 		<div class="modal-header">
 			<h1>Share a bit about yourself.</h1>
 		</div>
 		<div class="modal-body">
-			@Form("user-setup-form", FormAttrs{
-          DisableHTMX: true,
+			@Form("account-setup-form", FormAttrs{
+          Action: named.URLFor("account-setup-apply"),
+          HX: templ.Attributes{
+              "hx-swap": "innerHTML",
+              "hx-disabled-elt": "#account-setup-form input[type=submit]",
+            },
+
       }) {
 				<p>
 					Nice to meet you! This is a one-time setup process to get you
 					going. You'll be able to change this information later too.
 				</p>
-				if errors.Is(v.Ready, models.ErrUserNeedsName) {
-					@InputText("name", InputAttrs{
+				@InputText("name", InputAttrs{
               Label: "Name",
               HelpText: "What should we call you?",
+              Error: errs.Name,
+              Value: input.Name,
           })
-				}
-				if errors.Is(v.Ready, models.ErrUserNeedsCallsign) {
-					@InputText("callsign", InputAttrs{
+				@InputText("callsign", InputAttrs{
               Label: "Callsign",
               Placeholder: "Callsign",
               HelpText: "Your amateur radio callsign",
+              Value: input.Callsign,
+              Error: errs.Callsign,
           })
-				}
 				@InputSubmit(InputAttrs{
             Value: "Save your info",
         })

@@ -18,12 +18,16 @@ func (nw *NoopWriter) Write(p []byte) (n int, err error) { return len(p), nil }
 func TestMain(m *testing.M) {
 
 	var nullWriter io.Writer = &NoopWriter{}
+	l := log.With("pkg", "models")
+	l.SetLevel(log.DebugLevel)
+	l.SetOutput(nullWriter)
 
 	db, err := sql.Open("sqlite", ":memory:?_pragma=journal_mode(WAL)&_pragma=foreign_keys(on)")
+	// db, err := sql.Open("sqlite", "/Users/ryanfaerman/repos/ryanfaerman/netctl/tmp/foo.db?_pragma=journal_mode(WAL)&_pragma=foreign_keys(on)")
 	if err != nil {
 		panic(err)
 	}
-	if err := Setup(log.New(nullWriter), db); err != nil {
+	if err := Setup(l, db); err != nil {
 		panic(err)
 	}
 

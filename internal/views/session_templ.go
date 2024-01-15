@@ -193,7 +193,7 @@ func (v Session) LoginWithErrors(values SessionCreateInput, errs SessionCreateEr
 		templ_7745c5c3_Err = Form("magic-link-form", FormAttrs{
 			Action: named.URLFor("session-create"),
 			HX: templ.Attributes{
-				"hx-swap": "outerHTML",
+				"hz-swap": "outerHTML",
 			},
 		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {

@@ -32,7 +32,7 @@ func Page() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</title><meta charset=\"utf-8\"><meta name=\"description\" content=\"describe\"><meta name=\"author\" content=\"author\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"stylesheet\" href=\"/static/normalize.css\"><link rel=\"stylesheet\" href=\"/static/barebones.css\"><link rel=\"stylesheet\" href=\"/static/custom.css\"><link href=\"/static/fontawesome/css/fontawesome.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/all.min.css\" rel=\"stylesheet\"></head><body><div id=\"htmx-alert\" class=\"alert alert-warning sticky-top\" hidden></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</title><meta charset=\"utf-8\"><meta name=\"description\" content=\"describe\"><meta name=\"author\" content=\"author\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"stylesheet\" href=\"/static/normalize.css\"><link rel=\"stylesheet\" href=\"/static/barebones.css\"><link rel=\"stylesheet\" href=\"/static/custom.css\"><link href=\"/static/fontawesome/css/fontawesome.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/all.min.css\" rel=\"stylesheet\"></head><body hx-ext=\"morph\"><div id=\"htmx-alert\" class=\"alert alert-warning sticky-top\" hidden></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

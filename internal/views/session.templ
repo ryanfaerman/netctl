@@ -43,7 +43,7 @@ templ (v Session) LoginWithErrors(values SessionCreateInput, errs SessionCreateE
 		@Form("magic-link-form", FormAttrs{
           Action: named.URLFor("session-create"),
           HX: templ.Attributes{
-              "hx-swap": "outerHTML",
+            "hz-swap": "outerHTML",
             },
         }) {
 			<p>

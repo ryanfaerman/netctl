@@ -1,7 +1,7 @@
--- create_users
+-- create_accounts
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE users (
+CREATE TABLE accounts (
 	id integer PRIMARY KEY,
 
   name text NOT NULL DEFAULT '',
@@ -11,15 +11,15 @@ CREATE TABLE users (
   deletedAt timestamp
 );
 
-CREATE TABLE users_sessions (
-  user_id integer NOT NULL,
+CREATE TABLE accounts_sessions (
+  account_id integer NOT NULL,
   token text NOT NULL,
 
   createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   createdBy text NOT NULL DEFAULT 'system',
 
-  PRIMARY KEY (user_id, token),
-  FOREIGN KEY (user_id) REFERENCES users(id),
+  PRIMARY KEY (account_id, token),
+  FOREIGN KEY (account_id) REFERENCES accounts(id),
   FOREIGN KEY (token) REFERENCES sessions(token)
 );
 
@@ -29,7 +29,7 @@ CREATE TABLE emails (
   createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  user_id integer NOT NULL,
+  account_id integer NOT NULL,
 
   address text NOT NULL,
   isPrimary boolean NOT NULL DEFAULT false,
@@ -37,8 +37,8 @@ CREATE TABLE emails (
   isNotifiable boolean NOT NULL DEFAULT true,
   verifiedAt timestamp,
 
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  UNIQUE (user_id, isPrimary),
+  FOREIGN KEY (account_id) REFERENCES accounts(id),
+  UNIQUE (account_id, isPrimary),
   UNIQUE (address)
 
 );
@@ -68,13 +68,13 @@ CREATE TABLE callsigns (
 
 );
 
-CREATE TABLE users_callsigns (
-  user_id integer NOT NULL,
+CREATE TABLE accounts_callsigns (
+  account_id integer NOT NULL,
   callsign_id integer NOT NULL,
 
-  PRIMARY KEY (user_id, callsign_id),
+  PRIMARY KEY (account_id, callsign_id),
   UNIQUE (callsign_id),
-  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (account_id) REFERENCES accounts(id),
   FOREIGN KEY (callsign_id) REFERENCES callsigns(id)
 );
 
@@ -82,8 +82,8 @@ CREATE TABLE users_callsigns (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE users;
+DROP TABLE accounts;
 DROP TABLE emails;
 DROP TABLE callsigns;
-DROP TABLE users_callsigns;
+DROP TABLE accounts_callsigns;
 -- +goose StatementEnd

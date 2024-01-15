@@ -61,6 +61,7 @@ func (h Session) Create(w http.ResponseWriter, r *http.Request) {
 		ctx := services.CSRF.GetContext(r.Context(), r)
 
 		h.view.LoginWithErrors(input, inputErrs).Render(ctx, w)
+		return
 	}
 
 	if err := services.Session.SendEmailVerification(r.Context(), input.Email); err != nil {

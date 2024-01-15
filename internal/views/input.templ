@@ -136,6 +136,10 @@ templ Select(name string, attrs InputAttrs) {
 
 templ InputSubmit(attrs InputAttrs) {
 	<div class="button-group">
-		<input type="submit" class="button-primary u-full-width" value={ attrs.Value }/>
+		<input
+    type="submit"
+    class="button-primary u-full-width"
+    value={ attrs.Value }
+    />
 	</div>
 }

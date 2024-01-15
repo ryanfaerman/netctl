@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+//go:generate stringer -type=LicenseClass -linecomment
 type LicenseClass int
 
 const (
@@ -16,6 +17,7 @@ const (
 	GeneralClass                        // General
 	AdvancedClass                       // Advanced
 	ExtraClass                          // Extra
+	ClubClass                           // Club
 )
 
 func (l *LicenseClass) UnmarshalJSON(b []byte) (err error) {
@@ -28,8 +30,34 @@ func (l *LicenseClass) UnmarshalJSON(b []byte) (err error) {
 		*l = AdvancedClass
 	case `"E"`:
 		*l = ExtraClass
-	default:
+	case `""`:
+		*l = ClubClass
+	case `"NOT_FOUND"`:
 		*l = UnknownClass
+	default:
+		Logger.Warn("Unknown license class", "raw", string(b))
+		*l = UnknownClass
+	}
+	return
+}
+
+//go:generate stringer -type=LicenseStatus -trimprefix=LicenseStatus
+type LicenseStatus int
+
+const (
+	LicenseStatusUnknown LicenseStatus = iota
+	LicenseStatusActive
+)
+
+func (l *LicenseStatus) UnmarshalJSON(b []byte) (err error) {
+	switch string(b) {
+	case `"A"`:
+		*l = LicenseStatusActive
+	case `"NOT_FOUND"`:
+		*l = LicenseStatusUnknown
+	default:
+		Logger.Warn("Unknown license status", "raw", string(b))
+		*l = LicenseStatusUnknown
 	}
 	return
 }
@@ -86,7 +114,7 @@ type Callsign struct {
 	Call          string                `json:"call"`
 	Class         LicenseClass          `json:"class"`
 	Expires       Unknowable[time.Time] `json:"expires"`
-	Status        string                `json:"status"`
+	Status        LicenseStatus         `json:"status"`
 	Grid          string                `json:"grid"`
 	Lat           Unknowable[float64]   `json:"lat,string"`
 	Lon           Unknowable[float64]   `json:",string"`
@@ -97,7 +125,7 @@ type Callsign struct {
 	Address       string                `json:"addr1"`
 	City          string                `json:"addr2"`
 	State         string                `json:"state"`
-	Zip           Unknowable[int]       `json:"zip"`
+	Zip           string                `json:"zip"`
 	Country       string                `json:"country"`
 }
 

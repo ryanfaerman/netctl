@@ -38,7 +38,7 @@ func (session) Middleware(next http.Handler) http.Handler {
 func (session) AuthenticatedOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !global.session.GetBool(r.Context(), "authenticated") {
-			// http.Redirect(w, r, named.RouteURL("user-login"), http.StatusFound)
+			// http.Redirect(w, r, named.RouteURL("Account-login"), http.StatusFound)
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -120,12 +120,12 @@ func (session) Verify(ctx context.Context, token string) error {
 	global.session.Put(ctx, "authenticated", true)
 	global.log.Info("session verified", "email", payload.Email)
 
-	u, err := User.CreateWithEmail(ctx, payload.Email)
+	u, err := Account.CreateWithEmail(ctx, payload.Email)
 	if err != nil {
 		return err
 	}
 
-	global.session.Put(ctx, "user_id", u.ID)
+	global.session.Put(ctx, "account_id", u.ID)
 
 	return nil
 }
@@ -133,23 +133,24 @@ func (session) Verify(ctx context.Context, token string) error {
 func (session) Destroy(ctx context.Context) error {
 	global.log.Info("session destroyed")
 	global.session.Clear(ctx)
+	global.session.Destroy(ctx)
 	return nil
 }
 
 var (
-	ErrNoUserInSession = errors.New("no user in session")
+	ErrNoAccountInSession = errors.New("no account in session")
 )
 
-func (session) GetUser(ctx context.Context) (*models.User, error) {
-	id, ok := global.session.Get(ctx, "user_id").(int64)
+func (session) GetAccount(ctx context.Context) (*models.Account, error) {
+	id, ok := global.session.Get(ctx, "account_id").(int64)
 	if !ok {
-		return nil, ErrNoUserInSession
+		return nil, ErrNoAccountInSession
 	}
-	return User.FindByID(ctx, id)
+	return Account.FindByID(ctx, id)
 }
 
-func (s session) MustGetUser(ctx context.Context) *models.User {
-	u, err := s.GetUser(ctx)
+func (s session) MustGetAccount(ctx context.Context) *models.Account {
+	u, err := s.GetAccount(ctx)
 	if err != nil {
 		panic(err)
 	}

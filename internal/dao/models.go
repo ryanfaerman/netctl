@@ -9,6 +9,27 @@ import (
 	"time"
 )
 
+type Account struct {
+	ID        int64
+	Name      string
+	Createdat time.Time
+	Updatedat time.Time
+	Deletedat sql.NullTime
+	Kind      int64
+}
+
+type AccountsCallsign struct {
+	AccountID  int64
+	CallsignID int64
+}
+
+type AccountsSession struct {
+	AccountID int64
+	Token     string
+	Createdat time.Time
+	Createdby string
+}
+
 type Callsign struct {
 	ID         int64
 	Createdat  time.Time
@@ -35,7 +56,7 @@ type Email struct {
 	ID           int64
 	Createdat    time.Time
 	Updatedat    time.Time
-	UserID       int64
+	AccountID    int64
 	Address      string
 	Isprimary    bool
 	Ispublic     bool
@@ -43,28 +64,26 @@ type Email struct {
 	Verifiedat   sql.NullTime
 }
 
+type Net struct {
+	ID      int64
+	Name    string
+	Created time.Time
+	Updated time.Time
+	Deleted sql.NullTime
+}
+
+type NetEvent struct {
+	ID        int64
+	Created   time.Time
+	NetID     int64
+	SessionID string
+	AccountID int64
+	EventType string
+	EventData []byte
+}
+
 type Session struct {
 	Token  string
 	Data   []byte
 	Expiry float64
-}
-
-type User struct {
-	ID        int64
-	Name      string
-	Createdat time.Time
-	Updatedat time.Time
-	Deletedat sql.NullTime
-}
-
-type UsersCallsign struct {
-	UserID     int64
-	CallsignID int64
-}
-
-type UsersSession struct {
-	UserID    int64
-	Token     string
-	Createdat time.Time
-	Createdby string
 }

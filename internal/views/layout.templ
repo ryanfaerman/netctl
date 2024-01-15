@@ -15,7 +15,7 @@ templ Page() {
 			<link href="/static/fontawesome/css/fontawesome.css" rel="stylesheet"/>
 			<link href="/static/fontawesome/css/all.min.css" rel="stylesheet"/>
 		</head>
-		<body>
+		<body hx-ext="morph">
 			<div id="htmx-alert" class="alert alert-warning sticky-top" hidden></div>
 			{ children... }
 			<script src="/static/htmx.min.js"></script>

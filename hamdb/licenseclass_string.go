@@ -13,11 +13,12 @@ func _() {
 	_ = x[GeneralClass-2]
 	_ = x[AdvancedClass-3]
 	_ = x[ExtraClass-4]
+	_ = x[ClubClass-5]
 }
 
-const _LicenseClass_name = "UnknownTechnicianGeneralAdvancedExtra"
+const _LicenseClass_name = "UnknownTechnicianGeneralAdvancedExtraClub"
 
-var _LicenseClass_index = [...]uint8{0, 7, 17, 24, 32, 37}
+var _LicenseClass_index = [...]uint8{0, 7, 17, 24, 32, 37, 41}
 
 func (i LicenseClass) String() string {
 	if i < 0 || i >= LicenseClass(len(_LicenseClass_index)-1) {
