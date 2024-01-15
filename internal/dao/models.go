@@ -64,6 +64,15 @@ type Email struct {
 	Verifiedat   sql.NullTime
 }
 
+type Event struct {
+	ID        int64
+	Created   time.Time
+	StreamID  string
+	AccountID int64
+	EventType string
+	EventData []byte
+}
+
 type Net struct {
 	ID      int64
 	Name    string
@@ -72,14 +81,11 @@ type Net struct {
 	Deleted sql.NullTime
 }
 
-type NetEvent struct {
-	ID        int64
-	Created   time.Time
-	NetID     int64
-	SessionID string
-	AccountID int64
-	EventType string
-	EventData []byte
+type NetSession struct {
+	ID       int64
+	NetID    int64
+	StreamID string
+	Created  time.Time
 }
 
 type Session struct {

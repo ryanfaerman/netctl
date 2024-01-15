@@ -29,41 +29,25 @@ func (q *Queries) CreateNetAndReturnId(ctx context.Context, name string) (int64,
 	return id, err
 }
 
-const createNetEvent = `-- name: CreateNetEvent :exec
-INSERT INTO net_events (
-  created,
-  net_id,
-  session_id,
-  account_id,
-  event_type,
-  event_data
-) VALUES (
-  CURRENT_TIMESTAMP,
-  ?1,
-  ?2,
-  ?3,
-  ?4,
-  ?5
+const createNetSessionAndReturnId = `-- name: CreateNetSessionAndReturnId :one
+INSERT INTO net_sessions (
+  net_id, stream_id, created
+)VALUES (
+  ?1, ?2, CURRENT_TIMESTAMP
 )
+RETURNING id
 `
 
-type CreateNetEventParams struct {
-	NetID     int64
-	SessionID string
-	AccountID int64
-	EventType string
-	EventData []byte
+type CreateNetSessionAndReturnIdParams struct {
+	NetID    int64
+	StreamID string
 }
 
-func (q *Queries) CreateNetEvent(ctx context.Context, arg CreateNetEventParams) error {
-	_, err := q.db.ExecContext(ctx, createNetEvent,
-		arg.NetID,
-		arg.SessionID,
-		arg.AccountID,
-		arg.EventType,
-		arg.EventData,
-	)
-	return err
+func (q *Queries) CreateNetSessionAndReturnId(ctx context.Context, arg CreateNetSessionAndReturnIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createNetSessionAndReturnId, arg.NetID, arg.StreamID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getNet = `-- name: GetNet :one
@@ -83,27 +67,94 @@ func (q *Queries) GetNet(ctx context.Context, id int64) (Net, error) {
 	return i, err
 }
 
-const getNetEvents = `-- name: GetNetEvents :many
-SELECT id, created, net_id, session_id, account_id, event_type, event_data FROM net_events WHERE net_id = ?1
+const getNetSessionEvents = `-- name: GetNetSessionEvents :many
+SELECT events.id, events.created, events.stream_id, events.account_id, events.event_type, events.event_data
+FROM events
+JOIN net_sessions ON events.stream_id = net_sessions.stream_id
+WHERE net_sessions.net_id = ?1
 `
 
-func (q *Queries) GetNetEvents(ctx context.Context, netID int64) ([]NetEvent, error) {
-	rows, err := q.db.QueryContext(ctx, getNetEvents, netID)
+func (q *Queries) GetNetSessionEvents(ctx context.Context, netID int64) ([]Event, error) {
+	rows, err := q.db.QueryContext(ctx, getNetSessionEvents, netID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []NetEvent
+	var items []Event
 	for rows.Next() {
-		var i NetEvent
+		var i Event
 		if err := rows.Scan(
 			&i.ID,
 			&i.Created,
-			&i.NetID,
-			&i.SessionID,
+			&i.StreamID,
 			&i.AccountID,
 			&i.EventType,
 			&i.EventData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getNetSessions = `-- name: GetNetSessions :many
+SELECT id, net_id, stream_id, created FROM net_sessions WHERE net_id = ?1
+`
+
+func (q *Queries) GetNetSessions(ctx context.Context, netID int64) ([]NetSession, error) {
+	rows, err := q.db.QueryContext(ctx, getNetSessions, netID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []NetSession
+	for rows.Next() {
+		var i NetSession
+		if err := rows.Scan(
+			&i.ID,
+			&i.NetID,
+			&i.StreamID,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getNets = `-- name: GetNets :many
+SELECT id, name, created, updated, deleted FROM nets
+`
+
+func (q *Queries) GetNets(ctx context.Context) ([]Net, error) {
+	rows, err := q.db.QueryContext(ctx, getNets)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Net
+	for rows.Next() {
+		var i Net
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Created,
+			&i.Updated,
+			&i.Deleted,
 		); err != nil {
 			return nil, err
 		}

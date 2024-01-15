@@ -1,22 +1,19 @@
--- name: CreateNetEvent :exec
-INSERT INTO net_events (
-  created,
-  net_id,
-  session_id,
-  account_id,
-  event_type,
-  event_data
-) VALUES (
-  CURRENT_TIMESTAMP,
-  ?1,
-  ?2,
-  ?3,
-  ?4,
-  ?5
-);
+-- name: CreateNetSessionAndReturnId :one
+INSERT INTO net_sessions (
+  net_id, stream_id, created
+)VALUES (
+  ?1, ?2, CURRENT_TIMESTAMP
+)
+RETURNING id;
 
--- name: GetNetEvents :many
-SELECT * FROM net_events WHERE net_id = ?1;
+-- name: GetNetSessions :many
+SELECT * FROM net_sessions WHERE net_id = ?1;
+
+-- name: GetNetSessionEvents :many
+SELECT events.*
+FROM events
+JOIN net_sessions ON events.stream_id = net_sessions.stream_id
+WHERE net_sessions.net_id = ?1;
 
 -- name: CreateNetAndReturnId :one
 INSERT INTO nets (
@@ -32,3 +29,6 @@ RETURNING id;
 
 -- name: GetNet :one
 SELECT * FROM nets WHERE id = ?1;
+
+-- name: GetNets :many
+SELECT * FROM nets;

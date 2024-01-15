@@ -22,6 +22,7 @@ require (
 	github.com/justinas/nosurf v1.1.1
 	github.com/magefile/mage v1.15.0
 	github.com/mrz1836/postmark v1.6.1
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.14.0
 	github.com/r3labs/sse/v2 v2.10.0

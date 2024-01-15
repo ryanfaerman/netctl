@@ -39,7 +39,7 @@ type Store struct {
 func NewStore() *Store {
 	return &Store{
 		routes: make(map[string]route),
-		re:     regexp.MustCompile(`{\w+|\*}`),
+		re:     regexp.MustCompile(`{(\w+|\*)}`),
 	}
 }
 

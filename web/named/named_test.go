@@ -35,3 +35,18 @@ func TestUrlBuild(t *testing.T) {
 
 	}
 }
+
+func TestAdd(t *testing.T) {
+	examples := []struct {
+		name string
+		path string
+		out  string
+	}{
+		{
+			name: "foo",
+			path: "/foo",
+			out:  "/foo",
+		},
+	}
+
+}

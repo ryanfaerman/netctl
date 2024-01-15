@@ -1,31 +1,76 @@
 package models
 
-import "time"
+import (
+	"bytes"
+	"context"
+	"encoding/gob"
+	"time"
+)
 
-type Event[K any] struct {
-	ID         int64
-	At         time.Time
-	StreamID   string
-	Originator int64
-	Name       string
-	Event      K
+type Event struct {
+	ID        int64
+	At        time.Time
+	StreamID  string
+	AccountID int64
+	Name      string
+	Event     any
 }
 
 type NonEvent struct {
-	ID         int64
-	At         time.Time
-	StreamID   string
-	Originator int64
-	Name       string
-	Data       []byte
+	ID        int64
+	At        time.Time
+	StreamID  string
+	AccountID int64
+	Name      string
+	Data      []byte
 }
 
-type EventStream []Event[any]
+func FindEventsForStreams(ctx context.Context, streamIDs ...string) (EventStream, error) {
+	raws, err := global.dao.GetEventsForStreams(ctx, streamIDs)
+	if err != nil {
+		global.log.Error("unable to get events for streams", "error", err, "streams", streamIDs)
+		return nil, err
+	}
 
-func (es EventStream) ForStream(streamID string) EventStream {
+	stream := make(EventStream, len(raws))
+
+	for i, raw := range raws {
+		decoder := gob.NewDecoder(bytes.NewReader(raw.EventData))
+		var p any
+		if err := decoder.Decode(&p); err != nil {
+			global.log.Error("unable to decode event", "error", err)
+			return stream, err
+		}
+
+		stream[i] = Event{
+			ID:        raw.ID,
+			At:        raw.Created,
+			StreamID:  raw.StreamID,
+			AccountID: raw.AccountID,
+			Name:      raw.EventType,
+			Event:     p,
+		}
+	}
+
+	return stream, nil
+}
+
+type EventStream []Event
+
+func (es EventStream) FilterForStream(streamID string) EventStream {
 	var filtered EventStream
 	for _, event := range es {
 		if event.StreamID == streamID {
+			filtered = append(filtered, event)
+		}
+	}
+	return filtered
+}
+
+func (es EventStream) FilterForName(name string) EventStream {
+	var filtered EventStream
+	for _, event := range es {
+		if event.Name == name {
 			filtered = append(filtered, event)
 		}
 	}
