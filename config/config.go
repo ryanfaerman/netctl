@@ -109,8 +109,15 @@ func (c *config) Load() error {
 	c.log.Debug("loading config")
 
 	c.once.Do(func() {
+		err = os.MkdirAll(filepath.Dir(c.path), 0750)
+		if err != nil {
+			return
+		}
 		err = c.load()
 	})
+	if err != nil {
+		return err
+	}
 
 	err = Hook.Dispatch(context.Background(), Definition{c: c})
 	if err != nil {
@@ -136,7 +143,6 @@ func (c *config) WaitForLoad() {
 			case <-c.loadStatus:
 				ch <- true
 				return
-
 			}
 		}
 	}()
@@ -266,7 +272,6 @@ func (c *config) ScanEnv() {
 	if flagsField.Len() > 0 {
 		c.log.Info("loaded flags from environment", "defined", flagsField.String())
 	}
-
 }
 
 // Reset the configuration DB entirely. This is currently done by just deleting
