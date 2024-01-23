@@ -1,11 +1,10 @@
 package models
 
 import (
-	"strings"
 	"testing"
 	"time"
 
-	diff "github.com/r3labs/diff/v3"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ryanfaerman/netctl/internal/events"
 )
 
@@ -58,18 +57,21 @@ func TestNetReplay(t *testing.T) {
 
 			actual := *net.Sessions["abc"]
 
-			changelog, err := diff.Diff(actual, example.expected)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(changelog) > 0 {
-				for _, change := range changelog {
-					t.Errorf(
-						"Events did not apply: \n\tValue:    %s\n\tExpected: %s\n\tActual:   %s",
-						strings.Join(change.Path, "."),
-						change.From, change.To,
-					)
-				}
+			// changelog, err := diff.Diff(actual, example.expected)
+			// if err != nil {
+			// 	t.Fatal(err)
+			// }
+			// if len(changelog) > 0 {
+			// 	for _, change := range changelog {
+			// 		t.Errorf(
+			// 			"Events did not apply: \n\tValue:    %s\n\tExpected: %s\n\tActual:   %s",
+			// 			strings.Join(change.Path, "."),
+			// 			change.From, change.To,
+			// 		)
+			// 	}
+			// }
+			if diff := cmp.Diff(example.expected, actual); diff != "" {
+				t.Errorf("Events did not apply: (-want +got)\n%s", diff)
 			}
 		})
 	}
