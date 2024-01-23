@@ -2,9 +2,6 @@ package models
 
 import (
 	"context"
-	"fmt"
-	"strings"
-	"time"
 
 	ulid "github.com/oklog/ulid/v2"
 	"github.com/ryanfaerman/netctl/internal/dao"
@@ -12,10 +9,9 @@ import (
 )
 
 type Net struct {
-	ID   int64
-	Name string
-
 	Sessions map[string]*NetSession
+	Name     string
+	ID       int64
 }
 
 func NewNet(id int64, name string) *Net {
@@ -35,7 +31,6 @@ func FindAllNets(ctx context.Context) ([]*Net, error) {
 	nets := make([]*Net, len(raws))
 
 	for i, raw := range raws {
-
 		nets[i] = &Net{
 			ID:       raw.ID,
 			Name:     raw.Name,
@@ -90,30 +85,6 @@ func (m *Net) AddSession(ctx context.Context) (*NetSession, error) {
 	return session, nil
 }
 
-func (n Net) String() string {
-
-	var b strings.Builder
-
-	b.WriteString(fmt.Sprintf("Net %d: %s\n", n.ID, n.Name))
-	b.WriteString("---\n")
-	b.WriteString("Sessions: \n")
-
-	for _, session := range n.Sessions {
-		b.WriteString(fmt.Sprintf("  ID(%s):\n", session.ID))
-		b.WriteString(fmt.Sprintf("    Status: %s\n", session.Status.String()))
-		b.WriteString("    Checkins: \n")
-		for _, checkin := range session.Checkins {
-			b.WriteString(fmt.Sprintf("    - Callsign: %s\n", checkin.Callsign))
-			b.WriteString(fmt.Sprintf("      Kind: %s\n", checkin.Kind.String()))
-			b.WriteString(fmt.Sprintf("      Acked: %t\n", checkin.Acked))
-			b.WriteString(fmt.Sprintf("      Time: %s\n", checkin.At))
-		}
-	}
-
-	return b.String()
-
-}
-
 func (n *Net) Events(ctx context.Context) (EventStream, error) {
 	streamIDs := make([]string, 0, len(n.Sessions))
 	for streamID := range n.Sessions {
@@ -126,65 +97,87 @@ func (n *Net) Events(ctx context.Context) (EventStream, error) {
 	return FindEventsForStreams(ctx, streamIDs...)
 }
 
-func (n *Net) Replay(ctx context.Context) error {
-	stream, err := n.Events(ctx)
+func (m *Net) Replay(ctx context.Context) error {
+	stream, err := m.Events(ctx)
 	if err != nil {
 		return err
 	}
-	for _, event := range stream {
-		switch e := event.Event.(type) {
-		case events.NetStarted:
-			n.Sessions[event.StreamID].Status = NetStatusOpened
-		case events.NetCheckin:
-			c := NetCheckin{
-				Callsign: e.Callsign,
-				At:       event.At,
-				Kind:     NetCheckinKindRoutine,
-			}
-			n.Sessions[event.StreamID].Checkins = append(n.Sessions[event.StreamID].Checkins, c)
-		case events.NetAckCheckin:
-			session := n.Sessions[event.StreamID]
-			for i, checkin := range session.Checkins {
-				if checkin.Callsign == e.Callsign {
-					session.Checkins[i].Acked = true
-				}
-			}
-		}
-	}
+	m.replay(stream)
+
 	return nil
 }
 
-//go:generate stringer -type=NetStatus -trimprefix=NetStatus
-type NetStatus int
+func (m *Net) replay(stream EventStream) {
+	for _, event := range stream {
+	eventMachine:
+		switch e := event.Event.(type) {
+		case events.NetSessionScheduled:
+			// if any periods exist, ignore
+			// otherwise, create a new one in the future
+			session := m.Sessions[event.StreamID]
+			if len(session.Periods) > 0 {
+				break eventMachine
+			}
+			session.Periods = append(session.Periods, Period{
+				OpenedAt: e.At,
+			})
 
-const (
-	NetStatusUnknown NetStatus = iota
-	NetStatusScheduled
-	NetStatusOpened
-	NetStatusClosed
-)
+		case events.NetSessionOpened:
+			// if no periods exist, create a new one
+			// if the last period is closed, create a new one
+			session := m.Sessions[event.StreamID]
+			if len(session.Periods) == 0 {
+				session.Periods = append(session.Periods, Period{
+					OpenedAt: event.At,
+				})
+				break eventMachine
+			}
+			if session.Periods[len(session.Periods)-1].IsClosed() {
+				session.Periods = append(session.Periods, Period{
+					OpenedAt: event.At,
+				})
+				break eventMachine
+			}
 
-type NetSession struct {
-	ID        string
-	CreatedAt time.Time
-	Status    NetStatus
+		case events.NetSessionClosed:
+			// if no periods exist, ignore
+			// if the last period is open, close it
+			// if the last period is closed, ignore
+			session := m.Sessions[event.StreamID]
+			if len(session.Periods) == 0 {
+				break eventMachine
+			}
+			if session.Periods[len(session.Periods)-1].IsOpen() {
+				session.Periods[len(session.Periods)-1].ClosedAt = event.At
+			}
+		case events.NetCheckinHeard:
+			session := m.Sessions[event.StreamID]
+			// if the checkin is not in the session, add it
+			// if the checkin is in the session, unack it
+			for i, checkin := range session.Checkins {
+				if checkin.ID == e.ID {
+					session.Checkins[i].Acked = false
+					break eventMachine
+				}
+			}
+			session.Checkins = append(session.Checkins, NetCheckin{
+				Callsign: Hearable{AsHeard: e.Callsign},
+				Location: Hearable{AsHeard: e.Location},
+				Name:     Hearable{AsHeard: e.Name},
+				Traffic:  e.Traffic,
+				At:       event.At,
+			})
 
-	Checkins []NetCheckin
-}
-
-//go:generate stringer -type=NetCheckinKind -trimprefix=NetCheckinKind
-type NetCheckinKind int
-
-const (
-	NetCheckinKindUnknown NetCheckinKind = iota
-	NetCheckinKindRoutine
-	NetCheckinKindPriority
-	NetCheckinKindTraffic
-)
-
-type NetCheckin struct {
-	Callsign string
-	At       time.Time
-	Kind     NetCheckinKind
-	Acked    bool
+		case events.NetCheckinVerified:
+			// set the verified flag to true
+			// if the verification has no errors, set the valid flag to true
+		case events.NetCheckinAcked:
+			// set the acked flag to true
+		case events.NetCheckinCorrected:
+			// find the checkin and update it
+			// mark as invalidated
+		case events.NetCheckinRevoked:
+			// find the checkin and remove it
+		}
+	}
 }
