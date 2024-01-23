@@ -11,12 +11,18 @@ func _() {
 	_ = x[NetCheckinKindUnknown-0]
 	_ = x[NetCheckinKindRoutine-1]
 	_ = x[NetCheckinKindPriority-2]
-	_ = x[NetCheckinKindTraffic-3]
+	_ = x[NetCheckinKindWelfare-3]
+	_ = x[NetCheckinKindEmergency-4]
+	_ = x[NetCheckinKindTraffic-5]
+	_ = x[NetCheckinKindQuestion-6]
+	_ = x[NetCheckinKindAnnouncement-7]
+	_ = x[NetCheckinKindComment-8]
+	_ = x[NetCheckinKindWeather-9]
 }
 
-const _NetCheckinKind_name = "UnknownRoutinePriorityTraffic"
+const _NetCheckinKind_name = "UnknownRoutinePriorityWelfareEmergencyTrafficQuestionAnnouncementCommentWeather"
 
-var _NetCheckinKind_index = [...]uint8{0, 7, 14, 22, 29}
+var _NetCheckinKind_index = [...]uint8{0, 7, 14, 22, 29, 38, 45, 53, 65, 72, 79}
 
 func (i NetCheckinKind) String() string {
 	if i < 0 || i >= NetCheckinKind(len(_NetCheckinKind_index)-1) {

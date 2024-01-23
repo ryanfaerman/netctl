@@ -177,6 +177,7 @@ func (m *Net) replay(stream EventStream) {
 				Callsign: Hearable{AsHeard: e.Callsign},
 				Location: Hearable{AsHeard: e.Location},
 				Name:     Hearable{AsHeard: e.Name},
+				Kind:     ParseNetCheckinKind(e.Kind),
 				Traffic:  e.Traffic,
 				At:       event.At,
 			})

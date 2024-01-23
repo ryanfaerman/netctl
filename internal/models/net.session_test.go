@@ -205,3 +205,39 @@ func TestNetSessionReplayScheduling(t *testing.T) {
 
 	suite.run(t)
 }
+
+func TestNetCheckinReplay(t *testing.T) {
+	// futureTime := time.Now().Add(time.Hour)
+	nowTime := time.Now()
+
+	suite := netSessionTestSuite{
+		"checkin heard new": {
+			input: NetSession{ID: "abc"},
+			events: EventStream{
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinHeard{
+						ID:       "checkin-123",
+						Callsign: "CLSGN",
+						Name:     "NAME",
+						Location: "LOC",
+						Kind:     "ROUTINE",
+						Traffic:  3,
+					},
+				},
+			},
+			expected: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN"},
+					Name:     Hearable{AsHeard: "NAME"},
+					Location: Hearable{AsHeard: "LOC"},
+					Kind:     NetCheckinKindRoutine,
+					Traffic:  3,
+				},
+			}},
+		},
+	}
+	suite.run(t)
+}
