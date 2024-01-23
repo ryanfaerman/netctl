@@ -17,7 +17,7 @@ type NetCheckin struct {
 
 	Acked    bool
 	Verified bool
-	Valid    bool
+	Valid    error
 	Kind     NetCheckinKind
 	Traffic  int
 }

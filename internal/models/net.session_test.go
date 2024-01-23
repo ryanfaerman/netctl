@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/events"
 )
 
@@ -26,7 +28,7 @@ func (suite netSessionTestSuite) run(t *testing.T) {
 			net.Sessions["abc"] = &example.input
 			net.replay(example.events)
 			actual := *net.Sessions["abc"]
-			if diff := cmp.Diff(example.expected, actual); diff != "" {
+			if diff := cmp.Diff(example.expected, actual, cmpopts.EquateErrors()); diff != "" {
 				t.Errorf("Events did not apply: (-want +got)\n%s", diff)
 			}
 		})
@@ -211,30 +213,133 @@ func TestNetCheckinReplay(t *testing.T) {
 	nowTime := time.Now()
 
 	suite := netSessionTestSuite{
-		"checkin heard new": {
-			input: NetSession{ID: "abc"},
+		"checkins heard": {
+			input: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1"},
+					Name:     Hearable{AsHeard: "NAME-1"},
+					Location: Hearable{AsHeard: "LOC-1"},
+					Kind:     NetCheckinKindRoutine,
+					Traffic:  1,
+					Acked:    true,
+					Verified: true,
+					Valid:    nil,
+				},
+			}},
 			events: EventStream{
 				{
 					StreamID: "abc",
 					At:       nowTime,
 					Event: events.NetCheckinHeard{
 						ID:       "checkin-123",
-						Callsign: "CLSGN",
-						Name:     "NAME",
-						Location: "LOC",
+						Callsign: "CLSGN-1",
+						Name:     "NAME-1",
+						Location: "LOC-1",
 						Kind:     "ROUTINE",
+						Traffic:  1,
+					},
+				},
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinHeard{
+						ID:       "checkin-456",
+						Callsign: "CLSGN-2",
+						Name:     "NAME-2",
+						Location: "LOC-2",
+						Kind:     "WELFARE",
 						Traffic:  3,
 					},
 				},
 			},
 			expected: NetSession{ID: "abc", Checkins: []NetCheckin{
 				{
+					ID:       "checkin-123",
 					At:       nowTime,
-					Callsign: Hearable{AsHeard: "CLSGN"},
-					Name:     Hearable{AsHeard: "NAME"},
-					Location: Hearable{AsHeard: "LOC"},
+					Callsign: Hearable{AsHeard: "CLSGN-1"},
+					Name:     Hearable{AsHeard: "NAME-1"},
+					Location: Hearable{AsHeard: "LOC-1"},
 					Kind:     NetCheckinKindRoutine,
+					Traffic:  1,
+					Acked:    false,
+					Verified: false,
+					Valid:    nil,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{AsHeard: "NAME-2"},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Kind:     NetCheckinKindWelfare,
 					Traffic:  3,
+					Acked:    false,
+					Verified: false,
+					Valid:    nil,
+				},
+			}},
+		},
+		"checkins verified": {
+			input: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1"},
+					Name:     Hearable{AsHeard: "NAME-1"},
+					Location: Hearable{AsHeard: "LOC-1"},
+					Verified: false,
+					Valid:    nil,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: false,
+					Valid:    nil,
+				},
+			}},
+			events: EventStream{
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinVerified{
+						ID:       "checkin-123",
+						Callsign: "CLSGN-1-VERIFIED",
+						Name:     "NAME-1-VERIFIED",
+						Location: "LOC-1-VERIFIED",
+					},
+				},
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinVerified{
+						ID:        "checkin-456",
+						ErrorType: "hamdb.ErrNotFound",
+					},
+				},
+			},
+			expected: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1", AsLicensed: "CLSGN-1-VERIFIED"},
+					Name:     Hearable{AsHeard: "NAME-1", AsLicensed: "NAME-1-VERIFIED"},
+					Location: Hearable{AsHeard: "LOC-1", AsLicensed: "LOC-1-VERIFIED"},
+					Verified: true,
+					Valid:    nil,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: true,
+					Valid:    hamdb.ErrNotFound,
 				},
 			}},
 		},

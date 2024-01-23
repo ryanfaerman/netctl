@@ -2,8 +2,10 @@ package models
 
 import (
 	"context"
+	"errors"
 
 	ulid "github.com/oklog/ulid/v2"
+	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/events"
 )
@@ -166,14 +168,16 @@ func (m *Net) replay(stream EventStream) {
 		case events.NetCheckinHeard:
 			session := m.Sessions[event.StreamID]
 			// if the checkin is not in the session, add it
-			// if the checkin is in the session, unack it
+			// if the checkin is in the session, reset it
 			for i, checkin := range session.Checkins {
 				if checkin.ID == e.ID {
 					session.Checkins[i].Acked = false
+					session.Checkins[i].Verified = false
 					break eventMachine
 				}
 			}
 			session.Checkins = append(session.Checkins, NetCheckin{
+				ID:       e.ID,
 				Callsign: Hearable{AsHeard: e.Callsign},
 				Location: Hearable{AsHeard: e.Location},
 				Name:     Hearable{AsHeard: e.Name},
@@ -184,7 +188,32 @@ func (m *Net) replay(stream EventStream) {
 
 		case events.NetCheckinVerified:
 			// set the verified flag to true
-			// if the verification has no errors, set the valid flag to true
+			// if the verification has no errors, set the valid flag to nil
+			// if the verification has an error, set the valid flag to the error
+			session := m.Sessions[event.StreamID]
+			for i, checkin := range session.Checkins {
+				if checkin.ID == e.ID {
+					session.Checkins[i].Verified = true
+					session.Checkins[i].Callsign.AsLicensed = e.Callsign
+					session.Checkins[i].Name.AsLicensed = e.Name
+					session.Checkins[i].Location.AsLicensed = e.Location
+
+					if e.ErrorType == "" {
+						session.Checkins[i].Valid = nil
+					}
+					switch e.ErrorType {
+					case "hamdb.ErrNotFound":
+						session.Checkins[i].Valid = hamdb.ErrNotFound
+					default:
+						if e.ErrorType != "" {
+							session.Checkins[i].Valid = errors.New("unknown error")
+							global.log.Warn("unknown checkin validation error", "error", e.ErrorType, "event", event.Name)
+						}
+					}
+
+					break eventMachine
+				}
+			}
 		case events.NetCheckinAcked:
 			// set the acked flag to true
 		case events.NetCheckinCorrected:

@@ -37,6 +37,7 @@ type (
 
 		Callsign string
 		Name     string
+		Location string
 
 		ErrorType string // e.g. hamdb.ErrNotFound, ErrClub
 
