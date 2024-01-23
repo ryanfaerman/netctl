@@ -119,19 +119,31 @@ func (m *Net) replay(stream EventStream) {
 				break eventMachine
 			}
 			session.Periods = append(session.Periods, Period{
-				OpenedAt: e.At,
+				OpenedAt:  e.At,
+				Scheduled: true,
 			})
 
 		case events.NetSessionOpened:
-			// if no periods exist, create a new one
-			// if the last period is closed, create a new one
 			session := m.Sessions[event.StreamID]
+
+			// if no periods exist, create a new one
 			if len(session.Periods) == 0 {
 				session.Periods = append(session.Periods, Period{
 					OpenedAt: event.At,
 				})
 				break eventMachine
 			}
+
+			// if the last period is scheduled, close it and create a new one
+			if session.Periods[len(session.Periods)-1].Scheduled {
+				session.Periods[len(session.Periods)-1].ClosedAt = event.At
+				session.Periods = append(session.Periods, Period{
+					OpenedAt: event.At,
+				})
+				break eventMachine
+			}
+
+			// if the last period is open, ignore
 			if session.Periods[len(session.Periods)-1].IsClosed() {
 				session.Periods = append(session.Periods, Period{
 					OpenedAt: event.At,
@@ -150,6 +162,7 @@ func (m *Net) replay(stream EventStream) {
 			if session.Periods[len(session.Periods)-1].IsOpen() {
 				session.Periods[len(session.Periods)-1].ClosedAt = event.At
 			}
+
 		case events.NetCheckinHeard:
 			session := m.Sessions[event.StreamID]
 			// if the checkin is not in the session, add it

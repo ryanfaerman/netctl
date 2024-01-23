@@ -13,18 +13,20 @@ const (
 )
 
 type Period struct {
-	OpenedAt time.Time
-	ClosedAt time.Time
+	OpenedAt  time.Time
+	ClosedAt  time.Time
+	Scheduled bool
 }
 
-func (p Period) IsOpen() bool   { return p.ClosedAt.IsZero() }
-func (p Period) IsClosed() bool { return !p.ClosedAt.IsZero() }
+func (p Period) IsOpen() bool      { return p.ClosedAt.IsZero() }
+func (p Period) IsClosed() bool    { return !p.ClosedAt.IsZero() }
+func (p Period) IsScheduled() bool { return p.Scheduled }
 
 func (p Period) Duration() time.Duration {
 	if p.IsClosed() {
 		return p.ClosedAt.Sub(p.OpenedAt)
 	}
-	return time.Now().Sub(p.OpenedAt)
+	return time.Since(p.OpenedAt)
 }
 
 type Periods []Period
