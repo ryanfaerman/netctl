@@ -173,6 +173,7 @@ func (m *Net) replay(stream EventStream) {
 				if checkin.ID == e.ID {
 					session.Checkins[i].Acked = false
 					session.Checkins[i].Verified = false
+					session.Checkins[i].Valid = nil
 					break eventMachine
 				}
 			}
@@ -216,11 +217,42 @@ func (m *Net) replay(stream EventStream) {
 			}
 		case events.NetCheckinAcked:
 			// set the acked flag to true
+			session := m.Sessions[event.StreamID]
+			for i, checkin := range session.Checkins {
+				if checkin.ID == e.ID {
+					session.Checkins[i].Acked = true
+					break eventMachine
+				}
+			}
 		case events.NetCheckinCorrected:
 			// find the checkin and update it
 			// mark as invalidated
+			session := m.Sessions[event.StreamID]
+			// if the checkin is not in the session, add it
+			// if the checkin is in the session, reset it
+			for i, checkin := range session.Checkins {
+				if checkin.ID == e.ID {
+					session.Checkins[i].Verified = false
+					session.Checkins[i].Valid = nil
+
+					session.Checkins[i].Callsign = Hearable{AsHeard: e.Callsign}
+					session.Checkins[i].Location = Hearable{AsHeard: e.Location}
+					session.Checkins[i].Name = Hearable{AsHeard: e.Name}
+					session.Checkins[i].Kind = ParseNetCheckinKind(e.Kind)
+					session.Checkins[i].Traffic = e.Traffic
+
+					break eventMachine
+				}
+			}
 		case events.NetCheckinRevoked:
 			// find the checkin and remove it
+			session := m.Sessions[event.StreamID]
+			for i, checkin := range session.Checkins {
+				if checkin.ID == e.ID {
+					session.Checkins = append(session.Checkins[:i], session.Checkins[i+1:]...)
+					break eventMachine
+				}
+			}
 		}
 	}
 }

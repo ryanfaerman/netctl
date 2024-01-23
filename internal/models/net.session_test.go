@@ -343,6 +343,165 @@ func TestNetCheckinReplay(t *testing.T) {
 				},
 			}},
 		},
+		"checkin acked": {
+			input: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1", AsLicensed: "CLSGN-1-VERIFIED"},
+					Name:     Hearable{AsHeard: "NAME-1", AsLicensed: "NAME-1-VERIFIED"},
+					Location: Hearable{AsHeard: "LOC-1", AsLicensed: "LOC-1-VERIFIED"},
+					Verified: true,
+					Valid:    nil,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: true,
+					Valid:    nil,
+				},
+			}},
+			events: EventStream{
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinAcked{
+						ID: "checkin-123",
+					},
+				},
+			},
+			expected: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1", AsLicensed: "CLSGN-1-VERIFIED"},
+					Name:     Hearable{AsHeard: "NAME-1", AsLicensed: "NAME-1-VERIFIED"},
+					Location: Hearable{AsHeard: "LOC-1", AsLicensed: "LOC-1-VERIFIED"},
+					Verified: true,
+					Valid:    nil,
+					Acked:    true,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: true,
+					Valid:    nil,
+				},
+			}},
+		},
+		"checkin corrected": {
+			input: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1", AsLicensed: "CLSGN-1-VERIFIED"},
+					Name:     Hearable{AsHeard: "NAME-1", AsLicensed: "NAME-1-VERIFIED"},
+					Location: Hearable{AsHeard: "LOC-1", AsLicensed: "LOC-1-VERIFIED"},
+					Kind:     NetCheckinKindRoutine,
+					Traffic:  7,
+					Verified: true,
+					Valid:    nil,
+					Acked:    true,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: true,
+					Valid:    nil,
+				},
+			}},
+			events: EventStream{
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinCorrected{
+						ID:       "checkin-123",
+						Callsign: "CLSGN-1-CORRECTED",
+						Name:     "NAME-1-CORRECTED",
+						Location: "LOC-1-CORRECTED",
+						Kind:     "WELFARE",
+						Traffic:  3,
+					},
+				},
+			},
+			expected: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1-CORRECTED"},
+					Name:     Hearable{AsHeard: "NAME-1-CORRECTED"},
+					Location: Hearable{AsHeard: "LOC-1-CORRECTED"},
+					Kind:     NetCheckinKindWelfare,
+					Traffic:  3,
+					Verified: false,
+					Valid:    nil,
+					Acked:    true,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: true,
+					Valid:    nil,
+				},
+			}},
+		},
+		"checkin revoked": {
+			input: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-123",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-1", AsLicensed: "CLSGN-1-VERIFIED"},
+					Name:     Hearable{AsHeard: "NAME-1", AsLicensed: "NAME-1-VERIFIED"},
+					Location: Hearable{AsHeard: "LOC-1", AsLicensed: "LOC-1-VERIFIED"},
+					Kind:     NetCheckinKindRoutine,
+					Traffic:  7,
+					Verified: true,
+					Valid:    nil,
+					Acked:    true,
+				},
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: true,
+					Valid:    nil,
+				},
+			}},
+			events: EventStream{
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinRevoked{
+						ID: "checkin-123",
+					},
+				},
+			},
+			expected: NetSession{ID: "abc", Checkins: []NetCheckin{
+				{
+					ID:       "checkin-456",
+					At:       nowTime,
+					Callsign: Hearable{AsHeard: "CLSGN-2"},
+					Name:     Hearable{},
+					Location: Hearable{AsHeard: "LOC-2"},
+					Verified: true,
+					Valid:    nil,
+				},
+			}},
+		},
 	}
 	suite.run(t)
 }
