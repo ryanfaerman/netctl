@@ -2,11 +2,9 @@ package models
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	ulid "github.com/oklog/ulid/v2"
-	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/events"
 )
@@ -88,20 +86,22 @@ func (m *Net) AddSession(ctx context.Context) (*NetSession, error) {
 	return session, nil
 }
 
-func (n *Net) Events(ctx context.Context) (EventStream, error) {
-	streamIDs := make([]string, 0, len(n.Sessions))
-	for streamID := range n.Sessions {
-		streamIDs = append(streamIDs, streamID)
+func (n *Net) Events(ctx context.Context, onlyStreams ...string) (EventStream, error) {
+	if len(onlyStreams) == 0 {
+		streamIDs := make([]string, 0, len(n.Sessions))
+		for streamID := range n.Sessions {
+			streamIDs = append(streamIDs, streamID)
+		}
+		if len(streamIDs) == 0 {
+			return EventStream{}, nil
+		}
+		return FindEventsForStreams(ctx, streamIDs...)
 	}
-	if len(streamIDs) == 0 {
-		return EventStream{}, nil
-	}
-
-	return FindEventsForStreams(ctx, streamIDs...)
+	return FindEventsForStreams(ctx, onlyStreams...)
 }
 
-func (m *Net) Replay(ctx context.Context) error {
-	stream, err := m.Events(ctx)
+func (m *Net) Replay(ctx context.Context, onlyStreams ...string) error {
+	stream, err := m.Events(ctx, onlyStreams...)
 	if err != nil {
 		return err
 	}
@@ -200,17 +200,23 @@ func (m *Net) replay(stream EventStream) {
 					session.Checkins[i].Name.AsLicensed = e.Name
 					session.Checkins[i].Location.AsLicensed = e.Location
 
-					if e.ErrorType == "" {
-						session.Checkins[i].Valid = nil
-					}
 					switch e.ErrorType {
-					case "hamdb.ErrNotFound":
-						session.Checkins[i].Valid = hamdb.ErrNotFound
+					case "", events.ErrorTypeNone.Error():
+						session.Checkins[i].Valid = nil
+					case events.ErrorTypeNotFound.Error():
+						session.Checkins[i].Valid = events.ErrorTypeNotFound
+					case events.ErrorTypeClubClass.Error():
+						session.Checkins[i].Valid = events.ErrorTypeClubClass
+					case events.ErrorTypeLookupFailed.Error():
+						session.Checkins[i].Valid = events.ErrorTypeLookupFailed
 					default:
-						if e.ErrorType != "" {
-							session.Checkins[i].Valid = errors.New("unknown error")
-							global.log.Warn("unknown checkin validation error", "error", e.ErrorType, "event", event.Name)
-						}
+						session.Checkins[i].Valid = events.ErrorTypeLookupFailed
+						global.log.Warn(
+							"unknown checkin validation error",
+							"error", e.ErrorType,
+							"event", event.Name,
+							"event.id", event.ID,
+						)
 					}
 
 					break eventMachine

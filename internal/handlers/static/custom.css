@@ -445,11 +445,11 @@ html {
   gap: 0.5rem;
   list-style: none;
   margin: 0;
+  padding-left: 1rem;
 }
 
 .traffic-data .actions li {
   display: inline-flex;
-  padding: .5rem 0;
 }
 
 .traffic-data .action-item {
@@ -768,4 +768,18 @@ input[type=submit]:disabled {
 span.callsign {
   font-family: monospace, monospace;
   text-transform: uppercase;
+  position: relative;
+}
+
+.callsign.is-invalid {
+  /* border-bottom: 1px solid var(--danger-color); */
+}
+.callsign.is-invalid::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: url("/static/squiggle.png") bottom repeat-x;
 }

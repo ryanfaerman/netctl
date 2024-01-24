@@ -15,9 +15,9 @@ type NetCheckin struct {
 	Location Hearable
 	Name     Hearable
 
-	Acked    bool
-	Verified bool
-	Valid    error
+	Acked    bool  // when the checkin is acked by net control
+	Verified bool  // if verification has been performed
+	Valid    error // any verification errors
 	Kind     NetCheckinKind
 	Traffic  int
 }

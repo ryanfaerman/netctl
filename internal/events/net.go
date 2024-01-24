@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/gob"
+	"errors"
 	"time"
 )
 
@@ -16,6 +17,13 @@ func init() {
 	gob.Register(NetSessionOpened{})
 	gob.Register(NetSessionClosed{})
 }
+
+var (
+	ErrorTypeNone         = errors.New("not an error")
+	ErrorTypeNotFound     = errors.New("not found")
+	ErrorTypeClubClass    = errors.New("club class")
+	ErrorTypeLookupFailed = errors.New("lookup failed")
+)
 
 type (
 	// NetCheckinHeard is a struct that contains the information about a checkin
