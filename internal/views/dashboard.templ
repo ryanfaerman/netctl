@@ -16,6 +16,7 @@ templ (v Dashboard) Authenticated() {
 			@v.SetupAccount()
 		} else {
 			<h1>Welcome Back { v.Account.Name }!</h1>
+			<a href={ templ.URL(named.URLFor("net-new")) } class="button">Start a new net</a>
 			<a href={ templ.URL(named.URLFor("session-destroy")) } class="button">
 				Logout
 			</a>

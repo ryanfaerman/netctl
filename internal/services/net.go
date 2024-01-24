@@ -2,7 +2,12 @@ package services
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/oklog/ulid/v2"
+	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/events"
 	"github.com/ryanfaerman/netctl/internal/models"
 )
@@ -19,13 +24,59 @@ func (net) Get(ctx context.Context, id int64) (*models.Net, error) {
 	return models.FindNetById(ctx, id)
 }
 
-// func (n net) StartSession(ctx context.Context, id int64) error {
-//
-//	}
+func (net) Create(ctx context.Context, name string) (*models.Net, error) {
+	id, err := global.dao.CreateNetAndReturnId(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return models.FindNetById(ctx, id)
+}
+
+var CheckinErrClubClass = errors.New("club class")
+
 func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetCheckin) error {
-	return Event.Create(ctx, stream, events.NetCheckin{
-		Callsign: checkin.Callsign,
+	id := ulid.Make()
+	defer func() {
+		go func() {
+			ctx := context.Background()
+			license, err := hamdb.Lookup(ctx, checkin.Callsign.AsHeard)
+			if err != nil {
+				if err != hamdb.ErrNotFound {
+					global.log.Error("hamdb lookup failed", "error", err)
+				}
+				Event.Create(ctx, stream, events.NetCheckinVerified{
+					ErrorType: fmt.Sprintf("%T", err),
+				})
+				return
+			}
+
+			var logicErr error
+			if license.Class == hamdb.ClubClass {
+				logicErr = CheckinErrClubClass
+			}
+
+			Event.Create(ctx, stream, events.NetCheckinVerified{
+				ID: id.String(),
+
+				Callsign:  license.Call,
+				Name:      license.FullName(),
+				Location:  strings.Join([]string{license.City, license.State}, ", "),
+				ErrorType: fmt.Sprintf("%T", logicErr),
+			})
+		}()
+	}()
+
+	return Event.Create(ctx, stream, events.NetCheckinHeard{
+		ID: id.String(),
+
+		Callsign: checkin.Callsign.AsHeard,
+		Name:     checkin.Name.AsHeard,
+		Location: checkin.Location.AsHeard,
+		Kind:     checkin.Kind.String(),
+		Traffic:  0,
 	})
+
+	return nil
 }
 
 func (s net) GetReplayed(ctx context.Context, id int64) (*models.Net, error) {
@@ -35,22 +86,3 @@ func (s net) GetReplayed(ctx context.Context, id int64) (*models.Net, error) {
 	}
 	return m, m.Replay(ctx)
 }
-
-// func (net) SaveEventForNet(id int64, stream string, e any) error {
-// 	var b bytes.Buffer
-// 	var p any
-// 	p = &e
-// 	if err := gob.NewEncoder(&b).Encode(p); err != nil {
-// 		return err
-// 	}
-//
-// 	return global.dao.CreateNetEvent(context.Background(), dao.CreateNetEventParams{
-// 		NetID:     id,
-// 		SessioID: stream,
-// 		AccountID: 1,
-// 		EventType: fmt.Sprintf("%T", e),
-// 		EventData: b.Bytes(),
-// 	})
-//
-// 	return nil
-// }

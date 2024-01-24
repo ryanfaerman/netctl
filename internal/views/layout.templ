@@ -59,7 +59,7 @@ func (t TableAttrs) HasCaption() bool { return t.Caption != "" }
 func (t TableAttrs) HasHeader() bool  { return len(t.Headers) > 0 }
 
 templ TrafficTable(id string, attrs TableAttrs) {
-	<table id={ id } class="traffic-data u-full-width">
+	<table id={ id } class="traffic-data u-full-width" hx-swap-oob="true">
 		if attrs.HasCaption() {
 			<caption>{ attrs.Caption }</caption>
 		}

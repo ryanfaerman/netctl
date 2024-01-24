@@ -22,6 +22,49 @@ templ (n Net) List() {
 	}
 }
 
+templ (v Net) Create() {
+	@Page() {
+		<div class="modal">
+			<div class="modal-header">
+				<h1>Create a Net</h1>
+			</div>
+			<div class="modal-body">
+				@v.CreateForm()
+			</div>
+		</div>
+	}
+}
+
+type CreateNetFormInput struct {
+	Name string `validate:"required"`
+}
+
+type CreateNetFormErrors struct {
+	Name string
+}
+
+templ (v Net) CreateForm() {
+	@v.CreateFormWithErrors(CreateNetFormInput{}, CreateNetFormErrors{  })
+}
+
+templ (v Net) CreateFormWithErrors(input CreateNetFormInput, errs CreateNetFormErrors) {
+	@Form("new-net", FormAttrs{
+    Action: named.URLFor("net-create"),
+    HX: templ.Attributes{
+      "hx-swap": "innerHTML",
+      "hx-disabled-elt": "#new-net input[type=submit]",
+    },
+  }) {
+		@InputText("name", InputAttrs{
+      Label: "Net Name", 
+      HelpText: "Enter the name of the net",
+      Value: input.Name,
+      Error: errs.Name,
+    })
+		@InputSubmit(InputAttrs{Value: "Create Net"})
+	}
+}
+
 templ (n Net) Show() {
 	@Page() {
 		<div class="grid-container split">
@@ -38,9 +81,9 @@ templ (n Net) Show() {
 						@InputSubmit(InputAttrs{Value: "Start a Session"})
 					}
 					<button
- 						class="button"
- 						hx-post={ named.URLFor("net-session-new", strconv.FormatInt(n.Net.ID, 10)) }
- 						hx-target="body"
+						class="button"
+						hx-post={ named.URLFor("net-session-new", strconv.FormatInt(n.Net.ID, 10)) }
+						hx-target="body"
 					>
 						Start a Session
 					</button>
@@ -67,52 +110,20 @@ templ (n Net) Show() {
 	}
 }
 
-templ (n Net) SingleNetSession(streamID string) {
+templ (v Net) SingleNetSession(streamID string) {
 	@Page() {
 		<div class="grid-container split">
 			<div>
 				<div class="sticky mast-head-form">
-					<h1>{ n.Net.Name }</h1>
-					@Form("check-in-form", FormAttrs{}) {
-						<div class="grid-container quarters">
-							@InputText("call-sign", InputAttrs{Label: "Callsign", HelpText:"Enter the callsign"})
-							@InputText("name", InputAttrs{Label: "Name", HelpText: "Override the FCC Listing"})
-							@Select("traffic", InputAttrs{
-              Label: "Traffic Type",
-              Options: []string{
-                "Routine",
-                "Priority",
-                "Welfare",
-                "Emergency",
-                "Traffic",
-                "Question",
-                "Announcement",
-                "Comment",
-                "Weather",
-                },
-              })
-							@InputSubmit(InputAttrs{Value: "Check In"})
-						</div>
-					}
+					<h1>{ v.Net.Name }</h1>
+					@v.CheckinForm()
 					<div class="mast-head-divider"></div>
 				</div>
-				@TrafficTable("checkin-list", TableAttrs{
-          Caption: "Checkins for " + streamID,
-          Headers: []string{
-              "Callsign",
-              "Name",
-              "Location",
-              "Time In",
-            },
-        }) {
-					for _, checkin := range n.Session.Checkins {
-						@n.CheckinRow(checkin)
-					}
-				}
+				@v.TrafficTable(streamID)
 				<h3>Timeline</h3>
 				<div class="timeline">
-					for _, event := range n.Stream {
-						@n.TimelineItem(event)
+					for _, event := range v.Stream {
+						@v.TimelineItem(event)
 					}
 				</div>
 			</div>
@@ -121,9 +132,83 @@ templ (n Net) SingleNetSession(streamID string) {
 	}
 }
 
+templ (v Net) TrafficTable(streamID string) {
+	@TrafficTable("checkin-list", TableAttrs{
+          Caption: "Checkins for " + streamID,
+          Headers: []string{
+              "Callsign",
+              "Name",
+              "Location",
+              "Time In",
+            },
+        }) {
+		for _, checkin := range v.Session.Checkins {
+			@v.CheckinRow(checkin)
+		}
+	}
+}
+
+type CheckinFormInput struct {
+	Callsign string `validate:"required"`
+	Name     string
+	Traffic  string `validate:"required"`
+}
+
+type CheckinFormErrors struct {
+	Callsign string
+	Name     string
+	Traffic  string
+}
+
+templ (v Net) CheckinForm() {
+	@v.CheckinFormWithErrors(CheckinFormInput{}, CheckinFormErrors{})
+}
+
+templ (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormErrors) {
+	@Form("check-in-form", FormAttrs{
+
+    Action: named.URLFor("net-session-checkin", "3", "01HMW38CWXQQ7SK1RPQ37N58H4"),
+    HX: templ.Attributes{
+      "hx-swap": "innerHTML",
+    },
+    }) {
+		<div class="grid-container quarters">
+			@InputText("call-sign", InputAttrs{
+        Label: "Callsign", 
+        HelpText:"Enter the callsign",
+        Value: input.Callsign,
+        Error: errs.Callsign,
+      })
+			@InputText("name", InputAttrs{
+        Label: "Name", 
+        HelpText: "Override the FCC Listing",
+        Value: input.Name,
+        Error: errs.Name,
+      })
+			@Select("traffic", InputAttrs{
+        Label: "Traffic Type",
+        Options: []string{
+          "Routine",
+          "Priority",
+          "Welfare",
+          "Emergency",
+          "Traffic",
+          "Question",
+          "Announcement",
+          "Comment",
+          "Weather",
+          },
+          Value: input.Traffic,
+          Error: errs.Traffic,
+        })
+			@InputSubmit(InputAttrs{Value: "Check In"})
+		</div>
+	}
+}
+
 templ (n Net) CheckinRow(checkin models.NetCheckin) {
 	<tr>
-		<td>{ checkin.Callsign }</td>
+		<td>{ checkin.Callsign.AsHeard }</td>
 		<td>TBD</td>
 		<td>UNKNOWN</td>
 		<td>{ checkin.At.Format("15:04:05") }</td>
