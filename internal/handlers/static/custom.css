@@ -379,7 +379,7 @@ html {
 .traffic-data thead th {
   font-weight: bold;
   text-align: left;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0;
   border-top: 1px solid var(--border-color-softer);
   background: var(--background-color-softer);
   position: sticky;
@@ -410,6 +410,17 @@ html {
 
 .traffic-data tbody tr:nth-child(even) {
   background-color: var(--background-color-softer);
+}
+
+.traffic-data tbody td {
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  text-align: left;
+
+-webkit-hyphens: auto;
+   -moz-hyphens: auto;
+        hyphens: auto;
 }
 
 .traffic-data tbody td:first-child {
@@ -451,6 +462,22 @@ html {
   border-radius: 0.4rem;
   color: var(--text-color-softer);
   font-size: 1.54rem;
+}
+
+.traffic-data .checkin-name {
+  max-width: 7em;
+}
+
+.traffic-data .checkin-callsign {
+  width: 7em;
+}
+
+.traffic-data .checkin-location {
+  width: 20em;
+}
+
+.traffic-data .checkin-time-in {
+  width: 7em;
 }
 
 .timeline {

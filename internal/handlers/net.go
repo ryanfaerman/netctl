@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 
@@ -157,9 +158,9 @@ func (h Net) Checkin(w http.ResponseWriter, r *http.Request) {
 
 	inputErrs := views.CheckinFormErrors{}
 	input := views.CheckinFormInput{
-		Callsign: r.Form.Get("call-sign"),
-		Name:     r.Form.Get("name"),
-		Traffic:  r.Form.Get("traffic"),
+		Callsign: strings.ToUpper(strings.TrimSpace(r.Form.Get("call-sign"))),
+		Name:     strings.TrimSpace(r.Form.Get("name")),
+		Traffic:  strings.TrimSpace(r.Form.Get("traffic")),
 	}
 	if err := validate.Struct(input); err != nil {
 		errs := err.(validator.ValidationErrors)

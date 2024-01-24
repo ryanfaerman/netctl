@@ -151,7 +151,7 @@ templ (v Net) TrafficTable(streamID string) {
 }
 
 type CheckinFormInput struct {
-	Callsign string `validate:"required"`
+	Callsign string `validate:"required,alphanum"`
 	Name     string
 	Traffic  string `validate:"required"`
 }

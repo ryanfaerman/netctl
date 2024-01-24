@@ -58,7 +58,7 @@ func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetChec
 			Event.Create(ctx, stream, events.NetCheckinVerified{
 				ID: id.String(),
 
-				Callsign:  license.Call,
+				Callsign:  strings.ToUpper(license.Call),
 				Name:      license.FullName(),
 				Location:  strings.Join([]string{license.City, license.State}, ", "),
 				ErrorType: fmt.Sprintf("%T", logicErr),
@@ -69,7 +69,7 @@ func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetChec
 	return Event.Create(ctx, stream, events.NetCheckinHeard{
 		ID: id.String(),
 
-		Callsign: checkin.Callsign.AsHeard,
+		Callsign: strings.ToUpper(checkin.Callsign.AsHeard),
 		Name:     checkin.Name.AsHeard,
 		Location: checkin.Location.AsHeard,
 		Kind:     checkin.Kind.String(),
