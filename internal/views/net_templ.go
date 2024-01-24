@@ -573,7 +573,7 @@ func (v Net) TrafficTable(streamID string) templ.Component {
 }
 
 type CheckinFormInput struct {
-	Callsign string `validate:"required"`
+	Callsign string `validate:"required,alphanum"`
 	Name     string
 	Traffic  string `validate:"required"`
 }

@@ -126,7 +126,7 @@ func (c *Client) Stop() {
 
 func (c *Client) lookup(ctx context.Context, callsign string) (Response, error) {
 	var resp Response
-	callsign = strings.TrimSpace(callsign)
+	callsign = strings.ToUpper(strings.TrimSpace(callsign))
 	url := fmt.Sprintf("%s/%s/json/%s", c.baseURL, callsign, c.appName)
 
 	l := c.log.With("callsign", callsign, "url", url)
