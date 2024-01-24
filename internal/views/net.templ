@@ -3,6 +3,7 @@ package views
 import "github.com/ryanfaerman/netctl/internal/models"
 import "github.com/ryanfaerman/netctl/web/named"
 import "strconv"
+import "strings"
 
 type Net struct {
 	Nets    []*models.Net
@@ -139,6 +140,7 @@ templ (v Net) TrafficTable(streamID string) {
               "Callsign",
               "Name",
               "Location",
+              "Traffic Type",
               "Time In",
             },
         }) {
@@ -207,11 +209,36 @@ templ (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormErro
 }
 
 templ (n Net) CheckinRow(checkin models.NetCheckin) {
-	<tr>
-		<td>{ checkin.Callsign.AsHeard }</td>
-		<td>TBD</td>
-		<td>UNKNOWN</td>
-		<td>{ checkin.At.Format("15:04:05") }</td>
+	<tr class={ strings.ToLower(checkin.Kind.String()) }>
+		<td class="checkin-callsign">
+			<span class="callsign">
+				{ checkin.Callsign.AsHeard }
+			</span>
+		</td>
+		<td class="checkin-name">
+			if checkin.Name.AsHeard != "" {
+				{ checkin.Name.AsHeard }
+			} else {
+				if checkin.Name.AsLicensed != "" {
+					{ checkin.Name.AsLicensed }
+				} else {
+					UNKNOWN
+				}
+			}
+		</td>
+		<td class="checkin-location">
+			if checkin.Location.AsLicensed != "" {
+				{ checkin.Location.AsLicensed }
+			} else {
+				UNKNOWN
+			}
+		</td>
+		<td class="checkin-traffic-type">
+			{ checkin.Kind.String() }
+		</td>
+		<td class="checkin-time-in">
+			{ checkin.At.Format("15:04:05") }
+		</td>
 	</tr>
 }
 

@@ -737,3 +737,8 @@ input[type=submit]:disabled {
   border-color: var(--border-color);
   color: var(--text-color-softer);
 }
+
+span.callsign {
+  font-family: monospace, monospace;
+  text-transform: uppercase;
+}

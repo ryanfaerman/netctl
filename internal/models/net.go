@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"strings"
 
 	ulid "github.com/oklog/ulid/v2"
 	"github.com/ryanfaerman/netctl/hamdb"
@@ -170,7 +171,7 @@ func (m *Net) replay(stream EventStream) {
 			// if the checkin is not in the session, add it
 			// if the checkin is in the session, reset it
 			for i, checkin := range session.Checkins {
-				if checkin.ID == e.ID {
+				if checkin.ID == e.ID || strings.ToUpper(checkin.Callsign.AsHeard) == strings.ToUpper(e.Callsign) {
 					session.Checkins[i].Acked = false
 					session.Checkins[i].Verified = false
 					session.Checkins[i].Valid = nil

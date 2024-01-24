@@ -245,6 +245,18 @@ func TestNetCheckinReplay(t *testing.T) {
 					StreamID: "abc",
 					At:       nowTime,
 					Event: events.NetCheckinHeard{
+						ID:       "checkin-789",
+						Callsign: "CLSGN-1",
+						Name:     "NAME-1",
+						Location: "LOC-1",
+						Kind:     "ROUTINE",
+						Traffic:  1,
+					},
+				},
+				{
+					StreamID: "abc",
+					At:       nowTime,
+					Event: events.NetCheckinHeard{
 						ID:       "checkin-456",
 						Callsign: "CLSGN-2",
 						Name:     "NAME-2",
