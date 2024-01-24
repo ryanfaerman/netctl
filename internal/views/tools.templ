@@ -1,0 +1,13 @@
+package views
+
+import "strings"
+import "github.com/ryanfaerman/version"
+
+func join(glue string, parts ...string) string {
+	return strings.Join(parts, glue)
+}
+
+// noop to make templ happy
+templ MetaVersion() {
+	<meta name="version" content={ version.Version.String() }/>
+}
