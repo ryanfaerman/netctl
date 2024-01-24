@@ -641,10 +641,11 @@ func (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormError
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = InputText("name", InputAttrs{
-				Label:    "Name",
-				HelpText: "Override the FCC Listing",
-				Value:    input.Name,
-				Error:    errs.Name,
+				Label:               "Name",
+				HelpText:            "Override the FCC Listing",
+				Value:               input.Name,
+				Error:               errs.Name,
+				DisableAutocomplete: true,
 			}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -731,7 +732,7 @@ func (n Net) CheckinRow(checkin models.NetCheckin) templ.Component {
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(checkin.Callsign.AsHeard)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 214, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 215, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -745,7 +746,7 @@ func (n Net) CheckinRow(checkin models.NetCheckin) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(checkin.Name.AsHeard)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 219, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 220, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -756,7 +757,7 @@ func (n Net) CheckinRow(checkin models.NetCheckin) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(checkin.Name.AsLicensed)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 222, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 223, Col: 30}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -778,7 +779,7 @@ func (n Net) CheckinRow(checkin models.NetCheckin) templ.Component {
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(checkin.Location.AsLicensed)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 230, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 231, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -798,7 +799,7 @@ func (n Net) CheckinRow(checkin models.NetCheckin) templ.Component {
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(checkin.Kind.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 236, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 237, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -811,7 +812,7 @@ func (n Net) CheckinRow(checkin models.NetCheckin) templ.Component {
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(checkin.At.Format("15:04:05"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 239, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 240, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -883,7 +884,7 @@ func (n Net) TimelineItem(event models.Event) templ.Component {
 		var templ_7745c5c3_Var46 string
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(event.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 254, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 255, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
@@ -896,7 +897,7 @@ func (n Net) TimelineItem(event models.Event) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(event.At.Format("15:04:15"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 257, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/net.templ`, Line: 258, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {

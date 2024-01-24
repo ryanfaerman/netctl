@@ -48,21 +48,20 @@ func (a FormAttrs) HasMethod() bool { return len(a.Method) > 0 }
 
 templ Form(id string, attrs FormAttrs) {
 	<form
- 		id={ id }
- 		if attrs.HasAction() {
+		id={ id }
+		if attrs.HasAction() {
 			action={ templ.URL(attrs.Action) }
 		}
- 		if attrs.HasMethod() {
+		if attrs.HasMethod() {
 			method={ attrs.Method }
 		} else {
 			method="post"
 		}
- 		if !attrs.DisableHTMX && attrs.HasAction() {
+		if !attrs.DisableHTMX && attrs.HasAction() {
 			hx-post={ attrs.Action }
 			hx-swap-oob="true"
 		}
-
-    { attrs.HX... }
+		{ attrs.HX... }
 	>
 		if !attrs.DisableCSRF {
 			<input type="hidden" name="csrf_token" value={ services.CSRF.GetToken(ctx) }/>
@@ -77,15 +76,18 @@ templ Input(kind InputType, name string, attrs InputAttrs) {
 			<label for={ name }>{ attrs.Label }</label>
 		}
 		<input
- 			type={ kind.String() }
- 			id={ name }
- 			name={ name }
- 			class="u-full-width"
- 			if attrs.HasValue() {
+			type={ kind.String() }
+			id={ name }
+			name={ name }
+			class="u-full-width"
+			if attrs.HasValue() {
 				value={ attrs.Value }
 			}
- 			if  attrs.HasPlaceholder() {
+			if  attrs.HasPlaceholder() {
 				placeholder={ attrs.Placeholder }
+			}
+			if attrs.DisableAutocomplete {
+				autocomplete="off"
 			}
 		/>
 		<div class="input-annotations u-full-width">
@@ -137,9 +139,9 @@ templ Select(name string, attrs InputAttrs) {
 templ InputSubmit(attrs InputAttrs) {
 	<div class="button-group">
 		<input
-    type="submit"
-    class="button-primary u-full-width"
-    value={ attrs.Value }
-    />
+			type="submit"
+			class="button-primary u-full-width"
+			value={ attrs.Value }
+		/>
 	</div>
 }

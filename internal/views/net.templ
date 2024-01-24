@@ -186,6 +186,7 @@ templ (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormErro
         HelpText: "Override the FCC Listing",
         Value: input.Name,
         Error: errs.Name,
+        DisableAutocomplete: true,
       })
 			@Select("traffic", InputAttrs{
         Label: "Traffic Type",
