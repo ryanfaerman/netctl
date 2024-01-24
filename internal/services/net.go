@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/oklog/ulid/v2"
@@ -32,27 +30,31 @@ func (net) Create(ctx context.Context, name string) (*models.Net, error) {
 	return models.FindNetById(ctx, id)
 }
 
-var CheckinErrClubClass = errors.New("club class")
-
 func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetCheckin) error {
 	id := ulid.Make()
 	defer func() {
 		go func() {
 			ctx := context.Background()
+			errorType := events.ErrorTypeNone
+
 			license, err := hamdb.Lookup(ctx, checkin.Callsign.AsHeard)
 			if err != nil {
-				if err != hamdb.ErrNotFound {
+				if err == hamdb.ErrNotFound {
+					errorType = events.ErrorTypeNotFound
+				} else {
+					errorType = events.ErrorTypeLookupFailed
 					global.log.Error("hamdb lookup failed", "error", err)
+
 				}
 				Event.Create(ctx, stream, events.NetCheckinVerified{
-					ErrorType: fmt.Sprintf("%T", err),
+					ID:        id.String(),
+					ErrorType: errorType.Error(),
 				})
 				return
 			}
 
-			var logicErr error
 			if license.Class == hamdb.ClubClass {
-				logicErr = CheckinErrClubClass
+				errorType = events.ErrorTypeClubClass
 			}
 
 			Event.Create(ctx, stream, events.NetCheckinVerified{
@@ -61,7 +63,7 @@ func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetChec
 				Callsign:  strings.ToUpper(license.Call),
 				Name:      license.FullName(),
 				Location:  strings.Join([]string{license.City, license.State}, ", "),
-				ErrorType: fmt.Sprintf("%T", logicErr),
+				ErrorType: errorType.Error(),
 			})
 		}()
 	}()
@@ -75,8 +77,6 @@ func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetChec
 		Kind:     checkin.Kind.String(),
 		Traffic:  0,
 	})
-
-	return nil
 }
 
 func (s net) GetReplayed(ctx context.Context, id int64) (*models.Net, error) {

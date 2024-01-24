@@ -132,7 +132,7 @@ func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	net, err := services.Net.GetReplayed(ctx, id)
+	net, err := services.Net.Get(ctx, id)
 	if err != nil {
 		global.log.Error("unable to get net", "error", err)
 		panic("at the disco")
@@ -145,16 +145,40 @@ func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 		panic("at the disco")
 		return
 	}
+	net.Replay(ctx, sessionID)
 	v := views.Net{
 		Net:     net,
 		Session: session,
 	}
+
 	v.SingleNetSession(sessionID).Render(ctx, w)
 }
 
 func (h Net) Checkin(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	v := views.Net{}
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	net, err := services.Net.Get(r.Context(), id)
+	if err != nil {
+		global.log.Error("unable to get net", "error", err)
+		panic("at the disco")
+		return
+	}
+
+	sessionID := chi.URLParam(r, "session_id")
+	session, ok := net.Sessions[sessionID]
+	if !ok {
+		global.log.Error("unable to get session", "error", err)
+		panic("at the disco")
+		return
+	}
+	v := views.Net{
+		Net:     net,
+		Session: session,
+	}
 
 	inputErrs := views.CheckinFormErrors{}
 	input := views.CheckinFormInput{
@@ -180,12 +204,6 @@ func (h Net) Checkin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	sessionID := chi.URLParam(r, "session_id")
-
 	if err := services.Net.Checkin(r.Context(), sessionID, &models.NetCheckin{
 		Callsign: models.Hearable{AsHeard: input.Callsign},
 		Name:     models.Hearable{AsHeard: input.Name},
@@ -195,22 +213,8 @@ func (h Net) Checkin(w http.ResponseWriter, r *http.Request) {
 		panic("at the disco")
 		return
 	}
-	net, err := services.Net.GetReplayed(r.Context(), id)
-	if err != nil {
-		global.log.Error("unable to get net", "error", err)
-		panic("at the disco")
-		return
-	}
-	session, ok := net.Sessions[sessionID]
-	if !ok {
-		global.log.Error("unable to get session", "error", err)
-		panic("at the disco")
-		return
-	}
-	v = views.Net{
-		Net:     net,
-		Session: session,
-	}
+
+	net.Replay(r.Context(), sessionID)
 
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	v.CheckinForm().Render(ctx, w)

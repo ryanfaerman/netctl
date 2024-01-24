@@ -137,6 +137,7 @@ templ (v Net) TrafficTable(streamID string) {
 	@TrafficTable("checkin-list", TableAttrs{
           Caption: "Checkins for " + streamID,
           Headers: []string{
+              "",
               "Callsign",
               "Name",
               "Location",
@@ -169,7 +170,7 @@ templ (v Net) CheckinForm() {
 templ (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormErrors) {
 	@Form("check-in-form", FormAttrs{
 
-    Action: named.URLFor("net-session-checkin", "3", "01HMW38CWXQQ7SK1RPQ37N58H4"),
+    Action: named.URLFor("net-session-checkin", strconv.FormatInt(v.Net.ID, 10), v.Session.ID),
     HX: templ.Attributes{
       "hx-swap": "innerHTML",
     },
@@ -211,8 +212,41 @@ templ (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormErro
 
 templ (n Net) CheckinRow(checkin models.NetCheckin) {
 	<tr class={ strings.ToLower(checkin.Kind.String()) }>
+		<td class="checkin-actions">
+			<ul class="actions">
+				<li>
+					if checkin.Verified {
+						<span title="Station Verification is complete">
+							@IconSolid("shield-halved")
+						</span>
+					} else {
+						<span title="Verifying the station">
+							@IconSolid("users-viewfinder")
+						</span>
+					}
+				</li>
+				<li>
+					if checkin.Verified && checkin.Valid == nil {
+						<span title="Station is licensed">
+							@IconSolid("user-check")
+						</span>
+					} else {
+						<span title="Station cannot be verified as licensed">
+							@IconSolid("user-slash")
+						</span>
+					}
+				</li>
+			</ul>
+		</td>
 		<td class="checkin-callsign">
-			<span class="callsign">
+			<span
+				class={ "callsign", templ.KV("is-verified", checkin.Verified), templ.KV("is-invalid", !checkin.Verified || checkin.Valid != nil) }
+				if checkin.Verified && checkin.Valid == nil {
+					title="Station is licensed"
+				} else {
+					title="Station cannot be verified as licensed"
+				}
+			>
 				{ checkin.Callsign.AsHeard }
 			</span>
 		</td>

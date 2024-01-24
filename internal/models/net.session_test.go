@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/events"
 )
 
@@ -330,7 +329,7 @@ func TestNetCheckinReplay(t *testing.T) {
 					At:       nowTime,
 					Event: events.NetCheckinVerified{
 						ID:        "checkin-456",
-						ErrorType: "hamdb.ErrNotFound",
+						ErrorType: events.ErrorTypeNotFound.Error(),
 					},
 				},
 			},
@@ -351,7 +350,7 @@ func TestNetCheckinReplay(t *testing.T) {
 					Name:     Hearable{},
 					Location: Hearable{AsHeard: "LOC-2"},
 					Verified: true,
-					Valid:    hamdb.ErrNotFound,
+					Valid:    events.ErrorTypeNotFound,
 				},
 			}},
 		},
