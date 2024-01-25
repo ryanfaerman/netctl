@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 //go:generate stringer -type=NetStatus -trimprefix=NetStatus
 type NetStatus int
@@ -45,4 +48,13 @@ type NetSession struct {
 	Periods   Periods
 
 	Checkins []NetCheckin
+}
+
+func (m NetSession) FindCheckinByCallsign(call string) *NetCheckin {
+	for _, checkin := range m.Checkins {
+		if strings.ToUpper(checkin.Callsign.AsHeard) == strings.ToUpper(call) {
+			return &checkin
+		}
+	}
+	return nil
 }

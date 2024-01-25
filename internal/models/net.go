@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	ulid "github.com/oklog/ulid/v2"
@@ -10,9 +11,10 @@ import (
 )
 
 type Net struct {
-	Sessions map[string]*NetSession
-	Name     string
-	ID       int64
+	Name       string
+	Sessions   map[string]*NetSession
+	SessionIDs []string
+	ID         int64
 }
 
 func NewNet(id int64, name string) *Net {
@@ -64,7 +66,11 @@ func FindNetById(ctx context.Context, id int64) (*Net, error) {
 			ID:        raw.StreamID,
 			CreatedAt: raw.Created,
 		}
+		m.SessionIDs = append(m.SessionIDs, raw.StreamID)
 	}
+
+	sort.Sort(sort.Reverse(sort.StringSlice(m.SessionIDs)))
+
 	return m, nil
 }
 
@@ -173,8 +179,8 @@ func (m *Net) replay(stream EventStream) {
 			for i, checkin := range session.Checkins {
 				if checkin.ID == e.ID || strings.ToUpper(checkin.Callsign.AsHeard) == strings.ToUpper(e.Callsign) {
 					session.Checkins[i].Acked = false
-					session.Checkins[i].Verified = false
-					session.Checkins[i].Valid = nil
+					// session.Checkins[i].Verified = false
+					// session.Checkins[i].Valid = nil
 					break eventMachine
 				}
 			}

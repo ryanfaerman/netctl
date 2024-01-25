@@ -1,10 +1,31 @@
 package views
 
+import "fmt"
 import "strings"
 import "github.com/ryanfaerman/version"
+import "github.com/ryanfaerman/netctl/internal/services"
 
 func join(glue string, parts ...string) string {
 	return strings.Join(parts, glue)
+}
+
+func hxVals(data map[string]string) string {
+	var vals []string
+	for k, v := range data {
+		vals = append(vals, fmt.Sprintf("'%s':'%s'", k, v))
+	}
+	return fmt.Sprintf("{%s}", strings.Join(vals, ","))
+}
+
+func csrfVal(ctx context.Context) string {
+	token := services.CSRF.GetToken(ctx)
+	return fmt.Sprintf(`hx-vals='{"csrf_token":"%s"}'`, token)
+}
+
+func csrf(ctx context.Context) string { return services.CSRF.GetToken(ctx) }
+
+templ CSRFValue() {
+	{ csrfVal(ctx) }
 }
 
 // noop to make templ happy

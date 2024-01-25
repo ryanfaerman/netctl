@@ -13,13 +13,19 @@ import (
 	"github.com/unrolled/render"
 )
 
+var surfing *nosurf.CSRFHandler
+
 func Nosurfing(h http.Handler) http.Handler {
-	surfing := nosurf.New(h)
+	surfing = nosurf.New(h)
 	surfing.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Warn("failed to validate CSRF token", "reason", nosurf.Reason(r))
 		w.WriteHeader(http.StatusBadRequest)
 	}))
 	return surfing
+}
+
+func CSRFExempt(globs ...string) {
+	surfing.ExemptGlobs(globs...)
 }
 
 func Dropper(paths ...string) func(next http.Handler) http.Handler {
@@ -89,7 +95,6 @@ func (sr *statusRecorder) WriteHeader(code int) {
 	sr.status = code
 	if !sr.hijacked {
 		sr.ResponseWriter.WriteHeader(code)
-
 	}
 }
 
@@ -113,7 +118,6 @@ func (sr *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		rw := statusRecorder{w, http.StatusOK, false}
 		log.Printf("Received request: %s %s", r.Method, r.URL.Path)
 		next.ServeHTTP(&rw, r)

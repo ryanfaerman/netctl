@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/r3labs/sse/v2"
 	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/events"
 	"github.com/ryanfaerman/netctl/internal/models"
@@ -30,10 +31,17 @@ func (net) Create(ctx context.Context, name string) (*models.Net, error) {
 	return models.FindNetById(ctx, id)
 }
 
-func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetCheckin) error {
+func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetCheckin) (string, error) {
 	id := ulid.Make()
 	defer func() {
 		go func() {
+			defer func() {
+				global.log.Info("sending validation event", "id", id.String())
+				Event.Server.Publish(stream, &sse.Event{
+					Event: []byte(id.String()),
+					Data:  []byte("validation"),
+				})
+			}()
 			ctx := context.Background()
 			errorType := events.ErrorTypeNone
 
@@ -68,7 +76,8 @@ func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetChec
 		}()
 	}()
 
-	return Event.Create(ctx, stream, events.NetCheckinHeard{
+	global.log.Info("created heard event", "id", id.String())
+	return id.String(), Event.Create(ctx, stream, events.NetCheckinHeard{
 		ID: id.String(),
 
 		Callsign: strings.ToUpper(checkin.Callsign.AsHeard),
@@ -85,4 +94,17 @@ func (s net) GetReplayed(ctx context.Context, id int64) (*models.Net, error) {
 		return m, err
 	}
 	return m, m.Replay(ctx)
+}
+
+func (s net) AckCheckin(ctx context.Context, stream string, id string) error {
+	defer func() {
+		global.log.Info("sending validation event", "id", id)
+		Event.Server.Publish(stream, &sse.Event{
+			Event: []byte(id),
+			Data:  []byte("ack"),
+		})
+	}()
+	return Event.Create(ctx, stream, events.NetCheckinAcked{
+		ID: id,
+	})
 }

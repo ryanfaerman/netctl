@@ -1,16 +1,22 @@
 package handlers
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi"
+	sse "github.com/r3labs/sse/v2"
 
 	validator "github.com/go-playground/validator/v10"
+	"github.com/ryanfaerman/netctl/internal/middleware"
 	"github.com/ryanfaerman/netctl/internal/models"
 	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/internal/views"
+	"github.com/ryanfaerman/netctl/web"
 	"github.com/ryanfaerman/netctl/web/named"
 )
 
@@ -32,6 +38,13 @@ func (h Net) Routes(r chi.Router) {
 
 	// r.Get(named.Route("net-checkin", "/nets/{id}/checkin"), h.Checkin)
 	r.Post(named.Route("net-session-checkin", "/net/{id}/{session_id}/checkin"), h.Checkin)
+	r.Get(named.Route("get-checkin", "/net/{id}/{session_id}/{checkin_id}"), h.CheckinShow)
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.HTMXOnly)
+		web.CSRFExempt("/net/*/ack/*")
+		r.Post(named.Route("checkin-ack", "/net/{session_id}/ack/{checkin_id}"), h.AckCheckin)
+	})
 	// r.Post(named.Route("net-ack-checkin", "/nets/{id}/ack-checkin"), h.AckCheckin)
 }
 
@@ -146,9 +159,19 @@ func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	net.Replay(ctx, sessionID)
+	eventStream, err := net.Events(ctx, sessionID)
+	if err != nil {
+		global.log.Error("unable to get event stream", "error", err)
+		panic("at the disco")
+	}
 	v := views.Net{
 		Net:     net,
 		Session: session,
+		Stream:  eventStream,
+	}
+
+	if !global.events.StreamExists(sessionID) {
+		global.events.CreateStream(sessionID)
 	}
 
 	v.SingleNetSession(sessionID).Render(ctx, w)
@@ -204,20 +227,99 @@ func (h Net) Checkin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := services.Net.Checkin(r.Context(), sessionID, &models.NetCheckin{
+	checkin := models.NetCheckin{
 		Callsign: models.Hearable{AsHeard: input.Callsign},
 		Name:     models.Hearable{AsHeard: input.Name},
 		Kind:     models.ParseNetCheckinKind(input.Traffic),
-	}); err != nil {
+	}
+
+	checkinID, err := services.Net.Checkin(r.Context(), sessionID, &checkin)
+	if err != nil {
 		global.log.Error("unable to checkin", "error", err)
 		panic("at the disco")
 		return
 	}
+	checkin.ID = checkinID
 
 	net.Replay(r.Context(), sessionID)
+	v.Session = net.Sessions[sessionID]
 
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	v.CheckinForm().Render(ctx, w)
-	v.TrafficTable(sessionID).Render(ctx, w)
+	// v.CheckinRow(checkin).Render(ctx, w)
+	// for _, checkin := range session.Checkins {
+	// 	if checkin.ID == checkinID {
+	// 		v.CheckinRow(checkin).Render(ctx, w)
+	// 		break
+	// 	}
+	// }
+
+	found := v.Session.FindCheckinByCallsign(checkin.Callsign.AsHeard)
+	fmt.Println("found")
+	spew.Dump(found)
+	fmt.Println("checkin")
+	spew.Dump(checkin)
+
+	var b bytes.Buffer
+
+	se := &sse.Event{}
+	if found.ID != checkin.ID {
+		se.Event = []byte(found.ID)
+		v.CheckinRow(*found).Render(ctx, &b)
+		se.Data = b.Bytes()
+		se.Data = []byte("found")
+	} else {
+		v.CheckinRow(*found, true).Render(ctx, &b)
+		se.Data = b.Bytes()
+
+	}
+
+	global.events.Publish(sessionID, se)
+
 	// http.Redirect(w, r, named.URLFor("net-session-show", strconv.FormatInt(id, 10), session.ID), http.StatusFound)
+}
+
+func (h Net) CheckinShow(w http.ResponseWriter, r *http.Request) {
+	ctx := services.CSRF.GetContext(r.Context(), r)
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	net, err := services.Net.Get(ctx, id)
+	if err != nil {
+		global.log.Error("unable to get net", "error", err)
+		panic("at the disco")
+		return
+	}
+	sessionID := chi.URLParam(r, "session_id")
+	session, ok := net.Sessions[sessionID]
+	if !ok {
+		global.log.Error("unable to get session", "error", err)
+		panic("at the disco")
+		return
+	}
+	net.Replay(ctx, sessionID)
+	v := views.Net{
+		Net:     net,
+		Session: session,
+	}
+
+	for _, checkin := range session.Checkins {
+		if checkin.ID == chi.URLParam(r, "checkin_id") {
+			v.CheckinRow(checkin).Render(ctx, w)
+			return
+		}
+	}
+}
+
+func (h Net) AckCheckin(w http.ResponseWriter, r *http.Request) {
+	ctx := services.CSRF.GetContext(r.Context(), r)
+	stream := chi.URLParam(r, "session_id")
+	id := chi.URLParam(r, "checkin_id")
+	err := services.Net.AckCheckin(ctx, stream, id)
+	if err != nil {
+		global.log.Error("unable to ack checkin", "error", err)
+		panic("at the disco")
+		return
+	}
 }

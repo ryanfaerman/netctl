@@ -403,9 +403,30 @@ html {
   border-right: 1px solid var(--border-color-softer);
 }
 
+.traffic-data tbody tr {
+  position: relative;
+}
+
 .traffic-data tbody tr:hover,
 .traffic-data tbody tr:nth-child(even):hover {
   background-color: var(--border-color-softer);
+}
+
+.traffic-data tbody tr::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  background-color: var(--accent-color);
+  height: 100%;
+  opacity: 0;
+  width: 0;
+
+  transition: all 0.15s cubic-bezier(0.29, 0.73, 0.74, 1.02);
+}
+
+.traffic-data tbody tr.htmx-settling::after {
+  width: calc(100% + -2px);
+  opacity: 0.2;
 }
 
 .traffic-data tbody tr:nth-child(even) {
@@ -783,3 +804,4 @@ span.callsign {
   height: 5px;
   background: url("/static/squiggle.png") bottom repeat-x;
 }
+

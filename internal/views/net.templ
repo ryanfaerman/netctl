@@ -14,12 +14,19 @@ type Net struct {
 
 templ (n Net) List() {
 	@Page() {
-		<ul>
-			for _, net := range n.Nets {
-				<li>{ named.URLFor("net-show", strconv.FormatInt(net.ID, 10)) }</li>
-				<li><a href={ templ.URL(named.URLFor("net-show", strconv.FormatInt(net.ID, 10))) }>{ net.Name }</a></li>
-			}
-		</ul>
+		<div class="modal">
+			<div class="modal-header">
+				<h1>Net List</h1>
+			</div>
+			<div class="modal-body">
+				<a href={ templ.URL(named.URLFor("net-new")) } class="button">Start a new net</a>
+				<ul>
+					for _, net := range n.Nets {
+						<li><a href={ templ.URL(named.URLFor("net-show", strconv.FormatInt(net.ID, 10))) }>{ net.Name }</a></li>
+					}
+				</ul>
+			</div>
+		</div>
 	}
 }
 
@@ -98,12 +105,15 @@ templ (n Net) Show() {
             }) {
 						@InputSubmit(InputAttrs{Value: "Start a Session"})
 					}
-					for _, session := range n.Net.Sessions {
-						<a href={ templ.URL(named.URLFor("net-session-show", strconv.FormatInt(n.Net.ID, 10), session.ID)) }>
-							{ session.ID }
-							{ session.CreatedAt.Format("2006-01-02 15:04:05") }
-						</a>
-					}
+					<ul>
+						for _, id := range n.Net.SessionIDs {
+							<li>
+								<a href={ templ.URL(named.URLFor("net-session-show", strconv.FormatInt(n.Net.ID, 10), id)) }>
+									{ n.Net.Sessions[id].CreatedAt.Format("2006-01-02 15:04:05") }
+								</a>
+							</li>
+						}
+					</ul>
 				}
 			</div>
 			<div></div>
@@ -120,7 +130,9 @@ templ (v Net) SingleNetSession(streamID string) {
 					@v.CheckinForm()
 					<div class="mast-head-divider"></div>
 				</div>
-				@v.TrafficTable(streamID)
+				<div hx-ext="sse" sse-connect={ named.URLFor("sse-source") + "?stream=" + streamID }>
+					@v.TrafficTable(streamID)
+				</div>
 				<h3>Timeline</h3>
 				<div class="timeline">
 					for _, event := range v.Stream {
@@ -148,6 +160,7 @@ templ (v Net) TrafficTable(streamID string) {
 		for _, checkin := range v.Session.Checkins {
 			@v.CheckinRow(checkin)
 		}
+		<tr id="replaceme" sse-swap="message" hx-swap="outerHTML settle:1s"></tr>
 	}
 }
 
@@ -210,8 +223,14 @@ templ (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormErro
 	}
 }
 
-templ (n Net) CheckinRow(checkin models.NetCheckin) {
-	<tr class={ strings.ToLower(checkin.Kind.String()) }>
+templ (n Net) CheckinRow(checkin models.NetCheckin, isNew ...bool) {
+	<tr
+		id={ checkin.ID }
+		class={ strings.ToLower(checkin.Kind.String()) }
+		hx-swap="outerHTML settle:1s"
+		hx-get={ named.URLFor("get-checkin", strconv.FormatInt(n.Net.ID, 10), n.Session.ID, checkin.ID) }
+		hx-trigger={ join(":", "sse", checkin.ID) }
+	>
 		<td class="checkin-actions">
 			<ul class="actions">
 				<li>
@@ -233,6 +252,20 @@ templ (n Net) CheckinRow(checkin models.NetCheckin) {
 					} else {
 						<span title="Station cannot be verified as licensed">
 							@IconSolid("user-slash")
+						</span>
+					}
+				</li>
+				<li>
+					if checkin.Acked {
+						<span title="Acknowledged">
+							@IconSolid("check")
+						</span>
+					} else {
+						<span
+							title="Not Acknowledged"
+							hx-post={ named.URLFor("checkin-ack", n.Session.ID, checkin.ID) }
+						>
+							@IconRegular("hand")
 						</span>
 					}
 				</li>
@@ -275,6 +308,9 @@ templ (n Net) CheckinRow(checkin models.NetCheckin) {
 			{ checkin.At.Format("15:04:05") }
 		</td>
 	</tr>
+	if len(isNew) > 0 {
+		<tr sse-swap="message" hx-swap="outerHTML settle:1s"></tr>
+	}
 }
 
 templ (n Net) TimelineItem(event models.Event) {
@@ -284,10 +320,18 @@ templ (n Net) TimelineItem(event models.Event) {
 		</div>
 		<div class="timeline-body">
 			<div class="event">
-				<a href="#" class="subject">W4BUG</a>
+				switch event.Name {
+					case "events.NetCheckinHeard":
+						Heard a new checkin
+					case "events.NetCheckinAcked":
+						Acknowledged a checkin
+					case "events.NetCheckinVerified":
+						A station was verified
+				}
+				<!-- <a href="#" class="subject">W4BUG</a>
 				checked in by
 				<a href="#" class="author">W4BUG</a>
-				{ event.Name }
+				{ event.Name } -->
 			</div>
 			<div class="timestamp">
 				<code>{ event.At.Format("15:04:15") }</code>

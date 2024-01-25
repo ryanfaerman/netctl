@@ -9,6 +9,7 @@ import (
 	sse "github.com/r3labs/sse/v2"
 
 	"github.com/ryanfaerman/netctl/hook"
+	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/web"
 )
 
@@ -47,6 +48,9 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 		global.db = db
 
 		global.events = sse.New()
+		global.events.AutoReplay = false
+		global.events.AutoStream = true
+		services.Event.Server = global.events
 
 		web.HookServerRoutes.Register(func(e hook.Event[web.Router]) {
 			for _, h := range global.handlers {

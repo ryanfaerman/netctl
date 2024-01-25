@@ -11,6 +11,10 @@ func init() {
 	gob.Register(NetAckCheckin{})
 }
 
+type Event interface {
+	Event() string
+}
+
 type NetStarted struct{}
 
 type NetScheduled struct{}

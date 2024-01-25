@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	scs "github.com/alexedwards/scs/v2"
+	"github.com/r3labs/sse/v2"
 
 	"github.com/alexedwards/scs/sqlite3store"
 
@@ -23,6 +24,7 @@ var global = struct {
 	dao     *dao.Queries
 	log     *log.Logger
 	brc     branca.Branca
+	events  *sse.Server
 }{
 	session: scs.New(),
 	log:     log.With("pkg", "services"),
@@ -43,6 +45,10 @@ const (
 )
 
 var setupOnce sync.Once
+
+func SetupSSE(s *sse.Server) {
+	global.events = s
+}
 
 func Setup(logger *log.Logger, db *sql.DB) error {
 	var err error
@@ -65,7 +71,6 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 
 		global.session.Cookie.Name = config.Get("session.name", "_session")
 		global.session.Cookie.Path = config.Get("session.path", "/")
-
 	})
 
 	return err
