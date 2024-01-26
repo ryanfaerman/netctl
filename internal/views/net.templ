@@ -108,7 +108,7 @@ templ (n Net) Show() {
 					<ul>
 						for _, id := range n.Net.SessionIDs {
 							<li>
-								<a href={ templ.URL(named.URLFor("net-session-show", strconv.FormatInt(n.Net.ID, 10), id)) }>
+								<a href={ templ.URL(named.URLFor("net-session-show", id)) }>
 									{ n.Net.Sessions[id].CreatedAt.Format("2006-01-02 15:04:05") }
 								</a>
 							</li>

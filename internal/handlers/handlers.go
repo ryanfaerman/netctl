@@ -65,11 +65,3 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 
 	return err
 }
-
-// func (f *Frontend) Render(c templ.Component) func(w http.ResponseWriter, r *http.Request) {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		web.LogWith(r.Context(), "nosurf_token", nosurf.Token(r))
-// 		ctx := context.WithValue(r.Context(), ctxToken, nosurf.Token(r))
-// 		c.Render(ctx, w)
-// 	}
-// }

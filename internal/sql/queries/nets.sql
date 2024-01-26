@@ -32,3 +32,9 @@ SELECT * FROM nets WHERE id = ?1;
 
 -- name: GetNets :many
 SELECT * FROM nets;
+
+-- name: GetNetForSession :one
+SELECT nets.*, net_sessions.created AS session_created
+FROM nets 
+JOIN net_sessions ON net_sessions.net_id = nets.id
+WHERE net_sessions.stream_id = ?1;

@@ -7,6 +7,8 @@ package dao
 
 import (
 	"context"
+	"database/sql"
+	"time"
 )
 
 const createNetAndReturnId = `-- name: CreateNetAndReturnId :one
@@ -63,6 +65,36 @@ func (q *Queries) GetNet(ctx context.Context, id int64) (Net, error) {
 		&i.Created,
 		&i.Updated,
 		&i.Deleted,
+	)
+	return i, err
+}
+
+const getNetForSession = `-- name: GetNetForSession :one
+SELECT nets.id, nets.name, nets.created, nets.updated, nets.deleted, net_sessions.created AS session_created
+FROM nets 
+JOIN net_sessions ON net_sessions.net_id = nets.id
+WHERE net_sessions.stream_id = ?1
+`
+
+type GetNetForSessionRow struct {
+	ID             int64
+	Name           string
+	Created        time.Time
+	Updated        time.Time
+	Deleted        sql.NullTime
+	SessionCreated time.Time
+}
+
+func (q *Queries) GetNetForSession(ctx context.Context, streamID string) (GetNetForSessionRow, error) {
+	row := q.db.QueryRowContext(ctx, getNetForSession, streamID)
+	var i GetNetForSessionRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Created,
+		&i.Updated,
+		&i.Deleted,
+		&i.SessionCreated,
 	)
 	return i, err
 }

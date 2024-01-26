@@ -33,8 +33,8 @@ func (h Net) Routes(r chi.Router) {
 	r.Post(named.Route("net-create", "/nets/create"), h.Create)
 	r.Get(named.Route("net-show", "/net/{id}"), h.Show)
 
+	r.Get(named.Route("net-session-show", "/net/session/{session_id}"), h.SessionShow)
 	r.Post(named.Route("net-session-new", "/net/{id}/new"), h.CreateSession)
-	r.Get(named.Route("net-session-show", "/net/{id}/{session_id}"), h.SessionShow)
 
 	// r.Get(named.Route("net-checkin", "/nets/{id}/checkin"), h.Checkin)
 	r.Post(named.Route("net-session-checkin", "/net/{id}/{session_id}/checkin"), h.Checkin)
@@ -61,6 +61,7 @@ func (h Net) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Net) Show(w http.ResponseWriter, r *http.Request) {
+	spew.Dump(r.URL)
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -118,47 +119,34 @@ func (h Net) Create(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, named.URLFor("net-show", strconv.FormatInt(net.ID, 10)), http.StatusFound)
 }
 
+// CreateSession creates a new session for a net and
+// redirects to the session page
 func (h Net) CreateSession(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		panic(err)
 	}
-	net, err := services.Net.Get(ctx, id)
+
+	session, err := services.Net.CreateSession(ctx, id)
 	if err != nil {
-		global.log.Error("unable to get net", "error", err)
+		global.log.Error("unable to create session", "error", err)
 		panic("at the disco")
-		return
 	}
-	session, err := net.AddSession(ctx)
-	if err != nil {
-		global.log.Error("unable to add session", "error", err)
-		panic("at the disco")
-		return
-	}
-	http.Redirect(w, r, named.URLFor("net-session-show", strconv.FormatInt(id, 10), session.ID), http.StatusFound)
+
+	http.Redirect(w, r, named.URLFor("net-session-show", session.ID), http.StatusFound)
 }
 
 func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	net, err := services.Net.Get(ctx, id)
+	sessionID := chi.URLParam(r, "session_id")
+
+	net, err := services.Net.GetNetFromSession(ctx, sessionID)
 	if err != nil {
 		global.log.Error("unable to get net", "error", err)
 		panic("at the disco")
-		return
 	}
-	sessionID := chi.URLParam(r, "session_id")
-	session, ok := net.Sessions[sessionID]
-	if !ok {
-		global.log.Error("unable to get session", "error", err)
-		panic("at the disco")
-		return
-	}
-	net.Replay(ctx, sessionID)
+
 	eventStream, err := net.Events(ctx, sessionID)
 	if err != nil {
 		global.log.Error("unable to get event stream", "error", err)
@@ -166,12 +154,8 @@ func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 	}
 	v := views.Net{
 		Net:     net,
-		Session: session,
+		Session: net.Sessions[sessionID],
 		Stream:  eventStream,
-	}
-
-	if !global.events.StreamExists(sessionID) {
-		global.events.CreateStream(sessionID)
 	}
 
 	v.SingleNetSession(sessionID).Render(ctx, w)

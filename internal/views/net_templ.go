@@ -392,7 +392,7 @@ func (n Net) Show() templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var22 templ.SafeURL = templ.URL(named.URLFor("net-session-show", strconv.FormatInt(n.Net.ID, 10), id))
+					var templ_7745c5c3_Var22 templ.SafeURL = templ.URL(named.URLFor("net-session-show", id))
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var22)))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
