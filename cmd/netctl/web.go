@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ryanfaerman/netctl/frontend"
 	"github.com/ryanfaerman/netctl/health"
 	"github.com/ryanfaerman/netctl/hook"
 
@@ -27,16 +26,12 @@ var (
 		Short: "Run the web server",
 		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
-
 			health.Hook.Register(func(e hook.Event[*health.Check]) {
 				e.Payload.Add("check.awesome", errors.New("everything is awesome"))
-
 			})
 			health.Hook.Register(func(e hook.Event[*health.Check]) {
 				e.Payload.Add("check.hotdog", errors.New("not hotdog"))
 			})
-
-			frontend.Register()
 
 			s, err := web.NewServer(web.WithLogger(logger))
 			if err != nil {
@@ -117,5 +112,4 @@ var (
 
 func init() {
 	cmdWeb.PersistentFlags().StringVarP(&webAddr, "addr", "a", webAddr, "address to service")
-
 }

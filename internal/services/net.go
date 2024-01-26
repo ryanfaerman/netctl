@@ -7,6 +7,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/r3labs/sse/v2"
 	"github.com/ryanfaerman/netctl/hamdb"
+	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/events"
 	"github.com/ryanfaerman/netctl/internal/models"
 )
@@ -21,6 +22,30 @@ func (net) All(ctx context.Context) ([]*models.Net, error) {
 
 func (net) Get(ctx context.Context, id int64) (*models.Net, error) {
 	return models.FindNetById(ctx, id)
+}
+
+// CreateSession creates a new session and associates it with the net.
+func (net) CreateSession(ctx context.Context, netID int64) (*models.NetSession, error) {
+	session_id := ulid.Make().String()
+
+	_, err := global.dao.CreateNetSessionAndReturnId(ctx, dao.CreateNetSessionAndReturnIdParams{
+		NetID:    netID,
+		StreamID: session_id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &models.NetSession{
+		ID: session_id,
+	}, nil
+}
+
+func (net) GetNetFromSession(ctx context.Context, sessionID string) (*models.Net, error) {
+	n, err := models.FindNetBySessionID(ctx, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	return n, n.Replay(ctx, sessionID)
 }
 
 func (net) Create(ctx context.Context, name string) (*models.Net, error) {

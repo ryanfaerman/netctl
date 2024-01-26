@@ -74,23 +74,43 @@ func FindNetById(ctx context.Context, id int64) (*Net, error) {
 	return m, nil
 }
 
-func (m *Net) AddSession(ctx context.Context) (*NetSession, error) {
-	streamID := ulid.Make().String()
-	session := &NetSession{
-		ID: streamID,
-	}
-
-	_, err := global.dao.CreateNetSessionAndReturnId(ctx, dao.CreateNetSessionAndReturnIdParams{
-		NetID:    m.ID,
-		StreamID: streamID,
-	})
+func FindNetBySessionID(ctx context.Context, sessionID string) (*Net, error) {
+	raw, err := global.dao.GetNetForSession(ctx, sessionID)
 	if err != nil {
+		global.log.Error("cannot execute query", "query", "GetNetBySessionID", "id", sessionID, "err", err)
 		return nil, err
 	}
 
-	m.Sessions[streamID] = session
-	return session, nil
+	m := &Net{
+		ID:       raw.ID,
+		Name:     raw.Name,
+		Sessions: make(map[string]*NetSession),
+	}
+
+	m.Sessions[sessionID] = &NetSession{
+		ID:        sessionID,
+		CreatedAt: raw.SessionCreated,
+	}
+	return m, nil
 }
+
+// func (m *Net) AddSession(ctx context.Context) (*NetSession, error) {
+// 	streamID := ulid.Make().String()
+// 	session := &NetSession{
+// 		ID: streamID,
+// 	}
+//
+// 	_, err := global.dao.CreateNetSessionAndReturnId(ctx, dao.CreateNetSessionAndReturnIdParams{
+// 		NetID:    m.ID,
+// 		StreamID: streamID,
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	m.Sessions[streamID] = session
+// 	return session, nil
+// }
 
 func (n *Net) Events(ctx context.Context, onlyStreams ...string) (EventStream, error) {
 	if len(onlyStreams) == 0 {
