@@ -73,12 +73,20 @@ type Event struct {
 	EventData []byte
 }
 
+type EventsRecovery struct {
+	ID           int64
+	EventsID     int64
+	RegisteredFn string
+	Created      time.Time
+}
+
 type Net struct {
-	ID      int64
-	Name    string
-	Created time.Time
-	Updated time.Time
-	Deleted sql.NullTime
+	ID       int64
+	Name     string
+	Created  time.Time
+	Updated  time.Time
+	Deleted  sql.NullTime
+	StreamID string
 }
 
 type NetSession struct {

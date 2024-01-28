@@ -65,11 +65,11 @@ func (h Session) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := services.Session.SendEmailVerification(r.Context(), input.Email); err != nil {
-		views.Errors{}.GeneralError(err).Render(r.Context(), w)
+		v := views.Errors{Error: err}
+		v.General().Render(r.Context(), w)
 	} else {
 		h.view.Created().Render(r.Context(), w)
 	}
-
 }
 
 func (h Session) Verify(w http.ResponseWriter, r *http.Request) {

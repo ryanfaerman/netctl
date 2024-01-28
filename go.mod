@@ -27,6 +27,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.14.0
 	github.com/r3labs/sse/v2 v2.10.0
+	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/ryanfaerman/version v0.0.1
 	github.com/spf13/cobra v1.7.0
 	github.com/sqlc-dev/sqlc v1.20.0
@@ -44,11 +45,13 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/bytecodealliance/wasmtime-go/v8 v8.0.0 // indirect
+	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/charmbracelet/lipgloss v0.7.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/cubicdaiya/gonp v1.0.4 // indirect
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
@@ -68,6 +71,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
+	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
 	github.com/pganalyze/pg_query_go/v4 v4.2.1 // indirect
 	github.com/pingcap/errors v0.11.5-0.20210425183316-da1aaba5fb63 // indirect
 	github.com/pingcap/log v0.0.0-20210906054005-afc726e70354 // indirect

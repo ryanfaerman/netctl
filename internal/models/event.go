@@ -16,15 +16,6 @@ type Event struct {
 	Event     any
 }
 
-type NonEvent struct {
-	ID        int64
-	At        time.Time
-	StreamID  string
-	AccountID int64
-	Name      string
-	Data      []byte
-}
-
 func FindEventsForStreams(ctx context.Context, streamIDs ...string) (EventStream, error) {
 	raws, err := global.dao.GetEventsForStreams(ctx, streamIDs)
 	if err != nil {
@@ -52,6 +43,44 @@ func FindEventsForStreams(ctx context.Context, streamIDs ...string) (EventStream
 		}
 	}
 
+	return stream, nil
+}
+
+type RecoveredEvent struct {
+	Event        Event
+	RegisteredFn string
+	ID           int64
+}
+
+func FindRecoverableEvents(ctx context.Context) ([]RecoveredEvent, error) {
+	raws, err := global.dao.GetRecoverableEvents(ctx)
+	if err != nil {
+		global.log.Error("unable to get recoverable events", "error", err)
+		return nil, err
+	}
+	stream := make([]RecoveredEvent, len(raws))
+
+	for i, raw := range raws {
+		decoder := gob.NewDecoder(bytes.NewReader(raw.EventData))
+		var p any
+		if err := decoder.Decode(&p); err != nil {
+			global.log.Error("unable to decode event", "error", err)
+			return stream, err
+		}
+
+		stream[i] = RecoveredEvent{
+			ID:           raw.RecoveryID,
+			RegisteredFn: raw.RegisteredFn,
+			Event: Event{
+				ID:        raw.ID,
+				At:        raw.Created,
+				StreamID:  raw.StreamID,
+				AccountID: raw.AccountID,
+				Name:      raw.EventType,
+				Event:     p,
+			},
+		}
+	}
 	return stream, nil
 }
 

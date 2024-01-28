@@ -1,112 +1,84 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/ryanfaerman/netctl/internal/events"
-	"github.com/ryanfaerman/netctl/internal/models"
-	"github.com/ryanfaerman/netctl/internal/services"
+	circuit "github.com/rubyist/circuitbreaker"
 )
 
-// type Event[K any] struct {
-// 	At        time.Time
-// 	SessionID int64
-// 	Source    string
-// 	Event     K
-// }
-//
-// type Checkin struct {
-// 	Callsign string
-// 	Name     string
-// }
-//
-// func (e Checkin) Apply(event Event[NetEvent], net *models.Net) {
-// 	c := models.NetCheckin{
-// 		Callsign: e.Callsign,
-// 		At:       event.At,
-// 		Kind:     models.NetCheckinKindRoutine,
-// 	}
-// 	net.Sessions[event.SessionID].Checkins = append(net.Sessions[event.SessionID].Checkins, c)
-// }
-//
-// type AckCheckin struct {
-// 	Callsign string
-// }
-//
-// func (e AckCheckin) Apply(event Event[NetEvent], net *models.Net) {
-// 	session := net.Sessions[event.SessionID]
-// 	for i, checkin := range session.Checkins {
-// 		if checkin.Callsign == e.Callsign {
-// 			session.Checkins[i].Acked = true
-// 		}
-// 	}
-// }
-//
-// type NetStarted struct{}
-//
-// func (e NetStarted) Apply(event Event[NetEvent], net *models.Net) {
-// 	session := models.NetSession{
-// 		ID:     event.SessionID,
-// 		Status: models.NetStatusOpened,
-// 	}
-// 	net.Sessions[event.SessionID] = &session
-// }
-//
-// type NetClosed struct{}
-// type NetReopened struct{}
-// type NetScheduled struct{}
-//
-// func (e NetScheduled) Apply(event Event[NetEvent], net *models.Net) {
-// 	session := models.NetSession{
-// 		ID:     event.SessionID,
-// 		Status: models.NetStatusScheduled,
-// 	}
-// 	net.Sessions[event.SessionID] = &session
-// }
-//
-// type NetEvent interface {
-// 	Apply(Event[NetEvent], *models.Net)
-// }
-
-func main() {
-	// history := []any{
-	// 	NetStarted{},
-	//
-	// 	AcknowledgedCheckin{checkin{callsign: "W0TLM", name: "Ryan"}},
-	// 	AcknowledgedCheckin{checkin{callsign: "W4BUG", name: "James"}},
-	// 	NetClosed{},
-	// 	NetReopened{},
-	// 	NetCheckin{checkin{callsign: "ABC123", name: "Earl"}},
-	// 	AcknowledgedCheckin{checkin{callsign: "ABC123", name: "Earl"}},
-	// 	NetClosed{},
-	// }
-
-	history := models.EventStream[events.Net]{
-		{At: time.Now(), StreamID: "abc", Originator: 1, Event: events.NetStarted{}},
-		{At: time.Now().Add(1 * time.Minute), StreamID: "abc", Originator: 1, Event: events.NetCheckin{Callsign: "KQ4JXI", Name: "Ryan"}},
-		{At: time.Now().Add(1 * time.Minute), StreamID: "abc", Originator: 1, Event: events.NetCheckin{Callsign: "W4BUG", Name: "James"}},
-		{At: time.Now(), StreamID: "xyz", Originator: 1, Event: events.NetStarted{}},
-		{At: time.Now().Add(2 * time.Minute), StreamID: "abc", Originator: 1, Event: events.NetAckCheckin{Callsign: "KQ4JXI"}},
-	}
-	spew.Dump(history)
-
-	n := NewFromHistory(history)
-	fmt.Println(n)
-
+// Breaker is a circuit breaker, false is closed, true is open
+type Breaker struct {
+	Name    string
+	Open    bool
+	LastErr error
 }
 
-func NewFromHistory(events []models.Event[events.Net]) *models.Net {
-	net := &models.Net{
-		ID:       314,
-		Name:     "Test Net",
-		Sessions: make(map[string]*models.NetSession, 0),
+type Panel struct {
+	Breakers map[string]*Breaker
+	m        sync.RWMutex
+}
+
+func (p *Panel) Register(name string) {
+	p.m.Lock()
+	p.Breakers[name] = &Breaker{Name: name}
+	p.m.Unlock()
+}
+
+func (p *Panel) Use(name string, fn func() error) error {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	b, ok := p.Breakers[name]
+	if !ok {
+		return errors.New("breaker not found")
 	}
-	for _, event := range events {
-		services.Net.SaveEvent(event.StreamID, event.Event)
-		event.Event.Apply(event, net)
+	if b.Open {
+		return b.LastErr
 	}
 
-	return net
+	err := fn()
+	if err != nil {
+		b.Open = true
+		b.LastErr = err
+	} else {
+		b.Open = false
+		b.LastErr = nil
+	}
+
+	return err
+}
+
+func main() {
+	panel := circuit.NewPanel()
+	panel.Add("foo", circuit.NewThresholdBreaker(10))
+	go func() {
+		for e := range panel.Subscribe() {
+			switch e.Event {
+			case circuit.BreakerTripped:
+				fmt.Println("breaker tripped", e.Name)
+			case circuit.BreakerReset:
+				fmt.Println("breaker reset", e.Name)
+			case circuit.BreakerFail:
+				fmt.Println("breaker fail", e.Name)
+			case circuit.BreakerReady:
+				fmt.Println("breaker ready", e.Name)
+			}
+		}
+	}()
+
+	for i := 0; i < 100; i++ {
+		cb, _ := panel.Get("foo")
+		cb.Call(func() error {
+			fmt.Println("running")
+			if i%2 == 0 {
+				return errors.New("oh no")
+			}
+			return nil
+		}, 0)
+	}
+
+	time.Sleep(5 * time.Second)
 }

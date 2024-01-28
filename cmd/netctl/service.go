@@ -46,6 +46,8 @@ var cmdService = &cobra.Command{
 			return err
 		}
 
+		services.Event.StartRecoveryService(5 * time.Second)
+
 		if err := handlers.Setup(logger, db); err != nil {
 			return err
 		}
@@ -91,6 +93,8 @@ var cmdService = &cobra.Command{
 						logger.Error("unable to stop!", "err", err)
 						return
 					}
+
+					services.Event.StopRecoveryService()
 
 					close(gracefulCh)
 				}()

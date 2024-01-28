@@ -18,10 +18,12 @@ WHERE net_sessions.net_id = ?1;
 -- name: CreateNetAndReturnId :one
 INSERT INTO nets (
   name,
+  stream_id,
   created,
   updated
 ) VALUES (
   ?1,
+  ?2,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 )
@@ -29,6 +31,9 @@ RETURNING id;
 
 -- name: GetNet :one
 SELECT * FROM nets WHERE id = ?1;
+
+-- name: GetNetByStreamID :one
+SELECT * FROM nets WHERE stream_id = ?1;
 
 -- name: GetNets :many
 SELECT * FROM nets;

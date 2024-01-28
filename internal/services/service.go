@@ -54,6 +54,7 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 	var err error
 
 	setupOnce.Do(func() {
+		global.log = logger
 		global.log = log.With("pkg", "services")
 		global.log.Debug("running setup tasks")
 

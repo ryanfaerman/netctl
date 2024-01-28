@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strings"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/r3labs/sse/v2"
@@ -24,12 +26,21 @@ func (net) Get(ctx context.Context, id int64) (*models.Net, error) {
 	return models.FindNetById(ctx, id)
 }
 
+func (net) GetByStreamID(ctx context.Context, streamID string) (*models.Net, error) {
+	return models.FindNetByStreamID(ctx, streamID)
+}
+
 // CreateSession creates a new session and associates it with the net.
-func (net) CreateSession(ctx context.Context, netID int64) (*models.NetSession, error) {
+func (net) CreateSession(ctx context.Context, netStreamID string) (*models.NetSession, error) {
 	session_id := ulid.Make().String()
 
-	_, err := global.dao.CreateNetSessionAndReturnId(ctx, dao.CreateNetSessionAndReturnIdParams{
-		NetID:    netID,
+	net, err := models.FindNetByStreamID(ctx, netStreamID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = global.dao.CreateNetSessionAndReturnId(ctx, dao.CreateNetSessionAndReturnIdParams{
+		NetID:    net.ID,
 		StreamID: session_id,
 	})
 	if err != nil {
@@ -48,69 +59,148 @@ func (net) GetNetFromSession(ctx context.Context, sessionID string) (*models.Net
 	return n, n.Replay(ctx, sessionID)
 }
 
-func (net) Create(ctx context.Context, name string) (*models.Net, error) {
-	id, err := global.dao.CreateNetAndReturnId(ctx, name)
-	if err != nil {
-		return nil, err
+// func (net) Create(ctx context.Context, name string) (*models.Net, error) {
+// 	id, err := global.dao.CreateNetAndReturnId(ctx, name)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return models.FindNetById(ctx, id)
+// }
+
+func (net) Create(ctx context.Context, m *models.Net) (*models.Net, error) {
+	if err := Validation.Apply(m); err != nil {
+		return m, err
 	}
-	return models.FindNetById(ctx, id)
+	m.StreamID = ulid.Make().String()
+
+	id, err := global.dao.CreateNetAndReturnId(ctx, dao.CreateNetAndReturnIdParams{
+		Name:     m.Name,
+		StreamID: m.StreamID,
+	})
+	if err != nil {
+		return m, err
+	}
+	m.ID = id
+
+	return m, err
 }
 
-func (n net) Checkin(ctx context.Context, stream string, checkin *models.NetCheckin) (string, error) {
-	id := ulid.Make()
-	defer func() {
-		go func() {
-			defer func() {
-				global.log.Info("sending validation event", "id", id.String())
-				Event.Server.Publish(stream, &sse.Event{
-					Event: []byte(id.String()),
-					Data:  []byte("validation"),
-				})
-			}()
-			ctx := context.Background()
-			errorType := events.ErrorTypeNone
+func init() {
+	Breaker.AddWithConsecutive("hamdb", 5)
+	Event.Register(events.NetCheckinHeard{}, Net.ValidateCheckinHeard)
+}
 
-			license, err := hamdb.Lookup(ctx, checkin.Callsign.AsHeard)
-			if err != nil {
-				if err == hamdb.ErrNotFound {
-					errorType = events.ErrorTypeNotFound
-				} else {
-					errorType = events.ErrorTypeLookupFailed
-					global.log.Error("hamdb lookup failed", "error", err)
+func (n net) ValidateCheckinHeard(ctx context.Context, event models.Event) error {
+	if e, ok := event.Event.(events.NetCheckinHeard); ok {
+		m := &models.NetCheckin{
+			ID: e.ID,
+		}
+		m.Callsign.AsHeard = e.Callsign
 
-				}
-				Event.Create(ctx, stream, events.NetCheckinVerified{
-					ID:        id.String(),
-					ErrorType: errorType.Error(),
-				})
-				return
-			}
+		global.log.Debug("validating checkin heard", "callsign", m.Callsign.AsHeard)
+		return Breaker.Call("hamdb", func() error {
+			return n.ValidateCheckin(ctx, event.StreamID, m)
+		})
 
-			if license.Class == hamdb.ClubClass {
-				errorType = events.ErrorTypeClubClass
-			}
+	}
+	global.log.Debug("invalid event", "event", event)
+	return errors.New("invalid event")
+}
 
-			Event.Create(ctx, stream, events.NetCheckinVerified{
-				ID: id.String(),
-
-				Callsign:  strings.ToUpper(license.Call),
-				Name:      license.FullName(),
-				Location:  strings.Join([]string{license.City, license.State}, ", "),
-				ErrorType: errorType.Error(),
+func (n net) ValidateCheckin(ctx context.Context, stream string, checkin *models.NetCheckin) error {
+	license, err := hamdb.Lookup(ctx, checkin.Callsign.AsHeard)
+	if err != nil {
+		if err == hamdb.ErrNotFound {
+			return Event.Create(ctx, stream, events.NetCheckinVerified{
+				ID:        checkin.ID,
+				ErrorType: events.ErrorTypeNotFound.Error(),
 			})
-		}()
-	}()
+		}
+		return err
+	}
 
-	global.log.Info("created heard event", "id", id.String())
-	return id.String(), Event.Create(ctx, stream, events.NetCheckinHeard{
-		ID: id.String(),
+	errorType := events.ErrorTypeNone
+	if license.Class == hamdb.ClubClass {
+		errorType = events.ErrorTypeClubClass
+	}
 
-		Callsign: strings.ToUpper(checkin.Callsign.AsHeard),
-		Name:     checkin.Name.AsHeard,
-		Location: checkin.Location.AsHeard,
-		Kind:     checkin.Kind.String(),
-		Traffic:  0,
+	if err := Event.Create(ctx, stream, events.NetCheckinVerified{
+		ID: checkin.ID,
+
+		Callsign:  strings.ToUpper(license.Call),
+		Name:      license.FullName(),
+		Location:  strings.Join([]string{license.City, license.State}, ", "),
+		ErrorType: errorType.Error(),
+	}); err != nil {
+		return err
+	}
+
+	net, err := n.GetNetFromSession(ctx, stream)
+	if err != nil {
+		return err
+	}
+
+	existing := net.Sessions[stream].FindCheckinByCallsign(checkin.Callsign.AsHeard)
+
+	if checkin.ID != existing.ID {
+		global.log.Info("sending validation SSE event", "id", existing.ID, "existing", true)
+		Event.Server.Publish(stream, &sse.Event{
+			Event: []byte(existing.ID),
+			Data:  []byte("validation"),
+		})
+
+		return nil
+	}
+
+	global.log.Info("sending validation SSE event", "id", existing.ID, "existing", false)
+	Event.Server.Publish(stream, &sse.Event{
+		Event: []byte(checkin.ID),
+		Data:  []byte("validation"),
 	})
+
+	return nil
+}
+
+var ErrCheckinExists = errors.New("checkin exists")
+
+func (n net) Checkin(ctx context.Context, stream string, m *models.NetCheckin) (*models.NetCheckin, error) {
+	if err := Validation.Apply(m); err != nil {
+		return m, err
+	}
+
+	m.ID = ulid.Make().String()
+
+	if err := Event.Create(ctx, stream, events.NetCheckinHeard{
+		ID: m.ID,
+
+		Callsign: strings.ToUpper(m.Callsign.AsHeard),
+		Name:     m.Name.AsHeard,
+		Location: m.Location.AsHeard,
+		Kind:     m.Kind.String(),
+		Traffic:  m.Traffic,
+	}); err != nil {
+		return m, err
+	}
+	m.At = time.Now()
+
+	net, err := n.GetNetFromSession(ctx, stream)
+	if err != nil {
+		return m, err
+	}
+
+	existing := net.Sessions[stream].FindCheckinByCallsign(m.Callsign.AsHeard)
+
+	if m.ID != existing.ID {
+		global.log.Info("sending validation SSE event", "id", existing.ID, "existing", true)
+		Event.Server.Publish(stream, &sse.Event{
+			Event: []byte(existing.ID),
+			Data:  []byte("nack"),
+		})
+		return m, ErrCheckinExists
+
+	}
+
+	return m, nil
 }
 
 func (s net) GetReplayed(ctx context.Context, id int64) (*models.Net, error) {

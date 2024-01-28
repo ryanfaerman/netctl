@@ -2,7 +2,6 @@ package views
 
 import "github.com/ryanfaerman/netctl/internal/models"
 import "github.com/ryanfaerman/netctl/web/named"
-import "strconv"
 import "strings"
 
 type Net struct {
@@ -22,7 +21,7 @@ templ (n Net) List() {
 				<a href={ templ.URL(named.URLFor("net-new")) } class="button">Start a new net</a>
 				<ul>
 					for _, net := range n.Nets {
-						<li><a href={ templ.URL(named.URLFor("net-show", strconv.FormatInt(net.ID, 10))) }>{ net.Name }</a></li>
+						<li><a href={ templ.URL(named.URLFor("net-show", net.StreamID)) }>{ net.Name }</a></li>
 					}
 				</ul>
 			</div>
@@ -81,7 +80,7 @@ templ (n Net) Show() {
 				if len(n.Net.Sessions) == 0 {
 					No Session Yet
 					@Form("new-session", FormAttrs{
-              Action: named.URLFor("net-session-new", strconv.FormatInt(n.Net.ID, 10)),
+              Action: named.URLFor("net-session-new", n.Net.StreamID),
               HX: templ.Attributes{
                 "hx-target": "body",
               },
@@ -90,7 +89,7 @@ templ (n Net) Show() {
 					}
 					<button
 						class="button"
-						hx-post={ named.URLFor("net-session-new", strconv.FormatInt(n.Net.ID, 10)) }
+						hx-post={ named.URLFor("net-session-new", n.Net.StreamID) }
 						hx-target="body"
 					>
 						Start a Session
@@ -98,7 +97,7 @@ templ (n Net) Show() {
 				} else {
 					Sessions
 					@Form("new-session", FormAttrs{
-              Action: named.URLFor("net-session-new", strconv.FormatInt(n.Net.ID, 10)),
+              Action: named.URLFor("net-session-new", n.Net.StreamID),
               HX: templ.Attributes{
                 "hx-target": "body",
               },
@@ -183,7 +182,7 @@ templ (v Net) CheckinForm() {
 templ (v Net) CheckinFormWithErrors(input CheckinFormInput, errs CheckinFormErrors) {
 	@Form("check-in-form", FormAttrs{
 
-    Action: named.URLFor("net-session-checkin", strconv.FormatInt(v.Net.ID, 10), v.Session.ID),
+    Action: named.URLFor("net-session-checkin", v.Net.StreamID, v.Session.ID),
     HX: templ.Attributes{
       "hx-swap": "innerHTML",
     },
@@ -228,8 +227,12 @@ templ (n Net) CheckinRow(checkin models.NetCheckin, isNew ...bool) {
 		id={ checkin.ID }
 		class={ strings.ToLower(checkin.Kind.String()) }
 		hx-swap="outerHTML settle:1s"
-		hx-get={ named.URLFor("get-checkin", strconv.FormatInt(n.Net.ID, 10), n.Session.ID, checkin.ID) }
-		hx-trigger={ join(":", "sse", checkin.ID) }
+		hx-get={ named.URLFor("get-checkin", n.Net.StreamID, n.Session.ID, checkin.ID) }
+		if !checkin.Verified {
+			hx-trigger={ join(", ", "load delay:1s", join(":", "sse", checkin.ID)) }
+		} else {
+			hx-trigger={ join(":", "sse", checkin.ID) }
+		}
 	>
 		<td class="checkin-actions">
 			<ul class="actions">

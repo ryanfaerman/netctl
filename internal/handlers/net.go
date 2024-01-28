@@ -2,16 +2,12 @@ package handlers
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi"
 	sse "github.com/r3labs/sse/v2"
 
-	validator "github.com/go-playground/validator/v10"
 	"github.com/ryanfaerman/netctl/internal/middleware"
 	"github.com/ryanfaerman/netctl/internal/models"
 	"github.com/ryanfaerman/netctl/internal/services"
@@ -28,32 +24,35 @@ func init() {
 
 func (h Net) Routes(r chi.Router) {
 	r.Use(services.Session.Middleware)
+
 	r.Get(named.Route("net-index", "/nets"), h.Index)
 	r.Get(named.Route("net-new", "/nets/new"), h.New)
-	r.Post(named.Route("net-create", "/nets/create"), h.Create)
-	r.Get(named.Route("net-show", "/net/{id}"), h.Show)
+	r.Get(named.Route("net-show", "/net/{net_id}"), h.Show)
 
 	r.Get(named.Route("net-session-show", "/net/session/{session_id}"), h.SessionShow)
-	r.Post(named.Route("net-session-new", "/net/{id}/new"), h.CreateSession)
+	r.Post(named.Route("net-session-new", "/net/{net_id}/new"), h.CreateSession)
 
-	// r.Get(named.Route("net-checkin", "/nets/{id}/checkin"), h.Checkin)
-	r.Post(named.Route("net-session-checkin", "/net/{id}/{session_id}/checkin"), h.Checkin)
-	r.Get(named.Route("get-checkin", "/net/{id}/{session_id}/{checkin_id}"), h.CheckinShow)
+	r.Get(named.Route("get-checkin", "/net/{net_id}/{session_id}/{checkin_id}"), h.CheckinShow)
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.HTMXOnly)
+
+		r.Post(named.Route("net-create", "/nets/create"), h.Create)
+		r.Post(named.Route("net-session-checkin", "/net/{net_id}/{session_id}/checkin"), h.Checkin)
+
 		web.CSRFExempt("/net/*/ack/*")
 		r.Post(named.Route("checkin-ack", "/net/{session_id}/ack/{checkin_id}"), h.AckCheckin)
 	})
-	// r.Post(named.Route("net-ack-checkin", "/nets/{id}/ack-checkin"), h.AckCheckin)
 }
 
 func (h Net) Index(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	nets, err := services.Net.All(ctx)
 	if err != nil {
-		global.log.Error("unable to get nets", "error", err)
+		ErrorHandler(err)(w, r)
+		return
 	}
+
 	v := views.Net{
 		Nets: nets,
 	}
@@ -61,24 +60,18 @@ func (h Net) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Net) Show(w http.ResponseWriter, r *http.Request) {
-	spew.Dump(r.URL)
 	ctx := services.CSRF.GetContext(r.Context(), r)
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	net_id := chi.URLParam(r, "net_id")
+	net, err := services.Net.GetByStreamID(ctx, net_id)
 	if err != nil {
-		panic(err)
-	}
-	net, err := services.Net.Get(ctx, id)
-	if err != nil {
-		global.log.Error("unable to get net", "error", err)
-		panic("at the disco")
+		ErrorHandler(err)(w, r)
 		return
 	}
+
 	v := views.Net{
 		Net: net,
 	}
 	v.Show().Render(ctx, w)
-	// // TODO: validate stream exists
-	// v.SingleNetSession(stream).Render(ctx, w)
 }
 
 func (h Net) New(w http.ResponseWriter, r *http.Request) {
@@ -92,46 +85,46 @@ func (h Net) Create(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	v := views.Net{}
 
+	ctx := services.CSRF.GetContext(r.Context(), r)
+
 	inputErrs := views.CreateNetFormErrors{}
 	input := views.CreateNetFormInput{
 		Name: r.Form.Get("name"),
 	}
-	if err := validate.Struct(input); err != nil {
-		errs := err.(validator.ValidationErrors)
-		for field, e := range errs.Translate(trans) {
-			switch field {
-			case "CreateNetFormInput.Name":
-				inputErrs.Name = e
+
+	m, err := services.Net.Create(r.Context(), models.NewNet(input.Name))
+	if err != nil {
+		if errs, ok := err.(services.ValidationError); ok {
+			for field, e := range errs {
+				switch field {
+				case "models.Net.Name":
+					inputErrs.Name = e
+				}
 			}
+		} else {
+			inputErrs.Name = "Unable to create the net. Please try again later."
+			global.log.Error("Net creation failed", "error", err)
 		}
 
-		ctx := services.CSRF.GetContext(r.Context(), r)
 		v.CreateFormWithErrors(input, inputErrs).Render(ctx, w)
 		return
 	}
 
-	net, err := services.Net.Create(r.Context(), input.Name)
-	if err != nil {
-		global.log.Error("unable to create net", "error", err)
-		panic("at the disco")
-	}
-	w.Header().Set("HX-Location", named.URLFor("net-show", strconv.FormatInt(net.ID, 10)))
-	http.Redirect(w, r, named.URLFor("net-show", strconv.FormatInt(net.ID, 10)), http.StatusFound)
+	v.Net = m
+	v.Show().Render(ctx, w)
 }
 
 // CreateSession creates a new session for a net and
 // redirects to the session page
 func (h Net) CreateSession(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil {
-		panic(err)
-	}
+	net_id := chi.URLParam(r, "net_id")
 
-	session, err := services.Net.CreateSession(ctx, id)
+	session, err := services.Net.CreateSession(ctx, net_id)
 	if err != nil {
-		global.log.Error("unable to create session", "error", err)
-		panic("at the disco")
+		ref := ErrorHandler(err)(w, r)
+		global.log.Error("unable to create session", "error", err, "ref", ref)
+		return
 	}
 
 	http.Redirect(w, r, named.URLFor("net-session-show", session.ID), http.StatusFound)
@@ -143,15 +136,17 @@ func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 
 	net, err := services.Net.GetNetFromSession(ctx, sessionID)
 	if err != nil {
-		global.log.Error("unable to get net", "error", err)
-		panic("at the disco")
+		ref := ErrorHandler(err)(w, r)
+		global.log.Error("unable to get net", "error", err, "ref", ref)
+		return
 	}
 
 	eventStream, err := net.Events(ctx, sessionID)
 	if err != nil {
-		global.log.Error("unable to get event stream", "error", err)
-		panic("at the disco")
+		ErrorHandler(err)(w, r)
+		return
 	}
+
 	v := views.Net{
 		Net:     net,
 		Session: net.Sessions[sessionID],
@@ -164,28 +159,24 @@ func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 func (h Net) Checkin(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	net_id := chi.URLParam(r, "net_id")
+	net, err := services.Net.GetByStreamID(r.Context(), net_id)
 	if err != nil {
-		panic(err)
-	}
-	net, err := services.Net.Get(r.Context(), id)
-	if err != nil {
-		global.log.Error("unable to get net", "error", err)
-		panic("at the disco")
+		ErrorHandler(err)(w, r)
 		return
 	}
 
 	sessionID := chi.URLParam(r, "session_id")
 	session, ok := net.Sessions[sessionID]
 	if !ok {
-		global.log.Error("unable to get session", "error", err)
-		panic("at the disco")
+		ErrorHandler(err)(w, r)
 		return
 	}
 	v := views.Net{
 		Net:     net,
 		Session: session,
 	}
+	ctx := services.CSRF.GetContext(r.Context(), r)
 
 	inputErrs := views.CheckinFormErrors{}
 	input := views.CheckinFormInput{
@@ -193,95 +184,71 @@ func (h Net) Checkin(w http.ResponseWriter, r *http.Request) {
 		Name:     strings.TrimSpace(r.Form.Get("name")),
 		Traffic:  strings.TrimSpace(r.Form.Get("traffic")),
 	}
-	if err := validate.Struct(input); err != nil {
-		errs := err.(validator.ValidationErrors)
-		for field, e := range errs.Translate(trans) {
-			switch field {
-			case "CheckinFormInput.Name":
-				inputErrs.Name = e
-			case "CheckinFormInput.Callsign":
-				inputErrs.Callsign = e
-			case "CheckinFormInput.Traffic":
-				inputErrs.Traffic = e
-			}
-		}
 
-		ctx := services.CSRF.GetContext(r.Context(), r)
-		v.CheckinFormWithErrors(input, inputErrs).Render(ctx, w)
-		return
-	}
-
-	checkin := models.NetCheckin{
+	m, err := services.Net.Checkin(r.Context(), sessionID, &models.NetCheckin{
 		Callsign: models.Hearable{AsHeard: input.Callsign},
 		Name:     models.Hearable{AsHeard: input.Name},
 		Kind:     models.ParseNetCheckinKind(input.Traffic),
-	}
-
-	checkinID, err := services.Net.Checkin(r.Context(), sessionID, &checkin)
+	})
 	if err != nil {
-		global.log.Error("unable to checkin", "error", err)
-		panic("at the disco")
-		return
+		if errs, ok := err.(services.ValidationError); ok {
+			for field, e := range errs {
+				switch field {
+				case "NetCheckin.Callsign.AsHeard":
+					inputErrs.Callsign = e
+				case "NetCheckin.Name.AsHeard":
+					inputErrs.Name = e
+				case "NetCheckin.Kind":
+					inputErrs.Traffic = e
+				}
+			}
+			v.CheckinFormWithErrors(input, inputErrs).Render(ctx, w)
+			return
+		}
+
+		if err == services.ErrCheckinExists {
+			v.CheckinForm().Render(ctx, w)
+
+			services.Event.Server.Publish(sessionID, &sse.Event{
+				Event: []byte(m.ID),
+				Data:  []byte("found"),
+			})
+			return
+		} else {
+			global.log.Error("Checkin failed", "error", err)
+
+			inputErrs.Name = "Server Error: Unable to perform checkin"
+			v.CheckinFormWithErrors(input, inputErrs).Render(ctx, w)
+			return
+		}
 	}
-	checkin.ID = checkinID
 
-	net.Replay(r.Context(), sessionID)
-	v.Session = net.Sessions[sessionID]
-
-	ctx := services.CSRF.GetContext(r.Context(), r)
 	v.CheckinForm().Render(ctx, w)
-	// v.CheckinRow(checkin).Render(ctx, w)
-	// for _, checkin := range session.Checkins {
-	// 	if checkin.ID == checkinID {
-	// 		v.CheckinRow(checkin).Render(ctx, w)
-	// 		break
-	// 	}
-	// }
-
-	found := v.Session.FindCheckinByCallsign(checkin.Callsign.AsHeard)
-	fmt.Println("found")
-	spew.Dump(found)
-	fmt.Println("checkin")
-	spew.Dump(checkin)
 
 	var b bytes.Buffer
-
-	se := &sse.Event{}
-	if found.ID != checkin.ID {
-		se.Event = []byte(found.ID)
-		v.CheckinRow(*found).Render(ctx, &b)
-		se.Data = b.Bytes()
-		se.Data = []byte("found")
-	} else {
-		v.CheckinRow(*found, true).Render(ctx, &b)
-		se.Data = b.Bytes()
-
-	}
-
-	global.events.Publish(sessionID, se)
-
-	// http.Redirect(w, r, named.URLFor("net-session-show", strconv.FormatInt(id, 10), session.ID), http.StatusFound)
+	v.CheckinRow(*m, true).Render(ctx, &b)
+	w.Write(b.Bytes())
+	services.Event.Server.Publish(sessionID, &sse.Event{
+		Data: b.Bytes(),
+	})
 }
 
 func (h Net) CheckinShow(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	net_id := chi.URLParam(r, "net_id")
+	net, err := services.Net.GetByStreamID(ctx, net_id)
 	if err != nil {
-		panic(err)
-	}
-	net, err := services.Net.Get(ctx, id)
-	if err != nil {
-		global.log.Error("unable to get net", "error", err)
-		panic("at the disco")
+		ErrorHandler(err)(w, r)
 		return
 	}
+
 	sessionID := chi.URLParam(r, "session_id")
 	session, ok := net.Sessions[sessionID]
 	if !ok {
-		global.log.Error("unable to get session", "error", err)
-		panic("at the disco")
+		ErrorHandler(err)(w, r)
 		return
 	}
+
 	net.Replay(ctx, sessionID)
 	v := views.Net{
 		Net:     net,
@@ -302,8 +269,7 @@ func (h Net) AckCheckin(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "checkin_id")
 	err := services.Net.AckCheckin(ctx, stream, id)
 	if err != nil {
-		global.log.Error("unable to ack checkin", "error", err)
-		panic("at the disco")
+		ErrorHandler(err)(w, r)
 		return
 	}
 }

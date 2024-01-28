@@ -14,18 +14,25 @@ import (
 const createNetAndReturnId = `-- name: CreateNetAndReturnId :one
 INSERT INTO nets (
   name,
+  stream_id,
   created,
   updated
 ) VALUES (
   ?1,
+  ?2,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 )
 RETURNING id
 `
 
-func (q *Queries) CreateNetAndReturnId(ctx context.Context, name string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createNetAndReturnId, name)
+type CreateNetAndReturnIdParams struct {
+	Name     string
+	StreamID string
+}
+
+func (q *Queries) CreateNetAndReturnId(ctx context.Context, arg CreateNetAndReturnIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createNetAndReturnId, arg.Name, arg.StreamID)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
@@ -53,7 +60,7 @@ func (q *Queries) CreateNetSessionAndReturnId(ctx context.Context, arg CreateNet
 }
 
 const getNet = `-- name: GetNet :one
-SELECT id, name, created, updated, deleted FROM nets WHERE id = ?1
+SELECT id, name, created, updated, deleted, stream_id FROM nets WHERE id = ?1
 `
 
 func (q *Queries) GetNet(ctx context.Context, id int64) (Net, error) {
@@ -65,12 +72,31 @@ func (q *Queries) GetNet(ctx context.Context, id int64) (Net, error) {
 		&i.Created,
 		&i.Updated,
 		&i.Deleted,
+		&i.StreamID,
+	)
+	return i, err
+}
+
+const getNetByStreamID = `-- name: GetNetByStreamID :one
+SELECT id, name, created, updated, deleted, stream_id FROM nets WHERE stream_id = ?1
+`
+
+func (q *Queries) GetNetByStreamID(ctx context.Context, streamID string) (Net, error) {
+	row := q.db.QueryRowContext(ctx, getNetByStreamID, streamID)
+	var i Net
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Created,
+		&i.Updated,
+		&i.Deleted,
+		&i.StreamID,
 	)
 	return i, err
 }
 
 const getNetForSession = `-- name: GetNetForSession :one
-SELECT nets.id, nets.name, nets.created, nets.updated, nets.deleted, net_sessions.created AS session_created
+SELECT nets.id, nets.name, nets.created, nets.updated, nets.deleted, nets.stream_id, net_sessions.created AS session_created
 FROM nets 
 JOIN net_sessions ON net_sessions.net_id = nets.id
 WHERE net_sessions.stream_id = ?1
@@ -82,6 +108,7 @@ type GetNetForSessionRow struct {
 	Created        time.Time
 	Updated        time.Time
 	Deleted        sql.NullTime
+	StreamID       string
 	SessionCreated time.Time
 }
 
@@ -94,6 +121,7 @@ func (q *Queries) GetNetForSession(ctx context.Context, streamID string) (GetNet
 		&i.Created,
 		&i.Updated,
 		&i.Deleted,
+		&i.StreamID,
 		&i.SessionCreated,
 	)
 	return i, err
@@ -169,7 +197,7 @@ func (q *Queries) GetNetSessions(ctx context.Context, netID int64) ([]NetSession
 }
 
 const getNets = `-- name: GetNets :many
-SELECT id, name, created, updated, deleted FROM nets
+SELECT id, name, created, updated, deleted, stream_id FROM nets
 `
 
 func (q *Queries) GetNets(ctx context.Context) ([]Net, error) {
@@ -187,6 +215,7 @@ func (q *Queries) GetNets(ctx context.Context) ([]Net, error) {
 			&i.Created,
 			&i.Updated,
 			&i.Deleted,
+			&i.StreamID,
 		); err != nil {
 			return nil, err
 		}

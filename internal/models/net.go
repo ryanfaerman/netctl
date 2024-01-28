@@ -5,22 +5,22 @@ import (
 	"sort"
 	"strings"
 
-	ulid "github.com/oklog/ulid/v2"
-	"github.com/ryanfaerman/netctl/internal/dao"
+	"github.com/oklog/ulid/v2"
 	"github.com/ryanfaerman/netctl/internal/events"
 )
 
 type Net struct {
-	Name       string
+	Name       string `validate:"required"`
 	Sessions   map[string]*NetSession
 	SessionIDs []string
 	ID         int64
+	StreamID   string
 }
 
-func NewNet(id int64, name string) *Net {
+func NewNet(name string) *Net {
 	return &Net{
-		ID:       id,
 		Name:     name,
+		StreamID: ulid.Make().String(),
 		Sessions: make(map[string]*NetSession),
 	}
 }
@@ -37,6 +37,7 @@ func FindAllNets(ctx context.Context) ([]*Net, error) {
 		nets[i] = &Net{
 			ID:       raw.ID,
 			Name:     raw.Name,
+			StreamID: raw.StreamID,
 			Sessions: make(map[string]*NetSession),
 		}
 	}
@@ -53,11 +54,43 @@ func FindNetById(ctx context.Context, id int64) (*Net, error) {
 	m := &Net{
 		ID:       raw.ID,
 		Name:     raw.Name,
+		StreamID: raw.StreamID,
 		Sessions: make(map[string]*NetSession),
 	}
 	raws, err := global.dao.GetNetSessions(ctx, id)
 	if err != nil {
 		global.log.Error("cannot execute query", "query", "GetNetSessions", "id", id, "err", err)
+		return nil, err
+
+	}
+	for _, raw := range raws {
+		m.Sessions[raw.StreamID] = &NetSession{
+			ID:        raw.StreamID,
+			CreatedAt: raw.Created,
+		}
+		m.SessionIDs = append(m.SessionIDs, raw.StreamID)
+	}
+
+	sort.Sort(sort.Reverse(sort.StringSlice(m.SessionIDs)))
+
+	return m, nil
+}
+
+func FindNetByStreamID(ctx context.Context, streamID string) (*Net, error) {
+	raw, err := global.dao.GetNetByStreamID(ctx, streamID)
+	if err != nil {
+		global.log.Error("cannot execute query", "query", "GetNetByStreamID", "streamID", streamID, "err", err)
+		return nil, err
+	}
+	m := &Net{
+		ID:       raw.ID,
+		Name:     raw.Name,
+		StreamID: raw.StreamID,
+		Sessions: make(map[string]*NetSession),
+	}
+	raws, err := global.dao.GetNetSessions(ctx, raw.ID)
+	if err != nil {
+		global.log.Error("cannot execute query", "query", "GetNetSessions", "streamID", streamID, "err", err)
 		return nil, err
 
 	}
@@ -84,6 +117,7 @@ func FindNetBySessionID(ctx context.Context, sessionID string) (*Net, error) {
 	m := &Net{
 		ID:       raw.ID,
 		Name:     raw.Name,
+		StreamID: raw.StreamID,
 		Sessions: make(map[string]*NetSession),
 	}
 

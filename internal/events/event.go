@@ -1,29 +1,30 @@
 package events
 
-import (
-	"encoding/gob"
-)
+import "fmt"
 
-func init() {
-	gob.Register(NetStarted{})
-	gob.Register(NetScheduled{})
-	gob.Register(NetCheckin{})
-	gob.Register(NetAckCheckin{})
+type subscriber struct {
+	connection chan any
 }
 
-type Event interface {
-	Event() string
+type Bus struct {
+	subscribers map[string][]subscriber
 }
 
-type NetStarted struct{}
-
-type NetScheduled struct{}
-
-type NetCheckin struct {
-	Callsign string
-	Name     string
+func NewBus() *Bus {
+	return &Bus{
+		subscribers: make(map[string][]subscriber),
+	}
 }
 
-type NetAckCheckin struct {
-	Callsign string
+func (b *Bus) Subscribe(event any) chan any {
+	c := make(chan any)
+	s := subscriber{connection: c}
+	b.subscribers[fmt.Sprintf("%T", event)] = append(b.subscribers[fmt.Sprintf("%T", event)], s)
+	return c
+}
+
+func (b *Bus) Publish(event any) {
+	for _, s := range b.subscribers[fmt.Sprintf("%T", event)] {
+		s.connection <- event
+	}
 }

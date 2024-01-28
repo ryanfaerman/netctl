@@ -1,23 +1,68 @@
 package views
 
-type Errors struct{}
+type Errors struct {
+	Error     error
+	Reference string
+}
 
-templ (Errors) Unsupported() {
+templ (v Errors) referenceCode() {
+	if v.Reference != "" {
+		<p>Reference code: <code>{ v.Reference }</code></p>
+	}
+}
+
+templ (v Errors) Unsupported() {
 	@Page() {
-		<div class="unsupported">
-			<h1>Unsupported Browser</h1>
-			<p>
-				Javascript Required or your browser is not supported. Please enabled javascript and use a modern browser such as
-				<a href="https://www.google.com/chrome/">Google Chrome</a> or
-				<a href="https://www.mozilla.org/en-US/firefox/new/">Mozilla Firefox</a>.
-			</p>
+		<div class="modal error unsupported">
+			<div class="modal-header">
+				<h1>Unsupported Browser</h1>
+			</div>
+			<div class="modal-body">
+				<p>
+					Javascript Required or your browser is not supported. Please enabled javascript and use a modern browser such as
+					<a href="https://www.google.com/chrome/">Google Chrome</a> or
+					<a href="https://www.mozilla.org/en-US/firefox/new/">Mozilla Firefox</a>.
+				</p>
+				<p>If this problem persists, please contact support using the reference code below.</p>
+			</div>
+			<div class="modal-footer">
+				@v.referenceCode()
+			</div>
 		</div>
 	}
 }
 
-templ (Errors) GeneralError(err error) {
-	<div class="error">
-		<h1>Error</h1>
-		<p>{ err.Error() }</p>
-	</div>
+templ (v Errors) General() {
+	@Page() {
+		<div class="modal error general">
+			<div class="modal-header">
+				<h1>Oops! Something went wrong.</h1>
+			</div>
+			<div class="modal-body">
+				<p>Looks like some sort of internal error occurred.</p>
+				<p>Please try again later.</p>
+				<p>If this problem persists, please contact support using the reference code below.</p>
+			</div>
+			<div class="modal-footer">
+				@v.referenceCode()
+			</div>
+		</div>
+	}
+}
+
+templ (v Errors) NotFound() {
+	@Page() {
+		<div class="modal error not-found">
+			<div class="modal-header">
+				<h1>CQ CQ CQ... Nothing heard</h1>
+			</div>
+			<div class="modal-body">
+				<p>The page your were looking for cannot be found.</p>
+				<p>If this problem persists, please contact support using the reference code below.</p>
+			</div>
+			<div class="modal-footer">
+				@v.referenceCode()
+			</div>
+		</div>
+	}
 }
