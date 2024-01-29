@@ -22,6 +22,10 @@ func (account) FindByEmail(ctx context.Context, email string) (*models.Account, 
 	return models.FindAccountByEmail(ctx, email)
 }
 
+func (account) FindByCallsign(ctx context.Context, callsign string) (*models.Account, error) {
+	return models.FindAccountByCallsign(ctx, callsign)
+}
+
 func (s account) CreateWithEmail(ctx context.Context, email string) (*models.Account, error) {
 	if u, err := s.FindByEmail(ctx, email); err != nil {
 		if err != sql.ErrNoRows {
@@ -67,7 +71,6 @@ var (
 )
 
 func (s account) Setup(ctx context.Context, id int64, name, callsign string) error {
-
 	account, err := global.dao.UpdateAccount(ctx, dao.UpdateAccountParams{
 		ID:   id,
 		Name: name,
@@ -85,7 +88,6 @@ func (s account) Setup(ctx context.Context, id int64, name, callsign string) err
 		if account.ID != accountCallsign.ID {
 			return ErrAccountSetupCallsignTaken
 		}
-
 	}
 
 	fccCallsign, err := hamdb.Lookup(ctx, callsign)
@@ -144,9 +146,13 @@ func (s account) Setup(ctx context.Context, id int64, name, callsign string) err
 	return tx.Commit()
 }
 
-// func (s account) AddCallsign(ctx context.Context, id int64, callsign string) error {
-// 	return global.dao.AddCallsignForaccount(ctx, dao.AddCallsignForaccountParams{
-// 		accountID:   id,
-// 		Callsign: callsign,
-// 	})
-// }
+func (s account) Update(ctx context.Context, m *models.Account) error {
+	if err := Validation.Apply(m); err != nil {
+		return err
+	}
+	_, err := global.dao.UpdateAccount(ctx, dao.UpdateAccountParams{
+		ID:   m.ID,
+		Name: m.Name,
+	})
+	return err
+}

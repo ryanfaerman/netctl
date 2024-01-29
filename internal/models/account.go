@@ -17,7 +17,7 @@ const (
 type Account struct {
 	ID int64
 
-	Name string
+	Name string `validate:"required"`
 	Kind AccountKind
 
 	CreatedAt time.Time
@@ -120,6 +120,18 @@ func (u *Account) Callsigns() ([]Callsign, error) {
 		callsigns = append(callsigns, callsign)
 	}
 	return callsigns, nil
+}
+
+func (m *Account) Callsign() Callsign {
+	calls, err := m.Callsigns()
+	if err != nil {
+		return Callsign{}
+	}
+	if len(calls) == 0 {
+		return Callsign{}
+	}
+
+	return calls[0]
 }
 
 var (

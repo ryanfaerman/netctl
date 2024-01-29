@@ -1,0 +1,131 @@
+package views
+
+import "github.com/ryanfaerman/netctl/internal/models"
+import "github.com/ryanfaerman/netctl/web/named"
+
+type Account struct {
+	Account *models.Account
+}
+
+templ (v Account) Profile() {
+	@Page() {
+		<header class="app-header">
+			@v.LocalBar()
+		</header>
+		<div class="grid-container split">
+			<div>
+				"hello there { v.Account.Name }!"
+			</div>
+			<div>
+				<!-- sidebar -->
+				<a href={ templ.URL(named.URLFor("account-edit", v.Account.Callsign().Call)) } class="button">
+					Edit Profile
+				</a>
+			</div>
+		</div>
+	}
+}
+
+templ (v Account) Edit() {
+	@Page() {
+		<header class="app-header">
+			@v.LocalBar()
+		</header>
+		<div class="grid-container split">
+			<div>
+				"Editing { v.Account.Name }!"
+				@v.EditForm()
+			</div>
+			<div>
+				<!-- sidebar -->
+				<a href={ templ.URL(named.URLFor("account-profile", v.Account.Callsign().Call)) } class="button">
+					View Profile
+				</a>
+			</div>
+		</div>
+	}
+}
+
+type AccountEditFormInput struct {
+	Name  string
+	About string
+}
+
+type AccountEditFormErrors struct {
+	Name  string
+	About string
+}
+
+templ (v Account) EditForm() {
+	@v.EditFormWithErrors(
+    AccountEditFormInput{ 
+      Name: v.Account.Name,
+    },
+    AccountEditFormErrors{},
+	)
+}
+
+templ (v Account) EditFormWithErrors(input AccountEditFormInput, inputErrs AccountEditFormErrors) {
+	@Form("edit-account", FormAttrs{
+          Action: named.URLFor("account-edit-save", v.Account.Callsign().Call),
+        }) {
+		@InputText("name", InputAttrs{
+            Label: "Name",
+            Value: input.Name,
+            Error: inputErrs.Name,
+            HelpText: "Your name as you'd like to be called on the air",
+          })
+		@InputSubmit(InputAttrs{
+            Value: "Save",
+          })
+	}
+}
+
+templ (v Account) LocalBar() {
+	<div class="local-bar">
+		<nav>
+			<ul>
+				<li class="app-name">
+					<a href="/">
+						@Icon("tower-cell")
+						Net Control
+					</a>
+				</li>
+				<li>
+					<a href="#" class="tab">
+						@Icon("file-lines")
+						Preamble
+					</a>
+				</li>
+				<li>
+					<a href="#" class="tab active">
+						@Icon("list-check")
+						Check Ins
+					</a>
+				</li>
+				<li>
+					<a href="#" class="tab">
+						@Icon("receipt")
+						Reports
+					</a>
+				</li>
+				<li>
+					<a href="#" class="tab">
+						@Icon("sliders")
+						Settings
+					</a>
+				</li>
+			</ul>
+		</nav>
+		<nav>
+			<ul>
+				<li>
+					<a href="#" class="tab">
+						@Icon("user")
+						Account
+					</a>
+				</li>
+			</ul>
+		</nav>
+	</div>
+}
