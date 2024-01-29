@@ -329,6 +329,7 @@ html {
 .grid-container.split .sticky {
   position: sticky;
   top: 0;
+  background: var(--background-color);
 }
 
 .mast-head-form {
