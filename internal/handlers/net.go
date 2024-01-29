@@ -141,16 +141,16 @@ func (h Net) SessionShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventStream, err := net.Events(ctx, sessionID)
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
+	// eventStream, err := net.Events(ctx, sessionID)
+	// if err != nil {
+	// 	ErrorHandler(err)(w, r)
+	// 	return
+	// }
 
 	v := views.Net{
 		Net:     net,
 		Session: net.Sessions[sessionID],
-		Stream:  eventStream,
+		// Stream:  eventStream,
 	}
 
 	v.SingleNetSession(sessionID).Render(ctx, w)

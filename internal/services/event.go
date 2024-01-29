@@ -86,9 +86,9 @@ func (e *event) Publish(ctx context.Context, event models.Event) error {
 		l.Debug("no subscribers for event")
 		return nil
 	}
-	wg := workgroup.New(5)
+	wg := workgroup.New(5) // TODO: make this configurable
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute) // TODO: make this configurable
 	defer cancel()
 
 	for _, sub := range e.subscribers[event.Name] {
@@ -139,10 +139,11 @@ func (e *event) Recover(ctx context.Context) error {
 
 	if len(recovereds) == 0 {
 		l.Debug("no recoverable events found")
+		return nil
 	}
 	l.Debug("recovering events", "count", len(recovereds))
 
-	wg := workgroup.New(5)
+	wg := workgroup.New(5) // TODO: make this configurable
 	for _, recovered := range recovereds {
 		for _, sub := range e.subscribers[recovered.Event.Name] {
 			l = l.With("subscriber", sub.name, "event", recovered.Event.Name)

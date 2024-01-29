@@ -143,6 +143,7 @@ html {
 .app-header {
   background-color: var(--background-color-softer);
   border-bottom: 1px solid var(--border-color-softer);
+  padding-top: 0.3rem;
 }
 
 .global-bar {
@@ -226,6 +227,7 @@ html {
   font-weight: bold;
 }
 
+.context-item-separator,
 .app-context .context-item-separator {
   display: flex;
   align-items: center;
@@ -240,6 +242,7 @@ html {
 
 .local-bar {
   padding-left: 1rem;
+  display: flex;
 }
 
 .local-bar nav {
@@ -247,6 +250,20 @@ html {
   justify-content: space-between;
   min-height: 3rem;
 }
+
+.local-bar nav:first-child {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.local-bar nav:last-child {
+  flex: 0 1 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 
 .local-bar nav ul {
   display: flex;
@@ -260,6 +277,36 @@ html {
   display: inline-flex;
   padding: 0 1rem;
 }
+
+.local-bar .app-name {
+  margin-left: 1em;
+  padding-right: 2em;
+  border-right: 1px solid var(--border-color-softer);
+}
+
+.local-bar .app-name a {
+  font-weight: bold;
+  font-variant: small-caps;
+}
+
+.local-bar .app-name a:hover {
+  background-color: transparent;
+  color: var(--text-color-normal);
+}
+
+.local-bar .app-name a:hover::after {
+  background: black;
+  border-radius: 0.4rem;
+  bottom: calc(50% - 25px);
+  content: "";
+  height: 2px;
+  position: absolute;
+  right: 50%;
+  transform: translate(50%, -50%);
+  width: 100%;
+  z-index: 1;
+}
+
 
 .local-bar a {
   align-items: center;
@@ -384,7 +431,8 @@ html {
   border-top: 1px solid var(--border-color-softer);
   background: var(--background-color-softer);
   position: sticky;
-  top: 15rem;
+  top: 17rem;
+  z-index: 10;
 }
 
 .traffic-data tbody td {
@@ -571,6 +619,12 @@ html {
 
 .sidebar-item details {
   padding-left: 1em;
+}
+
+.sidebar-item h4 small {
+  display: inline-block;
+  font-size: 0.65em;
+  color: var(--text-color-softer);
 }
 
 .sidebar-item summary {

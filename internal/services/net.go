@@ -86,7 +86,7 @@ func (net) Create(ctx context.Context, m *models.Net) (*models.Net, error) {
 }
 
 func init() {
-	Breaker.AddWithConsecutive("hamdb", 5)
+	Breaker.AddWithConsecutive("hamdb", 5) // TODO: make this configurable
 	Event.Register(events.NetCheckinHeard{}, Net.ValidateCheckinHeard)
 }
 
