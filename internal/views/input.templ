@@ -187,7 +187,7 @@ templ InputTextArea(name string, attrs InputAttrs) {
 							</button>
 							<span class="divider"></span>
 						}
-						<a href="#" class="button" title="Markdown Supported">
+						<a href={ templ.URL(named.URLFor("markdown-help")) } class="button" title="Markdown Supported">
 							@IconBrand("markdown")
 						</a>
 					</div>

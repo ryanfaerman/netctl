@@ -20,10 +20,14 @@ func init() {
 }
 
 func (h Markdown) Routes(r chi.Router) {
-	r.Use(middleware.HTMXOnly)
-	web.CSRFExempt("/-/tools/markdown-render/*")
-	r.Post(named.Route("markdown-preview", "/-/tools/markdown-render/{name}"), h.Preview)
-	r.Post(named.Route("markdown-editor", "/-/tools/markdown-editor/{name}"), h.Editor)
+	r.Get(named.Route("markdown-help", "/-/docs/markdown"), h.Help)
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.HTMXOnly)
+		web.CSRFExempt("/-/tools/markdown-render/*")
+		r.Post(named.Route("markdown-preview", "/-/tools/markdown-render/{name}"), h.Preview)
+		r.Post(named.Route("markdown-editor", "/-/tools/markdown-editor/{name}"), h.Editor)
+	})
 }
 
 func (h Markdown) Preview(w http.ResponseWriter, r *http.Request) {
@@ -69,4 +73,8 @@ func (h Markdown) Editor(w http.ResponseWriter, r *http.Request) {
 	attrs.MarkdownModePreview = false
 
 	views.InputTextArea(field, attrs).Render(r.Context(), w)
+}
+
+func (h Markdown) Help(w http.ResponseWriter, r *http.Request) {
+	(views.Docs{}).Markdown().Render(r.Context(), w)
 }
