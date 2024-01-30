@@ -88,3 +88,12 @@ type (
 	// NetSessionClosed occurs when a net session is closed.
 	NetSessionClosed struct{}
 )
+
+func (NetCheckinHeard) Event() string     { return "checkin.heard" }
+func (NetCheckinVerified) Event() string  { return "checkin.verified" }
+func (NetCheckinAcked) Event() string     { return "checkin.acked" }
+func (NetCheckinCorrected) Event() string { return "checkin.corrected" }
+func (NetCheckinRevoked) Event() string   { return "checkin.revoked" }
+func (NetSessionScheduled) Event() string { return "session.scheduled" }
+func (NetSessionOpened) Event() string    { return "session.opened" }
+func (NetSessionClosed) Event() string    { return "session.closed" }

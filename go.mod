@@ -22,6 +22,7 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.1.1
 	github.com/justinas/nosurf v1.1.1
 	github.com/magefile/mage v1.15.0
+	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/mrz1836/postmark v1.6.1
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
@@ -34,6 +35,7 @@ require (
 	github.com/unrolled/render v1.6.0
 	github.com/vearutop/statigz v1.4.0
 	github.com/webview/webview_go v0.0.0-20230901181450-5a14030a9070
+	github.com/yuin/goldmark v1.4.13
 	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -43,6 +45,7 @@ require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230321174746-8dcc6526cfb1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
+	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/bytecodealliance/wasmtime-go/v8 v8.0.0 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
@@ -59,6 +62,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/cel-go v0.17.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/css v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect

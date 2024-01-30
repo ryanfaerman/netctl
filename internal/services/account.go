@@ -151,8 +151,9 @@ func (s account) Update(ctx context.Context, m *models.Account) error {
 		return err
 	}
 	_, err := global.dao.UpdateAccount(ctx, dao.UpdateAccountParams{
-		ID:   m.ID,
-		Name: m.Name,
+		ID:    m.ID,
+		Name:  m.Name,
+		About: m.About,
 	})
 	return err
 }

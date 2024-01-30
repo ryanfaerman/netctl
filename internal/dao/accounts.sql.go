@@ -45,7 +45,7 @@ func (q *Queries) CreateAccountAndReturnId(ctx context.Context) (int64, error) {
 }
 
 const findAccountByCallsign = `-- name: FindAccountByCallsign :one
-SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind
+SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about
 FROM accounts
 JOIN accounts_callsigns ON accounts.id = accounts_callsigns.account_id
 JOIN callsigns ON accounts_callsigns.callsign_id = callsigns.id
@@ -62,12 +62,13 @@ func (q *Queries) FindAccountByCallsign(ctx context.Context, upper string) (Acco
 		&i.Updatedat,
 		&i.Deletedat,
 		&i.Kind,
+		&i.About,
 	)
 	return i, err
 }
 
 const findAccountByEmail = `-- name: FindAccountByEmail :one
-SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind
+SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about
 FROM accounts
 JOIN emails ON emails.account_id = accounts.id
 WHERE emails.address = ?1
@@ -83,12 +84,13 @@ func (q *Queries) FindAccountByEmail(ctx context.Context, address string) (Accou
 		&i.Updatedat,
 		&i.Deletedat,
 		&i.Kind,
+		&i.About,
 	)
 	return i, err
 }
 
 const getAccount = `-- name: GetAccount :one
-SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind
+SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about
 FROM accounts
 WHERE id = ?1
 LIMIT 1
@@ -104,6 +106,7 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 		&i.Updatedat,
 		&i.Deletedat,
 		&i.Kind,
+		&i.About,
 	)
 	return i, err
 }
@@ -111,18 +114,27 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 const updateAccount = `-- name: UpdateAccount :one
 UPDATE accounts
 SET updatedAt = CURRENT_TIMESTAMP,
-    name = ?2
+    name = ?2,
+    about = ?3,
+    kind = ?4
 WHERE id = ?1
-RETURNING id, name, createdat, updatedat, deletedat, kind
+RETURNING id, name, createdat, updatedat, deletedat, kind, about
 `
 
 type UpdateAccountParams struct {
-	ID   int64
-	Name string
+	ID    int64
+	Name  string
+	About string
+	Kind  int64
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, updateAccount, arg.ID, arg.Name)
+	row := q.db.QueryRowContext(ctx, updateAccount,
+		arg.ID,
+		arg.Name,
+		arg.About,
+		arg.Kind,
+	)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -131,12 +143,13 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (A
 		&i.Updatedat,
 		&i.Deletedat,
 		&i.Kind,
+		&i.About,
 	)
 	return i, err
 }
 
 const accounts = `-- name: accounts :many
-SELECT id, name, createdat, updatedat, deletedat, kind FROM accounts
+SELECT id, name, createdat, updatedat, deletedat, kind, about FROM accounts
 `
 
 func (q *Queries) accounts(ctx context.Context) ([]Account, error) {
@@ -155,6 +168,7 @@ func (q *Queries) accounts(ctx context.Context) ([]Account, error) {
 			&i.Updatedat,
 			&i.Deletedat,
 			&i.Kind,
+			&i.About,
 		); err != nil {
 			return nil, err
 		}

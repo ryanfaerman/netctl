@@ -1,6 +1,7 @@
 package views
 
 import "github.com/ryanfaerman/netctl/internal/services"
+import "github.com/ryanfaerman/netctl/web/named"
 
 type InputType string
 
@@ -25,6 +26,12 @@ type InputAttrs struct {
 
 	DisableAutocomplete bool
 	DisableHTMX         bool
+	DisableMarkdown     bool
+
+	MarkdownModePreview bool
+	MarkdownPreviewBody string
+
+	Height string
 }
 
 func (a InputAttrs) HasLabel() bool       { return len(a.Label) > 0 }
@@ -133,6 +140,96 @@ templ Select(name string, attrs InputAttrs) {
 		if attrs.HasError() {
 			<div class="error-message">{ attrs.Error }</div>
 		}
+	</div>
+}
+
+templ InputTextArea(name string, attrs InputAttrs) {
+	<div id={ name } class={ "input-group", templ.KV("error", attrs.HasError()) }>
+		if attrs.HasLabel() {
+			<label for={ name }>{ attrs.Label }</label>
+		}
+		<div
+			class={ templ.KV("markdown-editor", !attrs.DisableMarkdown) }
+			if attrs.MarkdownModePreview {
+				data-mode="preview"
+			}
+		>
+			if !attrs.DisableMarkdown {
+				<input type="hidden" name={ "_" + name + "-config" } value={ attrs.Encode() }/>
+				<div class="controls">
+					<div class="modes">
+						<a
+							class={ "button", templ.KV("active", !attrs.MarkdownModePreview) }
+							if attrs.MarkdownModePreview {
+								hx-post={ named.URLFor("markdown-editor", name) }
+								hx-target={ "#" + name }
+							}
+						>
+							Write
+						</a>
+						<a
+							class={ "button", templ.KV("active", attrs.MarkdownModePreview) }
+							if !attrs.MarkdownModePreview {
+								hx-post={ named.URLFor("markdown-preview", name) }
+								hx-target={ "#" + name }
+							}
+						>
+							Preview
+						</a>
+					</div>
+					<div class="actions">
+						if false {
+							<button type="button" class="button">
+								@IconSolid("bold")
+							</button>
+							<button type="button" class="button">
+								@IconSolid("link")
+							</button>
+							<span class="divider"></span>
+						}
+						<a href="#" class="button" title="Markdown Supported">
+							@IconBrand("markdown")
+						</a>
+					</div>
+				</div>
+			}
+			<div class="wrapper">
+				<textarea
+					id={ name + "-raw" }
+					name={ name }
+					autocomplete="on"
+					spellcheck="true"
+					class="editor"
+					if attrs.Height != "" {
+						style={ "height: " + attrs.Height + ";" }
+					}
+					if  attrs.HasPlaceholder() {
+						placeholder={ attrs.Placeholder }
+					}
+				>
+					{ attrs.Value }
+				</textarea>
+				if attrs.MarkdownModePreview {
+					<div class="preview" hx-disable>
+						if attrs.MarkdownPreviewBody != "" {
+							@templ.Raw(attrs.MarkdownPreviewBody)
+						} else {
+							<p>Nothing to preview</p>
+						}
+					</div>
+				}
+			</div>
+			<div class="input-annotations u-full-width">
+				if attrs.HasHelpText() {
+					<div class="help-text">
+						{ attrs.HelpText }
+					</div>
+				}
+				if attrs.HasError() {
+					<div class="error-message">{ attrs.Error }</div>
+				}
+			</div>
+		</div>
 	</div>
 }
 

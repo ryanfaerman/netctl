@@ -16,6 +16,7 @@ type Account struct {
 	Updatedat time.Time
 	Deletedat sql.NullTime
 	Kind      int64
+	About     string
 }
 
 type AccountsCallsign struct {

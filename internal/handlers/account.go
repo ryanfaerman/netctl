@@ -96,6 +96,8 @@ func (h account) Show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.About = services.Markdown.MustRenderString(a.About)
+
 	v := views.Account{
 		Account: a,
 	}
@@ -132,15 +134,19 @@ func (h account) Update(w http.ResponseWriter, r *http.Request) {
 
 	inputErrs := views.AccountEditFormErrors{}
 	input := views.AccountEditFormInput{
-		Name: strings.TrimSpace(r.Form.Get("name")),
+		Name:  strings.TrimSpace(r.Form.Get("name")),
+		About: strings.TrimSpace(r.Form.Get("about")),
 	}
 	a.Name = input.Name
+	a.About = input.About
 	err = services.Account.Update(r.Context(), a)
 	if err != nil {
 		if errs, ok := err.(services.ValidationError); ok {
 			for field, e := range errs {
 				switch field {
 				case "Account.Name":
+					inputErrs.Name = e
+				case "Account.About":
 					inputErrs.Name = e
 				}
 			}

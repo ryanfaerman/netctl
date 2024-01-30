@@ -14,7 +14,8 @@ templ (v Account) Profile() {
 		</header>
 		<div class="grid-container split">
 			<div>
-				"hello there { v.Account.Name }!"
+				<h1>{ v.Account.Name }</h1>
+				@templ.Raw(v.Account.About)
 			</div>
 			<div>
 				<!-- sidebar -->
@@ -60,6 +61,8 @@ templ (v Account) EditForm() {
 	@v.EditFormWithErrors(
     AccountEditFormInput{ 
       Name: v.Account.Name,
+      About: v.Account.About,
+
     },
     AccountEditFormErrors{},
 	)
@@ -75,6 +78,13 @@ templ (v Account) EditFormWithErrors(input AccountEditFormInput, inputErrs Accou
             Error: inputErrs.Name,
             HelpText: "Your name as you'd like to be called on the air",
           })
+		@InputTextArea("about", InputAttrs{
+      Label: "About you",
+      Placeholder: "Tell us about yourself",
+      Value: input.About,
+      Error: inputErrs.About,
+      Height: "30rem",
+    })
 		@InputSubmit(InputAttrs{
             Value: "Save",
           })

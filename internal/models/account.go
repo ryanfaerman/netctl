@@ -17,8 +17,9 @@ const (
 type Account struct {
 	ID int64
 
-	Name string `validate:"required"`
-	Kind AccountKind
+	Name  string `validate:"required"`
+	About string
+	Kind  AccountKind
 
 	CreatedAt time.Time
 	DeletedAt time.Time
@@ -60,6 +61,7 @@ func FindAccountByID(ctx context.Context, id int64) (*Account, error) {
 	u := Account{
 		ID:        raw.ID,
 		Name:      raw.Name,
+		About:     raw.About,
 		Kind:      AccountKind(raw.Kind),
 		CreatedAt: raw.Createdat,
 	}
@@ -78,6 +80,7 @@ func FindAccountByEmail(ctx context.Context, email string) (*Account, error) {
 	u := Account{
 		ID:        raw.ID,
 		Name:      raw.Name,
+		About:     raw.About,
 		Kind:      AccountKind(raw.Kind),
 		CreatedAt: raw.Createdat,
 	}
@@ -96,6 +99,7 @@ func FindAccountByCallsign(ctx context.Context, callsign string) (*Account, erro
 	u := Account{
 		ID:        raw.ID,
 		Name:      raw.Name,
+		About:     raw.About,
 		Kind:      AccountKind(raw.Kind),
 		CreatedAt: raw.Createdat,
 	}

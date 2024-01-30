@@ -1,84 +1,112 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"sync"
-	"time"
+	"strings"
+	"unicode"
 
-	circuit "github.com/rubyist/circuitbreaker"
+	"github.com/ryanfaerman/netctl/internal/events"
 )
 
-// Breaker is a circuit breaker, false is closed, true is open
-type Breaker struct {
-	Name    string
-	Open    bool
-	LastErr error
-}
+type (
+	NamespaceThingHappened         struct{}
+	NamespaceSomethingElseHappened struct{}
+)
 
-type Panel struct {
-	Breakers map[string]*Breaker
-	m        sync.RWMutex
-}
+func splitByCapital(input string) []string {
+	var result []string
+	start := 0
 
-func (p *Panel) Register(name string) {
-	p.m.Lock()
-	p.Breakers[name] = &Breaker{Name: name}
-	p.m.Unlock()
-}
-
-func (p *Panel) Use(name string, fn func() error) error {
-	p.m.Lock()
-	defer p.m.Unlock()
-
-	b, ok := p.Breakers[name]
-	if !ok {
-		return errors.New("breaker not found")
-	}
-	if b.Open {
-		return b.LastErr
+	for i, char := range input {
+		if i > 0 && unicode.IsUpper(char) {
+			result = append(result, input[start:i])
+			start = i
+		}
 	}
 
-	err := fn()
-	if err != nil {
-		b.Open = true
-		b.LastErr = err
-	} else {
-		b.Open = false
-		b.LastErr = nil
+	// Add the last part of the string
+	result = append(result, input[start:])
+
+	return result
+}
+
+func convertToSnakeCase(input string) string {
+	var result []rune
+
+	for i, char := range input {
+		if unicode.IsUpper(char) {
+			// Add underscore if not at the beginning and the next character is not uppercase
+			if i > 0 && i+1 < len(input) && !unicode.IsUpper(rune(input[i+1])) {
+				result = append(result, '_')
+			}
+			// Convert the uppercase letter to lowercase
+			result = append(result, unicode.ToLower(char))
+		} else {
+			result = append(result, char)
+		}
 	}
 
-	return err
+	return strings.ReplaceAll(string(result), ".", "_")
+}
+
+func convertToSnakeCase2(input string) string {
+	var result []rune
+
+	for i, char := range input {
+		if i > 0 && char == '.' {
+			// Replace subsequent dots with underscores
+			result = append(result, '_')
+		} else if unicode.IsUpper(char) {
+			// Convert the uppercase letter to lowercase
+			result = append(result, unicode.ToLower(char))
+		} else {
+			result = append(result, char)
+		}
+	}
+
+	return string(result)
+}
+
+func convertToSnakeCase3(e any) string {
+	input := fmt.Sprintf("%T", e)
+	var result []rune
+
+	sep := 'X'
+	skip := true
+	for i, char := range input {
+		fmt.Println(i, string(char), skip)
+		if skip && char != '.' {
+			continue
+		}
+		if skip && char == '.' {
+			skip = false
+		}
+		if unicode.IsUpper(char) {
+			// Add underscore if not at the beginning and the next character is not uppercase
+			if i > 0 && i+1 < len(input) && !unicode.IsUpper(rune(input[i+1])) {
+				result = append(result, sep)
+				sep = '_'
+			}
+			// Convert the uppercase letter to lowercase
+			result = append(result, unicode.ToLower(char))
+		} else {
+			result = append(result, char)
+		}
+	}
+
+	return string(result)
 }
 
 func main() {
-	panel := circuit.NewPanel()
-	panel.Add("foo", circuit.NewThresholdBreaker(10))
-	go func() {
-		for e := range panel.Subscribe() {
-			switch e.Event {
-			case circuit.BreakerTripped:
-				fmt.Println("breaker tripped", e.Name)
-			case circuit.BreakerReset:
-				fmt.Println("breaker reset", e.Name)
-			case circuit.BreakerFail:
-				fmt.Println("breaker fail", e.Name)
-			case circuit.BreakerReady:
-				fmt.Println("breaker ready", e.Name)
-			}
-		}
-	}()
-
-	for i := 0; i < 100; i++ {
-		cb, _ := panel.Get("foo")
-		cb.Call(func() error {
-			fmt.Println("running")
-			if i%2 == 0 {
-				return errors.New("oh no")
-			}
-			return nil
-		}, 0)
+	things := []any{
+		NamespaceSomethingElseHappened{},
+		NamespaceThingHappened{},
+		events.NetSessionClosed{},
+		events.NetCheckinHeard{},
 	}
 
-	time.Sleep(5 * time.Second)
+	for _, thing := range things {
+		fmt.Println(convertToSnakeCase3(thing))
+		return
+	}
 }

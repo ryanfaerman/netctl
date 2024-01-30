@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/charmbracelet/log"
 )
 
 func NewMigration(name string) error {
-
 	migrations, err := ioutil.ReadDir("internal/sql/migrations")
 	if err != nil {
 		return err
@@ -32,6 +32,19 @@ func NewMigration(name string) error {
 		if migrationIndex > index {
 			index = migrationIndex
 		}
+	}
+
+	{
+		var result []rune
+
+		for _, char := range name {
+			if unicode.IsLetter(char) {
+				result = append(result, char)
+			} else {
+				result = append(result, '_')
+			}
+		}
+		name = string(result)
 	}
 
 	var b bytes.Buffer

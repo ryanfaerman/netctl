@@ -10,7 +10,9 @@ LIMIT 1;
 -- name: UpdateAccount :one
 UPDATE accounts
 SET updatedAt = CURRENT_TIMESTAMP,
-    name = ?2
+    name = ?2,
+    about = ?3,
+    kind = ?4
 WHERE id = ?1
 RETURNING *;
 
