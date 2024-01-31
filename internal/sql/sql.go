@@ -1,11 +1,15 @@
 package sql
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 
 	"github.com/charmbracelet/log"
 	"github.com/pressly/goose/v3"
+
+	_ "github.com/glebarez/go-sqlite"
+	goMigrations "github.com/ryanfaerman/netctl/internal/sql/migrations"
 )
 
 //go:generate sqlc generate
@@ -14,7 +18,8 @@ import (
 var migrations embed.FS
 
 func RunMigrations(log *log.Logger, db *sql.DB) error {
-	l := log.With("pgk", "sql")
+	l := log.With("pkg", "sql")
+	goMigrations.Log = log.With("pkg", "go-migrations")
 
 	goose.SetLogger(logAdapter{*l})
 	goose.SetBaseFS(migrations)
@@ -23,5 +28,10 @@ func RunMigrations(log *log.Logger, db *sql.DB) error {
 		return err
 	}
 
-	return goose.Up(db, "migrations")
+	// Add these migrations manually
+	for _, migration := range goMigrations.Migrations {
+		goose.AddNamedMigrationContext(migration.Name, migration.Up, migration.Down)
+	}
+
+	return goose.UpContext(context.Background(), db, "migrations")
 }

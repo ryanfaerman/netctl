@@ -114,6 +114,48 @@ func (q *Queries) GetEvents(ctx context.Context, ids []int64) ([]Event, error) {
 	return items, nil
 }
 
+const getEventsForCallsign = `-- name: GetEventsForCallsign :many
+SELECT id, created, stream_id, account_id, event_type, event_data
+FROM events
+WHERE event_type = ?1 
+AND json_extract(event_data, '$.Callsign') = ?2
+`
+
+type GetEventsForCallsignParams struct {
+	EventType string
+	Callsign  []byte
+}
+
+func (q *Queries) GetEventsForCallsign(ctx context.Context, arg GetEventsForCallsignParams) ([]Event, error) {
+	rows, err := q.db.QueryContext(ctx, getEventsForCallsign, arg.EventType, arg.Callsign)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Event
+	for rows.Next() {
+		var i Event
+		if err := rows.Scan(
+			&i.ID,
+			&i.Created,
+			&i.StreamID,
+			&i.AccountID,
+			&i.EventType,
+			&i.EventData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getEventsForStream = `-- name: GetEventsForStream :many
 SELECT id, created, stream_id, account_id, event_type, event_data FROM events
 WHERE stream_id = ?1
