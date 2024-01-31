@@ -10,11 +10,11 @@ import (
 )
 
 type Net struct {
-	Name       string `validate:"required"`
-	Sessions   map[string]*NetSession
-	SessionIDs []string
-	ID         int64
-	StreamID   string
+	Name       string                 `validate:"required" json:"name"`
+	StreamID   string                 `json:"stream_id"`
+	Sessions   map[string]*NetSession `json:"sessions"`
+	SessionIDs []string               `json:"session_ids"`
+	ID         int64                  `json:"id"`
 }
 
 func NewNet(name string) *Net {
@@ -128,24 +128,6 @@ func FindNetBySessionID(ctx context.Context, sessionID string) (*Net, error) {
 	return m, nil
 }
 
-// func (m *Net) AddSession(ctx context.Context) (*NetSession, error) {
-// 	streamID := ulid.Make().String()
-// 	session := &NetSession{
-// 		ID: streamID,
-// 	}
-//
-// 	_, err := global.dao.CreateNetSessionAndReturnId(ctx, dao.CreateNetSessionAndReturnIdParams{
-// 		NetID:    m.ID,
-// 		StreamID: streamID,
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	m.Sessions[streamID] = session
-// 	return session, nil
-// }
-
 func (n *Net) Events(ctx context.Context, onlyStreams ...string) (EventStream, error) {
 	if len(onlyStreams) == 0 {
 		streamIDs := make([]string, 0, len(n.Sessions))
@@ -170,11 +152,12 @@ func (m *Net) Replay(ctx context.Context, onlyStreams ...string) error {
 	return nil
 }
 
+// replay the given event stream, vivifying the model
 func (m *Net) replay(stream EventStream) {
 	for _, event := range stream {
 	eventMachine:
 		switch e := event.Event.(type) {
-		case events.NetSessionScheduled:
+		case *events.NetSessionScheduled:
 			// if any periods exist, ignore
 			// otherwise, create a new one in the future
 			session := m.Sessions[event.StreamID]
@@ -186,7 +169,7 @@ func (m *Net) replay(stream EventStream) {
 				Scheduled: true,
 			})
 
-		case events.NetSessionOpened:
+		case *events.NetSessionOpened:
 			session := m.Sessions[event.StreamID]
 
 			// if no periods exist, create a new one
@@ -214,7 +197,7 @@ func (m *Net) replay(stream EventStream) {
 				break eventMachine
 			}
 
-		case events.NetSessionClosed:
+		case *events.NetSessionClosed:
 			// if no periods exist, ignore
 			// if the last period is open, close it
 			// if the last period is closed, ignore
@@ -226,12 +209,12 @@ func (m *Net) replay(stream EventStream) {
 				session.Periods[len(session.Periods)-1].ClosedAt = event.At
 			}
 
-		case events.NetCheckinHeard:
+		case *events.NetCheckinHeard:
 			session := m.Sessions[event.StreamID]
 			// if the checkin is not in the session, add it
 			// if the checkin is in the session, reset it
 			for i, checkin := range session.Checkins {
-				if checkin.ID == e.ID || strings.ToUpper(checkin.Callsign.AsHeard) == strings.ToUpper(e.Callsign) {
+				if checkin.ID == e.ID || strings.EqualFold(checkin.Callsign.AsHeard, e.Callsign) {
 					session.Checkins[i].Acked = false
 					// session.Checkins[i].Verified = false
 					// session.Checkins[i].Valid = nil
@@ -248,7 +231,7 @@ func (m *Net) replay(stream EventStream) {
 				At:       event.At,
 			})
 
-		case events.NetCheckinVerified:
+		case *events.NetCheckinVerified:
 			// set the verified flag to true
 			// if the verification has no errors, set the valid flag to nil
 			// if the verification has an error, set the valid flag to the error
@@ -282,7 +265,7 @@ func (m *Net) replay(stream EventStream) {
 					break eventMachine
 				}
 			}
-		case events.NetCheckinAcked:
+		case *events.NetCheckinAcked:
 			// set the acked flag to true
 			session := m.Sessions[event.StreamID]
 			for i, checkin := range session.Checkins {
@@ -291,7 +274,7 @@ func (m *Net) replay(stream EventStream) {
 					break eventMachine
 				}
 			}
-		case events.NetCheckinCorrected:
+		case *events.NetCheckinCorrected:
 			// find the checkin and update it
 			// mark as invalidated
 			session := m.Sessions[event.StreamID]
@@ -311,7 +294,7 @@ func (m *Net) replay(stream EventStream) {
 					break eventMachine
 				}
 			}
-		case events.NetCheckinRevoked:
+		case *events.NetCheckinRevoked:
 			// find the checkin and remove it
 			session := m.Sessions[event.StreamID]
 			for i, checkin := range session.Checkins {
