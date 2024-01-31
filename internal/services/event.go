@@ -1,9 +1,8 @@
 package services
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/r3labs/sse/v2"
 	"github.com/ryanfaerman/netctl/internal/dao"
+	"github.com/ryanfaerman/netctl/internal/events"
 	"github.com/ryanfaerman/netctl/internal/models"
 	"github.com/ryanfaerman/netctl/workgroup"
 )
@@ -33,22 +33,22 @@ var Event = &event{
 }
 
 func (e *event) Create(ctx context.Context, stream string, evt any) error {
-	var (
-		b bytes.Buffer
-		p any
-	)
-
-	p = &evt
-	if err := gob.NewEncoder(&b).Encode(p); err != nil {
-		return err
+	d, err := json.Marshal(evt)
+	if err != nil {
+		global.log.Error("unable to marshal event", "error", err)
 	}
 
 	id, err := global.dao.CreateEvent(ctx, dao.CreateEventParams{
 		StreamID:  stream,
 		AccountID: 1,
 		EventType: fmt.Sprintf("%T", evt),
-		EventData: b.Bytes(),
+		EventData: d,
 	})
+	if err != nil {
+		return err
+	}
+
+	j, err := events.Decode(fmt.Sprintf("%T", evt), d)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (e *event) Create(ctx context.Context, stream string, evt any) error {
 		StreamID:  stream,
 		AccountID: 1,
 		Name:      fmt.Sprintf("%T", evt),
-		Event:     evt,
+		Event:     j,
 	}
 
 	go e.Publish(context.Background(), event)

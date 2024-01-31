@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -59,14 +60,6 @@ func (net) GetNetFromSession(ctx context.Context, sessionID string) (*models.Net
 	return n, n.Replay(ctx, sessionID)
 }
 
-// func (net) Create(ctx context.Context, name string) (*models.Net, error) {
-// 	id, err := global.dao.CreateNetAndReturnId(ctx, name)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return models.FindNetById(ctx, id)
-// }
-
 func (net) Create(ctx context.Context, m *models.Net) (*models.Net, error) {
 	if err := Validation.Apply(m); err != nil {
 		return m, err
@@ -91,7 +84,7 @@ func init() {
 }
 
 func (n net) ValidateCheckinHeard(ctx context.Context, event models.Event) error {
-	if e, ok := event.Event.(events.NetCheckinHeard); ok {
+	if e, ok := event.Event.(*events.NetCheckinHeard); ok {
 		m := &models.NetCheckin{
 			ID: e.ID,
 		}
@@ -104,7 +97,7 @@ func (n net) ValidateCheckinHeard(ctx context.Context, event models.Event) error
 
 	}
 	global.log.Debug("invalid event", "event", event)
-	return errors.New("invalid event")
+	return fmt.Errorf("invalid event %T", event.Event)
 }
 
 func (n net) ValidateCheckin(ctx context.Context, stream string, checkin *models.NetCheckin) error {
