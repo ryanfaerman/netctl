@@ -1,0 +1,108 @@
+package views
+
+import "github.com/go-chi/chi"
+import "github.com/ryanfaerman/netctl/web/named"
+
+type MenuItem struct {
+	Value string
+	URL   string
+
+	Icon IconAttrs
+
+	Attrs templ.Attributes
+
+	Section     string
+	IsSeparator bool
+}
+
+var MenuSeparator = MenuItem{
+	IsSeparator: true,
+}
+
+func currentURL(ctx context.Context) string {
+	c := chi.RouteContext(ctx)
+	n := named.Lookup(c.RoutePattern())
+	if n == "" {
+		return ""
+	}
+	return named.URLFor(named.Lookup(c.RoutePattern()), c.URLParams.Values...)
+}
+
+func isCurrentURL(ctx context.Context, URL string) bool {
+	return currentURL(ctx) == URL
+}
+
+templ (v MenuItem) Item() {
+	<li>
+		<a
+			if v.URL != "" && v.URL != "#" {
+				class={ templ.KV("active", isCurrentURL(ctx, v.URL)) }
+				href={ templ.URL(v.URL) }
+			} else {
+				href="#"
+			}
+			{ v.Attrs... }
+		>
+			if !v.Icon.IsZeroValue() {
+				@Icon(v.Icon)
+			}
+			if v.Value != "" {
+				{ v.Value }
+			}
+		</a>
+	</li>
+}
+
+type Menu []MenuItem
+
+func (v Menu) ForSection(section string) Menu {
+	var output Menu
+	for _, item := range v {
+		if item.Section == "" {
+			item.Section = "left"
+
+		}
+		if item.Section == section {
+			output = append(output, item)
+		}
+	}
+	return output
+}
+
+type Navigation struct {
+	LeftNav  []MenuItem
+	RightNav []MenuItem
+}
+
+templ (m Menu) NewAppBar() {
+	<header class="app-header">
+		<div class="local-bar">
+			<nav>
+				<ul>
+					<li class="app-name">
+						<a href="/">
+							@IconSolid("tower-cell")
+							Net Control
+						</a>
+					</li>
+					for _, item := range m.ForSection("left") {
+						@item.Item()
+					}
+				</ul>
+			</nav>
+			<nav>
+				<ul>
+					for _, item := range m.ForSection("right") {
+						@item.Item()
+					}
+					<li>
+						<a href="#" class="tab">
+							@IconSolid("user")
+							Account
+						</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</header>
+}

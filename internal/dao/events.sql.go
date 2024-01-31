@@ -117,7 +117,7 @@ func (q *Queries) GetEvents(ctx context.Context, ids []int64) ([]Event, error) {
 const getEventsForCallsign = `-- name: GetEventsForCallsign :many
 SELECT id, created, stream_id, account_id, event_type, event_data
 FROM events
-WHERE event_type = ?1 
+WHERE event_type = ?1
 AND json_extract(event_data, '$.callsign') = ?2
 `
 

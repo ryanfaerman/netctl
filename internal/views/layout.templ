@@ -1,6 +1,28 @@
 package views
 
-templ Page() {
+import "fmt"
+
+import "github.com/ryanfaerman/netctl/web/named"
+
+func DefaultMenu() Menu {
+	return Menu{
+		{Value: "Home", URL: named.URLFor("dashboard-index"), Icon: IconAttrs{Name: "house"}},
+		{Value: "View Nets", URL: named.URLFor("net-index"), Icon: IconAttrs{Name: "users-rectangle"}},
+	}
+}
+
+templ Page(m Menu) {
+	@BarePage() {
+		if len(m) == 0 {
+			@DefaultMenu().NewAppBar()
+		} else {
+			@m.NewAppBar()
+		}
+		{ children... }
+	}
+}
+
+templ BarePage() {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -27,33 +49,34 @@ templ Page() {
 	</html>
 }
 
-templ Unsupported() {
-	@Page() {
-		<div class="unsupported">
-			<h1>Unsupported Browser</h1>
-			<p>
-				Javascript Required or your browser is not supported. Please enabled javascript and use a modern browser such as
-				<a href="https://www.google.com/chrome/">Google Chrome</a> or
-				<a href="https://www.mozilla.org/en-US/firefox/new/">Mozilla Firefox</a>.
-			</p>
-		</div>
-	}
+type IconAttrs struct {
+	Kind string
+	Name string
 }
 
-templ Icon(name string) {
-	@IconSolid(name)
+func (i IconAttrs) String() string {
+	if i.Kind == "" {
+		i.Kind = "solid"
+	}
+	return fmt.Sprintf("fa-%s fa-%s", i.Kind, i.Name)
+}
+
+func (i IconAttrs) IsZeroValue() bool { return i.Kind == "" && i.Name == "" }
+
+templ Icon(attrs IconAttrs) {
+	<i class={ attrs.String() }></i>
 }
 
 templ IconSolid(name string) {
-	<i class={ "fa-solid fa-" + name }></i>
+	@Icon(IconAttrs{Kind: "solid", Name: name})
 }
 
 templ IconRegular(name string) {
-	<i class={ "fa-regular fa-" + name }></i>
+	@Icon(IconAttrs{Kind: "regular", Name: name})
 }
 
 templ IconBrand(name string) {
-	<i class={ "fa-brands fa-" + name }></i>
+	@Icon(IconAttrs{Kind: "brand", Name: name})
 }
 
 type TableAttrs struct {
@@ -85,75 +108,6 @@ templ TrafficTable(id string, attrs TableAttrs) {
 }
 
 templ TrafficRow() {
-}
-
-templ AppHeader() {
-	<header class="app-header">
-		@GlobalBar()
-		@LocalBar()
-	</header>
-}
-
-templ GlobalBar() {
-	<div class="global-bar">
-		<div class="global-bar-start">
-			<a href="/">
-				<img src="/static/icons8-radio-tower-48.png" class="logo-img"/>
-			</a>
-			<div class="app-context">
-				<nav role="navigation">
-					<ul>
-						<li>
-							<a href="#" class="context-item button">Southeast Florida Traffic Net</a>
-							<span class="context-item-separator">/</span>
-						</li>
-						<li>
-							<a href="#" class="context-item button">Current Net</a>
-						</li>
-					</ul>
-				</nav>
-			</div>
-		</div>
-		<div class="global-bar-end">
-			<a href="#" class="button">
-				@Icon("user")
-				Account
-			</a>
-		</div>
-	</div>
-}
-
-templ LocalBar() {
-	<div class="local-bar">
-		<nav>
-			<ul>
-				<li>
-					<a href="#" class="active">
-						@Icon("file-lines")
-						Preamble
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("list-check")
-						Check Ins
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("receipt")
-						Reports
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("sliders")
-						Settings
-					</a>
-				</li>
-			</ul>
-		</nav>
-	</div>
 }
 
 templ Announcement(title, body string) {

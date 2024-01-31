@@ -68,7 +68,7 @@ templ (v Session) Created() {
 }
 
 templ (v Session) VerificationFailed(reason error) {
-	@Page() {
+	@BarePage() {
 		<div class="modal">
 			<div class="modal-header">
 				<h1>That didn't work.</h1>

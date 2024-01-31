@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/mrz1836/postmark"
 	"github.com/ryanfaerman/netctl/config"
 	"github.com/ryanfaerman/netctl/internal/models"
@@ -137,9 +136,7 @@ func (session) Destroy(ctx context.Context) error {
 	return nil
 }
 
-var (
-	ErrNoAccountInSession = errors.New("no account in session")
-)
+var ErrNoAccountInSession = errors.New("no account in session")
 
 func (session) GetAccount(ctx context.Context) (*models.Account, error) {
 	id, ok := global.session.Get(ctx, "account_id").(int64)
@@ -154,7 +151,5 @@ func (s session) MustGetAccount(ctx context.Context) *models.Account {
 	if err != nil {
 		panic(err)
 	}
-	spew.Dump(u)
-	spew.Dump(u.Ready())
 	return u
 }

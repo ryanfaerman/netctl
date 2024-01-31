@@ -40,5 +40,5 @@ DELETE FROM events_recovery WHERE id = ?1;
 -- name: GetEventsForCallsign :many
 SELECT *
 FROM events
-WHERE event_type = ?1 
+WHERE event_type = ?1
 AND json_extract(event_data, '$.callsign') = @callsign;

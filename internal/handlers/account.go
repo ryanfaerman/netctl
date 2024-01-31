@@ -8,6 +8,7 @@ import (
 
 	validator "github.com/go-playground/validator/v10"
 	"github.com/ryanfaerman/netctl/internal/middleware"
+	"github.com/ryanfaerman/netctl/internal/models"
 	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/internal/views"
 	"github.com/ryanfaerman/netctl/web/named"
@@ -29,6 +30,7 @@ func (h account) Routes(r chi.Router) {
 	})
 
 	r.Get(named.Route("account-profile", "/profile/{callsign}"), h.Show)
+	r.Get(named.Route("account-profile-self", "/profile"), h.Show)
 	r.Get(named.Route("account-edit", "/profile/{callsign}/edit"), h.Edit)
 	r.Post(named.Route("account-edit-save", "/profile/{callsign}/edit/-/save"), h.Update)
 }
@@ -87,19 +89,32 @@ func (h account) Setup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h account) Show(w http.ResponseWriter, r *http.Request) {
+	var account *models.Account
+
 	callsign := chi.URLParam(r, "callsign")
+	if callsign == "" {
+		a, err := services.Session.GetAccount(r.Context())
+		if err != nil {
+			ErrorHandler(err)(w, r)
+			return
+		}
+		account = a
+		// get account from session
+	} else {
+		a, err := services.Account.FindByCallsign(r.Context(), callsign)
+		if err != nil {
+			ErrorHandler(err)(w, r)
+			return
+		}
+		account = a
+
+	}
 	ctx := services.CSRF.GetContext(r.Context(), r)
 
-	a, err := services.Account.FindByCallsign(ctx, callsign)
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
-
-	a.About = services.Markdown.MustRenderString(a.About)
+	account.About = services.Markdown.MustRenderString(account.About)
 
 	v := views.Account{
-		Account: a,
+		Account: account,
 	}
 	v.Profile().Render(ctx, w)
 }

@@ -11,8 +11,17 @@ type Net struct {
 	Stream  models.EventStream
 }
 
+func (v Net) Nav() Menu {
+	return Menu{
+		{Value: "Preamble", URL: "#", Icon: IconAttrs{Name: "file-lines"}},
+		{Value: "Check Ins", URL: named.URLFor("net-session-show", v.Session.ID), Icon: IconAttrs{Name: "list-check"}},
+		{Value: "Reports", URL: "#", Icon: IconAttrs{Name: "receipt"}},
+		{Value: "Settings", URL: "#", Icon: IconAttrs{Name: "sliders"}},
+	}
+}
+
 templ (n Net) List() {
-	@Page() {
+	@Page(Menu{}) {
 		<div class="modal">
 			<div class="modal-header">
 				<h1>Net List</h1>
@@ -30,7 +39,7 @@ templ (n Net) List() {
 }
 
 templ (v Net) Create() {
-	@Page() {
+	@BarePage() {
 		<div class="modal">
 			<div class="modal-header">
 				<h1>Create a Net</h1>
@@ -73,7 +82,7 @@ templ (v Net) CreateFormWithErrors(input CreateNetFormInput, errs CreateNetFormE
 }
 
 templ (n Net) Show() {
-	@Page() {
+	@Page(Menu{}) {
 		<div class="grid-container split">
 			<div>
 				<h1>{ n.Net.Name }</h1>
@@ -120,89 +129,13 @@ templ (n Net) Show() {
 	}
 }
 
-templ (v Net) GlobalBar() {
-	<div class="global-bar">
-		<div class="global-bar-start">
-			<a href="/">
-				<img src="/static/icons8-radio-tower-48.png" class="logo-img"/>
-			</a>
-			<div class="app-context">
-				<nav role="navigation">
-					<ul>
-						<li>
-							<a href="#" class="context-item button">Southeast Florida Traffic Net</a>
-							<span class="context-item-separator">/</span>
-						</li>
-						<li>
-							<a href="#" class="context-item button">Current Net</a>
-						</li>
-					</ul>
-				</nav>
-			</div>
-		</div>
-		<div class="global-bar-end">
-			<a href="#" class="button">
-				@Icon("user")
-				Account
-			</a>
-		</div>
-	</div>
-}
-
-templ (v Net) LocalBar() {
-	<div class="local-bar">
-		<nav>
-			<ul>
-				<li class="app-name">
-					<a href="/">
-						@Icon("tower-cell")
-						Net Control
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("file-lines")
-						Preamble
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab active">
-						@Icon("list-check")
-						Check Ins
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("receipt")
-						Reports
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("sliders")
-						Settings
-					</a>
-				</li>
-			</ul>
-		</nav>
-		<nav>
-			<ul>
-				<li>
-					<a href="#" class="tab">
-						@Icon("user")
-						Account
-					</a>
-				</li>
-			</ul>
-		</nav>
-	</div>
-}
-
 templ (v Net) SingleNetSession(streamID string) {
-	@Page() {
-		<header class="app-header">
-			@v.LocalBar()
-		</header>
+	@Page(Menu{
+		{Value: "Preamble", URL: "#", Icon: IconAttrs{Name: "file-lines"}},
+		{Value: "Check Ins", URL: named.URLFor("net-session-show", streamID), Icon: IconAttrs{Name: "list-check"}},
+		{Value: "Reports", URL: "#", Icon: IconAttrs{Name: "receipt"}},
+		{Value: "Settings", URL: "#", Icon: IconAttrs{Name: "sliders"}},
+	}) {
 		<div class="grid-container split">
 			<div>
 				<div class="sticky mast-head-form">
@@ -499,7 +432,7 @@ templ (n Net) CheckinRow(checkin models.NetCheckin, isNew ...bool) {
 templ (n Net) TimelineItem(event models.Event) {
 	<div class="timeline-item">
 		<div class="timeline-badge">
-			@Icon("play")
+			@IconSolid("play")
 		</div>
 		<div class="timeline-body">
 			<div class="event">

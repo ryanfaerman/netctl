@@ -11,10 +11,12 @@ type Dashboard struct {
 }
 
 templ (v Dashboard) Authenticated() {
-	@Page() {
-		if v.Ready != nil {
+	if v.Ready != nil {
+		@BarePage() {
 			@v.SetupAccount()
-		} else {
+		}
+	} else {
+		@Page(Menu{}) {
 			<div class="modal">
 				<div class="modal-header">
 					<h1>Welcome Back { v.Account.Name }!</h1>
@@ -95,7 +97,7 @@ templ (v Dashboard) SetupAccountWithErrors(input SetupAccountInput, errs SetupAc
 }
 
 templ (v Dashboard) Anonymous() {
-	@Page() {
+	@BarePage() {
 		<div class="modal">
 			<div class="modal-header">
 				<h1>It's nice to see you again.</h1>

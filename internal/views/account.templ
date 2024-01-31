@@ -7,11 +7,17 @@ type Account struct {
 	Account *models.Account
 }
 
+func (v Account) Nav() Menu {
+	return Menu{
+		{Value: "Profile", URL: named.URLFor("account-profile", v.Account.Callsign().Call), Icon: IconAttrs{Name: "file-lines"}},
+		{Value: "Billing", URL: "#", Icon: IconAttrs{Name: "list-check"}},
+		{Value: "Reports", URL: "#", Icon: IconAttrs{Name: "receipt"}},
+		{Value: "Settings", URL: "#", Icon: IconAttrs{Name: "sliders"}},
+	}
+}
+
 templ (v Account) Profile() {
-	@Page() {
-		<header class="app-header">
-			@v.LocalBar()
-		</header>
+	@Page(v.Nav()) {
 		<div class="grid-container split">
 			<div>
 				<h1>{ v.Account.Name }</h1>
@@ -28,10 +34,7 @@ templ (v Account) Profile() {
 }
 
 templ (v Account) Edit() {
-	@Page() {
-		<header class="app-header">
-			@v.LocalBar()
-		</header>
+	@Page(v.Nav()) {
 		<div class="grid-container split">
 			<div>
 				"Editing { v.Account.Name }!"
@@ -89,53 +92,4 @@ templ (v Account) EditFormWithErrors(input AccountEditFormInput, inputErrs Accou
             Value: "Save",
           })
 	}
-}
-
-templ (v Account) LocalBar() {
-	<div class="local-bar">
-		<nav>
-			<ul>
-				<li class="app-name">
-					<a href="/">
-						@Icon("tower-cell")
-						Net Control
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("file-lines")
-						Preamble
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab active">
-						@Icon("list-check")
-						Check Ins
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("receipt")
-						Reports
-					</a>
-				</li>
-				<li>
-					<a href="#" class="tab">
-						@Icon("sliders")
-						Settings
-					</a>
-				</li>
-			</ul>
-		</nav>
-		<nav>
-			<ul>
-				<li>
-					<a href="#" class="tab">
-						@Icon("user")
-						Account
-					</a>
-				</li>
-			</ul>
-		</nav>
-	</div>
 }

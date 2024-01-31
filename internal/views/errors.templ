@@ -12,7 +12,7 @@ templ (v Errors) referenceCode() {
 }
 
 templ (v Errors) Unsupported() {
-	@Page() {
+	@BarePage() {
 		<div class="modal error unsupported">
 			<div class="modal-header">
 				<h1>Unsupported Browser</h1>
@@ -33,7 +33,7 @@ templ (v Errors) Unsupported() {
 }
 
 templ (v Errors) General() {
-	@Page() {
+	@BarePage() {
 		<div class="modal error general">
 			<div class="modal-header">
 				<h1>Oops! Something went wrong.</h1>
@@ -51,7 +51,7 @@ templ (v Errors) General() {
 }
 
 templ (v Errors) NotFound() {
-	@Page() {
+	@BarePage() {
 		<div class="modal error not-found">
 			<div class="modal-header">
 				<h1>CQ CQ CQ... Nothing heard</h1>
