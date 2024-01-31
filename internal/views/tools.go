@@ -2,7 +2,9 @@ package views
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
+	"strings"
 	"sync"
 
 	"github.com/essentialkaos/branca/v2"
@@ -57,4 +59,10 @@ func DecodeInputAttrs(encoded string) (InputAttrs, error) {
 		return InputAttrs{}, err
 	}
 	return i, nil
+}
+
+func gravatarURL(email string) string {
+	h := sha256.New()
+	h.Write([]byte(strings.TrimSpace(strings.ToLower(email))))
+	return "https://www.gravatar.com/avatar/" + string(h.Sum(nil)) + "?s=80"
 }
