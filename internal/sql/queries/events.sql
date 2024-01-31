@@ -41,4 +41,4 @@ DELETE FROM events_recovery WHERE id = ?1;
 SELECT *
 FROM events
 WHERE event_type = ?1 
-AND json_extract(event_data, '$.Callsign') = @callsign;
+AND json_extract(event_data, '$.callsign') = @callsign;

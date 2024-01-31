@@ -1,112 +1,92 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
-	"unicode"
+	"log"
+	"reflect"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ryanfaerman/netctl/internal/events"
 )
 
-type (
-	NamespaceThingHappened         struct{}
-	NamespaceSomethingElseHappened struct{}
-)
-
-func splitByCapital(input string) []string {
-	var result []string
-	start := 0
-
-	for i, char := range input {
-		if i > 0 && unicode.IsUpper(char) {
-			result = append(result, input[start:i])
-			start = i
-		}
-	}
-
-	// Add the last part of the string
-	result = append(result, input[start:])
-
-	return result
+// Define a sample struct
+type YourStruct struct {
+	ID       string `json:"id"`
+	Callsign string `json:"callsign"`
+	Name     string `json:"name"`
+	Location string `json:"location"`
+	// ... other fields
 }
 
-func convertToSnakeCase(input string) string {
-	var result []rune
+var registry = make(map[string]reflect.Type)
 
-	for i, char := range input {
-		if unicode.IsUpper(char) {
-			// Add underscore if not at the beginning and the next character is not uppercase
-			if i > 0 && i+1 < len(input) && !unicode.IsUpper(rune(input[i+1])) {
-				result = append(result, '_')
-			}
-			// Convert the uppercase letter to lowercase
-			result = append(result, unicode.ToLower(char))
-		} else {
-			result = append(result, char)
-		}
-	}
-
-	return strings.ReplaceAll(string(result), ".", "_")
+func register(e interface{}) {
+	name := fmt.Sprintf("%T", e)
+	fmt.Println("registering", name)
+	registry[name] = reflect.TypeOf(e)
 }
 
-func convertToSnakeCase2(input string) string {
-	var result []rune
-
-	for i, char := range input {
-		if i > 0 && char == '.' {
-			// Replace subsequent dots with underscores
-			result = append(result, '_')
-		} else if unicode.IsUpper(char) {
-			// Convert the uppercase letter to lowercase
-			result = append(result, unicode.ToLower(char))
-		} else {
-			result = append(result, char)
-		}
-	}
-
-	return string(result)
+func get(name string) interface{} {
+	return reflect.New(registry[name]).Interface()
 }
 
-func convertToSnakeCase3(e any) string {
-	input := fmt.Sprintf("%T", e)
-	var result []rune
+func get2(name string) interface{} {
+	instance := reflect.New(registry[name]).Elem().Interface()
+	return reflect.Indirect(reflect.ValueOf(instance)).Interface()
+}
 
-	sep := 'X'
-	skip := true
-	for i, char := range input {
-		fmt.Println(i, string(char), skip)
-		if skip && char != '.' {
-			continue
-		}
-		if skip && char == '.' {
-			skip = false
-		}
-		if unicode.IsUpper(char) {
-			// Add underscore if not at the beginning and the next character is not uppercase
-			if i > 0 && i+1 < len(input) && !unicode.IsUpper(rune(input[i+1])) {
-				result = append(result, sep)
-				sep = '_'
-			}
-			// Convert the uppercase letter to lowercase
-			result = append(result, unicode.ToLower(char))
-		} else {
-			result = append(result, char)
-		}
+func get3[K any](name string) K {
+	instance := reflect.New(registry[name]).Elem().Interface()
+	return reflect.Indirect(reflect.ValueOf(instance)).Interface().(K)
+}
+
+var handlers = make(map[string]func() any)
+
+func handle[K any]() {
+	n := new(K)
+	spew.Dump(n)
+	name := fmt.Sprintf("%T", *new(K))
+	fmt.Println(name)
+	handlers[name] = func() any {
+		return new(K)
 	}
+}
 
-	return string(result)
+func decode(kind string, data []byte) any {
+	k := handlers[kind]()
+	json.Unmarshal(data, k)
+	return k
 }
 
 func main() {
-	things := []any{
-		NamespaceSomethingElseHappened{},
-		NamespaceThingHappened{},
-		events.NetSessionClosed{},
-		events.NetCheckinHeard{},
-	}
+	// register(events.NetCheckinHeard{})
+	// register(YourStruct{})
+	//
+	// k := get2("events.NetCheckinHeard")
+	// spew.Dump(k)
+	//
+	// data := `{"id":"01HNDEHNP9BJSGYS5369TPQV04","callsign":"KQ4JXI","name":"","location":"","kind":"Routine","traffic":0}`
+	// json.Unmarshal([]byte(data), &k)
+	// spew.Dump(k)
+	//
+	// name := fmt.Sprintf("%T", k)
+	// fmt.Println(name)
+	// handle[events.NetCheckinHeard]()
+	//
+	// data := `{"id":"01HNDEHNP9BJSGYS5369TPQV04","callsign":"KQ4JXI","name":"","location":"","kind":"Routine","traffic":0}`
+	// fmt.Println("whoop")
+	// k := decode("events.NetCheckinHeard", []byte(data))
+	// spew.Dump(k)
 
-	for _, thing := range things {
-		fmt.Println(convertToSnakeCase3(thing))
-		return
+	data := `{"id":"01HNDEHNP9BJSGYS5369TPQV04","callsign":"KQ4JXI","name":"","location":"","kind":"Routine","traffic":0}`
+	k, err := events.Decode("events.NetCheckinHeard", []byte(data))
+	if err != nil {
+		log.Fatal(err)
+	}
+	switch v := k.(type) {
+	case *events.NetCheckinHeard:
+		fmt.Println(v.Callsign)
+		spew.Dump(v)
 	}
 }

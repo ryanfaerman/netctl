@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/pressly/goose/v3"
 
-	_ "github.com/glebarez/go-sqlite"
 	goMigrations "github.com/ryanfaerman/netctl/internal/sql/migrations"
 )
 

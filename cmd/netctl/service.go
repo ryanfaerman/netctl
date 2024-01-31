@@ -16,6 +16,8 @@ import (
 	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/web"
 	"github.com/spf13/cobra"
+
+	_ "modernc.org/sqlite"
 )
 
 var cmdService = &cobra.Command{

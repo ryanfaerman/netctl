@@ -32,7 +32,7 @@ func FindEventsForStreams(ctx context.Context, streamIDs ...string) (EventStream
 	stream := make(EventStream, len(raws))
 
 	for i, raw := range raws {
-		e, err := events.Decode(raw.EventType, raw.EventData)
+		e, err := events.Decode(raw.EventType, []byte(raw.EventData))
 		if err != nil {
 			return EventStream{}, err
 		}
@@ -55,7 +55,7 @@ func FindEventsForCallsign(eventType string, callsign string) (EventStream, erro
 	l := global.log.With("callsign", callsign, "event_type", eventType)
 	raws, err := global.dao.GetEventsForCallsign(context.Background(), dao.GetEventsForCallsignParams{
 		EventType: eventType,
-		Callsign:  []byte(callsign),
+		Callsign:  callsign,
 	})
 	if err != nil {
 		l.Error("unable to get events for callsign")
@@ -65,7 +65,7 @@ func FindEventsForCallsign(eventType string, callsign string) (EventStream, erro
 	stream := make(EventStream, len(raws))
 
 	for i, raw := range raws {
-		e, err := events.Decode(raw.EventType, raw.EventData)
+		e, err := events.Decode(raw.EventType, []byte(raw.EventData))
 		if err != nil {
 			return EventStream{}, err
 		}
@@ -99,7 +99,7 @@ func FindRecoverableEvents(ctx context.Context) ([]RecoveredEvent, error) {
 	stream := make([]RecoveredEvent, len(raws))
 
 	for i, raw := range raws {
-		e, err := events.Decode(raw.EventType, raw.EventData)
+		e, err := events.Decode(raw.EventType, []byte(raw.EventData))
 		if err != nil {
 			return stream, err
 		}

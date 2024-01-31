@@ -42,7 +42,7 @@ func (e *event) Create(ctx context.Context, stream string, evt any) error {
 		StreamID:  stream,
 		AccountID: 1,
 		EventType: fmt.Sprintf("%T", evt),
-		EventData: d,
+		EventData: string(d),
 	})
 	if err != nil {
 		return err

@@ -7,3 +7,8 @@ sql:
       go:
         package: "dao"
         out: "../dao"
+        overrides:
+          - column: events.event_data
+            go_type:
+              type: string
+

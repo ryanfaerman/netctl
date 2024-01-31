@@ -8,7 +8,7 @@ import (
 
 	"github.com/charmbracelet/log"
 
-	_ "github.com/glebarez/go-sqlite"
+	_ "modernc.org/sqlite"
 )
 
 type NoopWriter struct{}
@@ -16,7 +16,6 @@ type NoopWriter struct{}
 func (nw *NoopWriter) Write(p []byte) (n int, err error) { return len(p), nil }
 
 func TestMain(m *testing.M) {
-
 	var nullWriter io.Writer = &NoopWriter{}
 	l := log.With("pkg", "models")
 	l.SetLevel(log.DebugLevel)

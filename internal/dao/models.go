@@ -71,7 +71,7 @@ type Event struct {
 	StreamID  string
 	AccountID int64
 	EventType string
-	EventData []byte
+	EventData string
 }
 
 type EventsRecovery struct {

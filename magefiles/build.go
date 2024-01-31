@@ -169,7 +169,6 @@ func Release() error {
 	})
 
 	return wg.Wait()
-
 }
 
 func Vendor() {

@@ -24,7 +24,7 @@ type CreateEventParams struct {
 	StreamID  string
 	AccountID int64
 	EventType string
-	EventData []byte
+	EventData string
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (int64, error) {
@@ -118,12 +118,12 @@ const getEventsForCallsign = `-- name: GetEventsForCallsign :many
 SELECT id, created, stream_id, account_id, event_type, event_data
 FROM events
 WHERE event_type = ?1 
-AND json_extract(event_data, '$.Callsign') = ?2
+AND json_extract(event_data, '$.callsign') = ?2
 `
 
 type GetEventsForCallsignParams struct {
 	EventType string
-	Callsign  []byte
+	Callsign  string
 }
 
 func (q *Queries) GetEventsForCallsign(ctx context.Context, arg GetEventsForCallsignParams) ([]Event, error) {
@@ -253,7 +253,7 @@ type GetRecoverableEventsRow struct {
 	StreamID     string
 	AccountID    int64
 	EventType    string
-	EventData    []byte
+	EventData    string
 }
 
 func (q *Queries) GetRecoverableEvents(ctx context.Context) ([]GetRecoverableEventsRow, error) {

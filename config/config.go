@@ -13,7 +13,7 @@ import (
 
 	goose "github.com/pressly/goose/v3"
 
-	_ "github.com/glebarez/go-sqlite"
+	_ "modernc.org/sqlite"
 
 	"github.com/charmbracelet/log"
 	dao "github.com/ryanfaerman/netctl/config/data"

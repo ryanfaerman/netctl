@@ -27,7 +27,7 @@ func NewMigration(name string) error {
 		parts := strings.SplitN(migration.Name(), "_", 2)
 		migrationIndex, err := strconv.Atoi(parts[0])
 		if err != nil {
-			return err
+			continue
 		}
 		if migrationIndex > index {
 			index = migrationIndex

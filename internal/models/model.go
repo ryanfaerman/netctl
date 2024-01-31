@@ -7,7 +7,6 @@ import (
 	"github.com/ryanfaerman/netctl/internal/dao"
 
 	"github.com/charmbracelet/log"
-	_ "github.com/glebarez/go-sqlite"
 
 	migrations "github.com/ryanfaerman/netctl/internal/sql"
 )
@@ -39,7 +38,6 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 		}
 
 		global.dao = dao.New(global.db)
-
 	})
 
 	return err

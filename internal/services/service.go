@@ -15,7 +15,6 @@ import (
 	"github.com/ryanfaerman/netctl/internal/models"
 
 	"github.com/charmbracelet/log"
-	_ "github.com/glebarez/go-sqlite"
 )
 
 var global = struct {
