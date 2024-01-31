@@ -1,25 +1,27 @@
 package events
 
+func init() {
+	register[AccountCreated]("account.created")
+	register[AccountProfileUpdated]("account.profile_updated")
+	register[AccountSessionOpened]("account.session_opened")
+}
+
 type (
 	AccountCreated struct {
-		ID    int64
-		Email string
+		Email string `json:"email"`
+		ID    int64  `json:"id"`
 	}
 
 	AccountProfileUpdated struct {
-		ID       int64
-		Name     string
-		About    string
-		Callsign string
+		Name     string `json:"name"`
+		About    string `json:"about"`
+		Callsign string `json:"callsign"`
+		ID       int64  `json:"id"`
 	}
 
 	AccountSessionOpened struct {
-		ID        int64
-		UserAgent string
-		IP        string
+		UserAgent string `json:"user_agent"`
+		IP        string `json:"ip"`
+		ID        int64  `json:"id"`
 	}
 )
-
-func (AccountCreated) Event() string        { return "account.created" }
-func (AccountProfileUpdated) Event() string { return "account.profile_updated" }
-func (AccountSessionOpened) Event() string  { return "account.session_opened" }

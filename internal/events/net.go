@@ -1,21 +1,20 @@
 package events
 
 import (
-	"encoding/gob"
 	"errors"
 	"time"
 )
 
 func init() {
-	gob.Register(NetCheckinHeard{})
-	gob.Register(NetCheckinVerified{})
-	gob.Register(NetCheckinAcked{})
-	gob.Register(NetCheckinCorrected{})
-	gob.Register(NetCheckinRevoked{})
+	register[NetCheckinHeard]("net.checkin_heard")
+	register[NetCheckinVerified]("net.checkin_verified")
+	register[NetCheckinAcked]("net.checkin_acked")
+	register[NetCheckinCorrected]("net.checkin_corrected")
+	register[NetCheckinRevoked]("net.checkin_revoked")
 
-	gob.Register(NetSessionScheduled{})
-	gob.Register(NetSessionOpened{})
-	gob.Register(NetSessionClosed{})
+	register[NetSessionScheduled]("net.session_scheduled")
+	register[NetSessionOpened]("net.session_opened")
+	register[NetSessionClosed]("net.session_closed")
 }
 
 var (
@@ -29,57 +28,52 @@ type (
 	// NetCheckinHeard is a struct that contains the information about a checkin
 	// as it was heard by the net control operator.
 	NetCheckinHeard struct {
-		ID string // a random identifier, ideally a ULID
-
-		Callsign string
-		Name     string
-		Location string
-		Kind     string // e.g. models.EventCheckinKindRoutine
-		Traffic  int
+		ID       string `json:"id"` // a random identifier, ideally a ULID
+		Callsign string `json:"callsign"`
+		Name     string `json:"name"`
+		Location string `json:"location"`
+		Kind     string `json:"kind"` // e.g. models.EventCheckinKindRoutine
+		Traffic  int    `json:"traffic"`
 	}
 
 	// NetCheckinVerified is a struct that contains the information about a checkin
 	// as it was verified against a licensing authority.
 	NetCheckinVerified struct {
-		ID string // should match the ID from NetCheckinHeard
-
-		Callsign string
-		Name     string
-		Location string
-
-		ErrorType string // e.g. hamdb.ErrNotFound, ErrClub
-
-		CallsignID int64 // reference a record in the database
+		ID         string `json:"id"` // should match the ID from NetCheckinHeard
+		Callsign   string `json:"callsign"`
+		Name       string `json:"name"`
+		Location   string `json:"location"`
+		ErrorType  string `json:"error_type"`  // e.g. hamdb.ErrNotFound, ErrClub
+		CallsignID int64  `json:"callsign_id"` // reference a record in the database
 	}
 
 	// NetCheckinAcked is a struct that contains the information about a checkin
 	// as it was acknowledged by the net control operator.
 	NetCheckinAcked struct {
-		ID string // should match the ID from NetCheckinHeard
+		ID string `json:"id"` // should match the ID from NetCheckinHeard
 	}
 
 	// NetCheckinCorrected is a struct that contains the information about a checkin
 	// as it was corrected by the net control operator.
 	NetCheckinCorrected struct {
-		ID string // should match the ID from NetCheckinHeard
-
-		Callsign string
-		Name     string
-		Location string
-		Kind     string
-		Traffic  int
+		ID       string `json:"id"` // should match the ID from NetCheckinHeard
+		Callsign string `json:"callsign"`
+		Name     string `json:"name"`
+		Location string `json:"location"`
+		Kind     string `json:"kind"`
+		Traffic  int    `json:"traffic"`
 	}
 
 	// NetCheckinRevoked is a struct that contains the information about a checkin
 	// as it was revoked by the net control operator.
 	NetCheckinRevoked struct {
-		ID string // should match the ID from NetCheckinHeard
+		ID string `json:"id"` // should match the ID from NetCheckinHeard
 	}
 
 	// NetSessionScheduled occurs when a net session is scheduled. Often occurs
 	// when it is first created.
 	NetSessionScheduled struct {
-		At time.Time
+		At time.Time `json:"at"`
 	}
 
 	// NetSessionOpened occurs when a net session is opened.
@@ -88,12 +82,3 @@ type (
 	// NetSessionClosed occurs when a net session is closed.
 	NetSessionClosed struct{}
 )
-
-func (NetCheckinHeard) Event() string     { return "checkin.heard" }
-func (NetCheckinVerified) Event() string  { return "checkin.verified" }
-func (NetCheckinAcked) Event() string     { return "checkin.acked" }
-func (NetCheckinCorrected) Event() string { return "checkin.corrected" }
-func (NetCheckinRevoked) Event() string   { return "checkin.revoked" }
-func (NetSessionScheduled) Event() string { return "session.scheduled" }
-func (NetSessionOpened) Event() string    { return "session.opened" }
-func (NetSessionClosed) Event() string    { return "session.closed" }
