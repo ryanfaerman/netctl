@@ -96,7 +96,12 @@ templ (m Menu) NewAppBar() {
 						@item.Item()
 					}
 					<li>
-						<a href="#" class="tab">
+						<a
+							class="tab"
+							hx-get={ named.URLFor("slide-over-show") }
+							hx-target="#slide-over-target"
+							hx-swap="outerHTML"
+						>
 							@IconSolid("user")
 							Account
 						</a>
@@ -105,4 +110,92 @@ templ (m Menu) NewAppBar() {
 			</nav>
 		</div>
 	</header>
+	@SlideOverTarget()
+}
+
+templ SlideOverTarget() {
+	<div id="slide-over-target"></div>
+}
+
+templ SlideOver() {
+	<div id="slide-over-target">
+		<div
+			class="slide-overlay"
+			hx-get={ named.URLFor("slide-over-hide") }
+			hx-target="#slide-over-target"
+			hx-swap="outerHTML"
+		></div>
+		<div class="slide-over" data-slide-from="right">
+			<header>
+				<span class="title name">Ryan Faerman</span>
+				<span class="subtitle callsign">KQ4JXI</span>
+				<a
+					class="close"
+					hx-get={ named.URLFor("slide-over-hide") }
+					hx-target="#slide-over-target"
+					hx-swap="outerHTML"
+				>
+					@IconSolid("xmark")
+				</a>
+			</header>
+			<div class="content">
+				<ul>
+					<li>
+						<a href={ templ.URL(named.URLFor("account-profile-self")) }>
+							@IconSolid("user")
+							Your Profile
+						</a>
+					</li>
+				</ul>
+				<ul>
+					<li>
+						<a href="#">
+							@IconSolid("book")
+							Your Logbooks
+						</a>
+					</li>
+					<li>
+						<a href="#">
+							@IconSolid("users-rectangle")
+							Your Nets
+						</a>
+					</li>
+					<li>
+						<a href="#">
+							@IconSolid("people-group")
+							Your Clubs
+						</a>
+					</li>
+					<li>
+						<a href="#">
+							@IconSolid("sliders")
+							Settings
+						</a>
+					</li>
+				</ul>
+				<ul>
+					<li>
+						<a href="#">
+							@IconSolid("book-open")
+							Net Control Docs
+						</a>
+					</li>
+					<li>
+						<a href="#">
+							@IconSolid("clipboard-question")
+							Net Control Support
+						</a>
+					</li>
+				</ul>
+				<ul>
+					<li>
+						<a href="#">
+							@IconSolid("sign-out")
+							Sign Out
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</div>
 }
