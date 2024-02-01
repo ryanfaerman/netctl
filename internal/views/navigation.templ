@@ -79,6 +79,16 @@ templ (m Menu) NewAppBar() {
 		<div class="local-bar">
 			<nav>
 				<ul>
+					<li>
+						<a
+							class="tab menu-button"
+							hx-get={ named.URLFor("slide-over-show", "left") }
+							hx-target="#slide-over-target"
+							hx-swap="outerHTML"
+						>
+							@IconSolid("bars")
+						</a>
+					</li>
 					<li class="app-name">
 						<a href="/">
 							@IconSolid("tower-cell")
@@ -98,7 +108,7 @@ templ (m Menu) NewAppBar() {
 					<li>
 						<a
 							class="tab"
-							hx-get={ named.URLFor("slide-over-show") }
+							hx-get={ named.URLFor("slide-over-show", "right") }
 							hx-target="#slide-over-target"
 							hx-swap="outerHTML"
 						>
@@ -117,7 +127,20 @@ templ SlideOverTarget() {
 	<div id="slide-over-target"></div>
 }
 
-templ SlideOver() {
+type SideMenu struct {
+	Header   templ.Component
+	Sections []Menu
+	OnRight  bool
+}
+
+func (v SideMenu) side() string {
+	if v.OnRight {
+		return "right"
+	}
+	return "left"
+}
+
+templ (v SideMenu) Show() {
 	<div id="slide-over-target">
 		<div
 			class="slide-overlay"
@@ -125,7 +148,97 @@ templ SlideOver() {
 			hx-target="#slide-over-target"
 			hx-swap="outerHTML"
 		></div>
-		<div class="slide-over" data-slide-from="right">
+		<div class="slide-over" data-slide-from={ v.side() }>
+			<header>
+				@v.Header
+				<a
+					class="close"
+					hx-get={ named.URLFor("slide-over-hide") }
+					hx-target="#slide-over-target"
+					hx-swap="outerHTML"
+				>
+					@IconSolid("xmark")
+				</a>
+			</header>
+			<div class="content">
+				for _, section := range v.Sections {
+					<ul>
+						for _, item := range section {
+							@item.Item()
+						}
+					</ul>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ LeftNavHeader() {
+	<div class="title app-name">
+		<a href="/">
+			@IconSolid("tower-cell")
+			Net Control
+		</a>
+	</div>
+}
+
+func LeftNav() SideMenu {
+	return SideMenu{
+		Header:  LeftNavHeader(),
+		OnRight: false,
+		Sections: []Menu{
+			{
+				{Value: "Home", URL: "/", Icon: IconAttrs{Name: "house"}},
+				{Value: "Nets", URL: "#", Icon: IconAttrs{Name: "users-rectangle"}},
+				{Value: "Stations", URL: "#", Icon: IconAttrs{Name: "walkie-talkie"}},
+				{Value: "Clubs", URL: "#", Icon: IconAttrs{Name: "people-group"}},
+				{Value: "Contests", URL: "#", Icon: IconAttrs{Name: "trophy"}},
+			},
+			{
+				{Value: "Testing Locations", URL: "#", Icon: IconAttrs{Name: "map-location-dot"}},
+				{Value: "Marketplace", URL: "#", Icon: IconAttrs{Name: "store"}},
+			},
+		},
+	}
+}
+
+templ RightNavHeader() {
+	<span class="title name">Ryan Faerman</span>
+	<span class="subtitle callsign">KQ4JXI</span>
+}
+
+func RightNav() SideMenu {
+	return SideMenu{
+		Header:  RightNavHeader(),
+		OnRight: true,
+		Sections: []Menu{
+			{
+				{Value: "Your Profile", URL: named.URLFor("account-profile-self"), Icon: IconAttrs{Name: "user"}},
+				{Value: "Your Logbooks", URL: "#", Icon: IconAttrs{Name: "book"}},
+				{Value: "Your Nets", URL: "#", Icon: IconAttrs{Name: "users-rectangle"}},
+				{Value: "Your Clubs", URL: "#", Icon: IconAttrs{Name: "people-group"}},
+				{Value: "Settings", URL: "#", Icon: IconAttrs{Name: "sliders"}},
+			},
+			{
+				{Value: "Net Control Docs", URL: "#", Icon: IconAttrs{Name: "book-open"}},
+				{Value: "Net Control Support", URL: "#", Icon: IconAttrs{Name: "clipboard-question"}},
+			},
+			{
+				{Value: "Sign Out", URL: named.URLFor("session-destroy"), Icon: IconAttrs{Name: "sign-out"}},
+			},
+		},
+	}
+}
+
+templ SlideOver(side string) {
+	<div id="slide-over-target">
+		<div
+			class="slide-overlay"
+			hx-get={ named.URLFor("slide-over-hide") }
+			hx-target="#slide-over-target"
+			hx-swap="outerHTML"
+		></div>
+		<div class="slide-over" data-slide-from={ side }>
 			<header>
 				<span class="title name">Ryan Faerman</span>
 				<span class="subtitle callsign">KQ4JXI</span>

@@ -279,18 +279,32 @@ html {
   padding: 0 1rem;
 }
 
+.local-bar .menu-button {
+  border: 1px solid var(--border-color-softer);
+  color: var(--text-color-softer);
+  width: 1.5rem;
+  height: 2rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.local-bar .menu-button:hover {
+  border-color: var(--border-color);
+  color: var(--text-color-normal);
+}
+
 .local-bar .app-name {
-  margin-left: 1em;
   padding-right: 2em;
   border-right: 1px solid var(--border-color-softer);
 }
 
-.local-bar .app-name a {
+.app-name a {
   font-weight: bold;
   font-variant: small-caps;
+  color: inherit;
 }
 
-.local-bar .app-name a:hover {
+.app-name a:hover {
   background-color: transparent;
   color: var(--text-color-normal);
 }
@@ -432,7 +446,7 @@ html {
   border-top: 1px solid var(--border-color-softer);
   background: var(--background-color-softer);
   position: sticky;
-  top: 17rem;
+  top: 18rem;
   z-index: 10;
 }
 
@@ -1016,6 +1030,7 @@ textarea {
 	position: fixed;
 	z-index: 200;
 	opacity: .1;
+  top: 0;
 }
 
 
@@ -1027,6 +1042,14 @@ textarea {
 @keyframes slide-over-from-right {
     0% {
         transform: translateX(320px);
+    }
+    100% {
+        transform: translateX(0px);
+    }
+}
+@keyframes slide-over-from-left {
+    0% {
+        transform: translateX(-320px);
     }
     100% {
         transform: translateX(0px);
@@ -1044,7 +1067,8 @@ textarea {
   padding: 0.5rem 1rem;
 
   border-radius: 0.4rem;
-  animation: slide-over-from-right 100ms ease-in;
+
+  overflow-y: auto;
 }
 
 .slide-over[data-slide-from="right"] {
@@ -1052,6 +1076,15 @@ textarea {
 	border-left: 1px solid var(--border-color);
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
+  animation: slide-over-from-right 100ms ease-in;
+}
+
+.slide-over[data-slide-from="left"] {
+  left: 0;
+  border-right: 1px solid var(--border-color);
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  animation: slide-over-from-left 100ms ease-in;
 }
 
 .slide-over header {
@@ -1081,6 +1114,19 @@ textarea {
   color: var(--text-color-softer);
 }
 
+.slide-over header .app-name {
+  font-size: 1.6em;
+  color: var(--text-color-softer);
+  font-weight: bold;
+}
+
+.slide-over header a {
+  text-decoration: none;
+}
+.slide-over header a:hover {
+  color: var(--text-color-normal);
+}
+
 .slide-over header .close {
   grid-area: close;
   text-align: right;
@@ -1088,6 +1134,7 @@ textarea {
   font-size: 1.3em;
   color: var(--text-color-softer);
 }
+
 
 .slide-over ul {
   border-top: 1px solid var(--background-color-softer);
@@ -1099,6 +1146,8 @@ textarea {
 .slide-over ul a {
   color: var(--text-color-softer);
   text-decoration: none;
+  display: inline-block;
+  width: 100%;
 }
 
 .slide-over ul li {

@@ -17,12 +17,20 @@ func init() {
 
 func (h Navigation) Routes(r chi.Router) {
 	r.Use(middleware.HTMXOnly)
-	r.Get(named.Route("slide-over-show", "/-/slide-over/show"), h.SlideOverShow)
+	r.Get(named.Route("slide-over-show", "/-/slide-over/show/{side}"), h.SlideOverShow)
 	r.Get(named.Route("slide-over-hide", "/-/slide-over/hide"), h.SlideOverHide)
 }
 
 func (h Navigation) SlideOverShow(w http.ResponseWriter, r *http.Request) {
-	views.SlideOver().Render(r.Context(), w)
+	side := chi.URLParam(r, "side")
+	if side != "left" && side != "right" {
+		side = "right"
+	}
+	if side == "right" {
+		views.RightNav().Show().Render(r.Context(), w)
+	} else {
+		views.LeftNav().Show().Render(r.Context(), w)
+	}
 }
 
 func (h Navigation) SlideOverHide(w http.ResponseWriter, r *http.Request) {
