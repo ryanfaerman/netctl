@@ -41,6 +41,7 @@ type ctxKey int
 const (
 	ctxKeyCSRF ctxKey = iota
 	ctxKeyUser
+	ctxKeyAccount
 )
 
 var setupOnce sync.Once

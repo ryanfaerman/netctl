@@ -14,8 +14,14 @@ const (
 	AccountKindClub
 )
 
+var AccountAnonymous = &Account{
+	ID:        -1,
+	Name:      "Anonymous",
+	CreatedAt: time.Now(),
+}
+
 type Account struct {
-	ID int64
+	ID int64 `validate:"gte=0"`
 
 	Name  string `validate:"required"`
 	About string
@@ -24,6 +30,14 @@ type Account struct {
 	CreatedAt time.Time
 	DeletedAt time.Time
 	Deleted   bool
+}
+
+func (m *Account) IsAnonymous() bool {
+	return m.ID < 0
+}
+
+func (m *Account) InsertAllowed() bool {
+	return !m.IsAnonymous()
 }
 
 func (u *Account) Emails() ([]Email, error) {
@@ -51,6 +65,19 @@ func (u *Account) Emails() ([]Email, error) {
 		emails = append(emails, email)
 	}
 	return emails, nil
+}
+
+func (m *Account) PrimaryEmail() (Email, error) {
+	emails, err := m.Emails()
+	if err != nil {
+		return Email{}, err
+	}
+	for _, email := range emails {
+		if email.IsPrimary {
+			return email, nil
+		}
+	}
+	return Email{}, errors.New("no primary email")
 }
 
 func FindAccountByID(ctx context.Context, id int64) (*Account, error) {

@@ -32,3 +32,7 @@ templ CSRFValue() {
 templ MetaVersion() {
 	<meta name="version" content={ version.Version.String() }/>
 }
+
+templ UserGravatar() {
+	<img src={ selfGravatarURL(ctx) } class="user-gravatar"/>
+}

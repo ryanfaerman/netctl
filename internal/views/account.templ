@@ -21,6 +21,12 @@ templ (v Account) Profile() {
 		<div class="grid-container split">
 			<div>
 				<h1>{ v.Account.Name }</h1>
+				@UserGravatar()
+				@Image(ImageAttrs{
+            URL: selfGravatarURL(ctx),
+            Width: 250,
+            Height: 250, 
+          })
 				@templ.Raw(v.Account.About)
 			</div>
 			<div>
@@ -37,7 +43,7 @@ templ (v Account) Edit() {
 	@Page(v.Nav()) {
 		<div class="grid-container split">
 			<div>
-				"Editing { v.Account.Name }!"
+				Editing { v.Account.Name }!
 				@v.EditForm()
 			</div>
 			<div>

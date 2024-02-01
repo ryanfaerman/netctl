@@ -2,9 +2,13 @@ package services
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/models"
@@ -156,4 +160,37 @@ func (s account) Update(ctx context.Context, m *models.Account) error {
 		About: m.About,
 	})
 	return err
+}
+
+func (s account) AvatarURLForCallsign(ctx context.Context, callsign string) (string, error) {
+	m, err := s.FindByCallsign(ctx, callsign)
+	if err != nil {
+		return "", err
+	}
+	email, err := m.PrimaryEmail()
+	if err != nil {
+		return "", err
+	}
+
+	h := sha256.New()
+	h.Write([]byte(strings.TrimSpace(strings.ToLower(email.Address))))
+	return "https://www.gravatar.com/avatar/" + string(h.Sum(nil)), nil
+}
+
+func (s account) AvatarURLForAccount(ctx context.Context) (string, error) {
+	m, err := Session.GetAccount(ctx)
+	if err != nil {
+		return "", err
+	}
+	email, err := m.PrimaryEmail()
+	if err != nil {
+		return "", err
+	}
+	spew.Dump(email.Address)
+
+	h := sha256.New()
+	h.Write([]byte(strings.TrimSpace(strings.ToLower(email.Address))))
+	sum := fmt.Sprintf("%x", h.Sum(nil))
+	spew.Dump(sum)
+	return "https://www.gravatar.com/avatar/" + string(sum), nil
 }

@@ -138,12 +138,21 @@ func (session) Destroy(ctx context.Context) error {
 
 var ErrNoAccountInSession = errors.New("no account in session")
 
+// TODO: use middleware to add account to the context, possibly the session
 func (session) GetAccount(ctx context.Context) (*models.Account, error) {
+	if account, ok := ctx.Value(ctxKeyAccount).(*models.Account); ok {
+		return account, nil
+	}
+
 	id, ok := global.session.Get(ctx, "account_id").(int64)
 	if !ok {
 		return nil, ErrNoAccountInSession
 	}
-	return Account.FindByID(ctx, id)
+	account, err := Account.FindByID(ctx, id)
+	if err != nil {
+		return models.AccountAnonymous, err
+	}
+	return account, nil
 }
 
 func (s session) MustGetAccount(ctx context.Context) *models.Account {

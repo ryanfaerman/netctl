@@ -2,13 +2,14 @@ package views
 
 import (
 	"bytes"
-	"crypto/sha256"
+	"context"
 	"encoding/gob"
-	"strings"
 	"sync"
 
 	"github.com/essentialkaos/branca/v2"
 	"github.com/ryanfaerman/netctl/config"
+	"github.com/ryanfaerman/netctl/internal/models"
+	"github.com/ryanfaerman/netctl/internal/services"
 )
 
 var (
@@ -61,8 +62,23 @@ func DecodeInputAttrs(encoded string) (InputAttrs, error) {
 	return i, nil
 }
 
-func gravatarURL(email string) string {
-	h := sha256.New()
-	h.Write([]byte(strings.TrimSpace(strings.ToLower(email))))
-	return "https://www.gravatar.com/avatar/" + string(h.Sum(nil)) + "?s=80"
+func selfGravatarURL(ctx context.Context) string {
+	u, err := services.Account.AvatarURLForAccount(ctx)
+	if err != nil {
+		return ""
+	}
+	return u
+}
+
+func callsignGravatarURL(ctx context.Context, callsign string) string {
+	u, err := services.Account.AvatarURLForCallsign(ctx, callsign)
+	if err != nil {
+		return ""
+	}
+	return u
+}
+
+func CurrentAccount(ctx context.Context) *models.Account {
+	m, _ := services.Session.GetAccount(ctx)
+	return m
 }
