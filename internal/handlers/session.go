@@ -82,7 +82,8 @@ func (h Session) Verify(w http.ResponseWriter, r *http.Request) {
 			services.ErrTokenDecode:
 			h.view.VerificationFailed(err).Render(r.Context(), w)
 		default:
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			ErrorHandler(err)(w, r)
+			return
 		}
 		return
 	}

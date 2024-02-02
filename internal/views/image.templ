@@ -1,6 +1,8 @@
 package views
 
 import "fmt"
+import "github.com/ryanfaerman/netctl/internal/services"
+import "github.com/ryanfaerman/netctl/internal/models"
 
 type ImageAttrs struct {
 	URL     string
@@ -26,12 +28,20 @@ func (v ImageAttrs) height() string {
 	return fmt.Sprintf("%d%s", v.Height, v.units())
 }
 
+func GravatarURL(ctx context.Context, account *models.Account, size int) string {
+	url := services.Account.AvatarURL(ctx, account.Callsign().Call)
+	return fmt.Sprintf("%s?s=%d&d=robohash", url, size)
+}
+
 templ Image(attrs ImageAttrs) {
-	<img
-		src={ attrs.URL }
-		class={ attrs.Classes }
-		width={ attrs.width() }
-		height={ attrs.height() }
-		{ attrs.Extra... }
-	/>
+	if attrs.URL == "" {
+	} else {
+		<img
+			src={ attrs.URL }
+			class={ attrs.Classes }
+			width={ attrs.width() }
+			height={ attrs.height() }
+			{ attrs.Extra... }
+		/>
+	}
 }

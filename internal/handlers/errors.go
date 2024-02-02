@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/internal/views"
 	"github.com/ryanfaerman/netctl/web"
 )
@@ -23,9 +25,15 @@ func ErrorHandler(err error) func(w http.ResponseWriter, r *http.Request) string
 			Reference: ref,
 		}
 
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
 			v.NotFound().Render(r.Context(), w)
+			return ref
+		}
+
+		if errors.Is(err, services.ErrNotAuthorized) {
+			w.WriteHeader(http.StatusForbidden)
+			v.Unauthorized().Render(r.Context(), w)
 			return ref
 		}
 

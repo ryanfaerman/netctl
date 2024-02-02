@@ -60,12 +60,7 @@ func (h account) Setup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := services.Session.GetAccount(r.Context())
-	if err != nil {
-		global.log.Error("unable to get account from session", "error", err)
-		// views.Errors{}.Internal().Render(r.Context(), w)
-		return
-	}
+	account := services.Session.GetAccount(r.Context())
 	if err := services.Account.Setup(r.Context(), account.ID, input.Name, input.Callsign); err != nil {
 
 		global.log.Error("unable to setup account", "error", err)
@@ -89,26 +84,39 @@ func (h account) Setup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h account) Show(w http.ResponseWriter, r *http.Request) {
-	var account *models.Account
+	var (
+		account *models.Account
+		err     error
+	)
 
 	callsign := chi.URLParam(r, "callsign")
-	if callsign == "" {
-		a, err := services.Session.GetAccount(r.Context())
-		if err != nil {
-			ErrorHandler(err)(w, r)
-			return
-		}
-		account = a
-		// get account from session
-	} else {
-		a, err := services.Account.FindByCallsign(r.Context(), callsign)
-		if err != nil {
-			ErrorHandler(err)(w, r)
-			return
-		}
-		account = a
 
+	user := services.Session.GetAccount(r.Context())
+	if user.IsAnonymous() && callsign == "" {
+		ErrorHandler(services.ErrNotAuthorized)(w, r)
+		return
 	}
+
+	if callsign == "" && callsign != user.Callsign().Call {
+		http.Redirect(w, r, named.URLFor("account-profile", user.Callsign().Call), http.StatusSeeOther)
+		return
+	}
+
+	if callsign != user.Callsign().Call {
+		account, err = services.Account.FindByCallsign(r.Context(), callsign)
+		if err != nil {
+			ErrorHandler(err)(w, r)
+			return
+		}
+	} else {
+		account = user
+	}
+
+	if err := services.Authorization.Can(user, "view", account); err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+
 	ctx := services.CSRF.GetContext(r.Context(), r)
 
 	account.About = services.Markdown.MustRenderString(account.About)
@@ -127,6 +135,13 @@ func (h account) Edit(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(err)(w, r)
 		return
 	}
+
+	actor := services.Session.GetAccount(r.Context())
+	if err := services.Authorization.Can(actor, "edit", a); err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+
 	v := views.Account{
 		Account: a,
 	}

@@ -50,21 +50,43 @@ templ BarePage() {
 }
 
 type IconAttrs struct {
-	Kind string
-	Name string
+	Kind     string
+	Name     string
+	SwapKind string
+	SwapName string
 }
 
 func (i IconAttrs) String() string {
 	if i.Kind == "" {
 		i.Kind = "solid"
 	}
+	if i.SwapName != "" {
+		return fmt.Sprintf("initial fa-%s fa-%s", i.Kind, i.Name)
+	}
 	return fmt.Sprintf("fa-%s fa-%s", i.Kind, i.Name)
+}
+
+func (i IconAttrs) Swapped() string {
+	if i.SwapName == "" {
+		return ""
+	}
+	if i.SwapKind == "" {
+		i.SwapKind = "solid"
+	}
+	return fmt.Sprintf("hover fa-%s fa-%s", i.SwapKind, i.SwapName)
 }
 
 func (i IconAttrs) IsZeroValue() bool { return i.Kind == "" && i.Name == "" }
 
 templ Icon(attrs IconAttrs) {
-	<i class={ attrs.String() }></i>
+	if attrs.Swapped() != "" {
+		<i class="swap-icon">
+			<i class={ attrs.String() }></i>
+			<i class={ attrs.Swapped() }></i>
+		</i>
+	} else {
+		<i class={ attrs.String() }></i>
+	}
 }
 
 templ IconSolid(name string) {

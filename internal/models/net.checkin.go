@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type Hearable struct {
 	AsHeard    string `validate:"eq=|alphanum"`
@@ -20,4 +23,17 @@ type NetCheckin struct {
 	Valid    error          // any verification errors
 	Kind     NetCheckinKind `validate:"required"`
 	Traffic  int            `validate:"gte=0"`
+}
+
+func (m *NetCheckin) Can(account *Account, action string) error {
+	if account.IsAnonymous() {
+		return errors.New("not authorized")
+	}
+	switch action {
+	case "create":
+		if account.ID > 1 {
+			return errors.New("not authorized")
+		}
+	}
+	return nil
 }

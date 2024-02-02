@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"encoding/gob"
 	"errors"
 	"time"
 )
@@ -21,7 +22,7 @@ var AccountAnonymous = &Account{
 }
 
 type Account struct {
-	ID int64 `validate:"gte=0"`
+	ID int64
 
 	Name  string `validate:"required"`
 	About string
@@ -30,6 +31,32 @@ type Account struct {
 	CreatedAt time.Time
 	DeletedAt time.Time
 	Deleted   bool
+}
+
+func init() {
+	gob.Register(Account{})
+}
+
+func (m *Account) Verbs() []string {
+	return []string{"edit", "view"}
+}
+
+func (m *Account) Can(account *Account, action string) error {
+	switch action {
+	case "edit":
+		if account.IsAnonymous() {
+			return errors.New("anonymous users cannot edit accounts")
+		}
+		if account.ID != m.ID {
+			return errors.New("cannot edit another user's account")
+		}
+	case "view":
+		// if account.IsAnonymous() {
+		// 	return errors.New("account is restricted")
+		// }
+	}
+
+	return nil
 }
 
 func (m *Account) IsAnonymous() bool {

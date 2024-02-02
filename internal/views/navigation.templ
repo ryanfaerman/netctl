@@ -13,6 +13,9 @@ type MenuItem struct {
 
 	Section     string
 	IsSeparator bool
+
+	CanAction   string
+	CanResource any
 }
 
 var MenuSeparator = MenuItem{
@@ -33,24 +36,26 @@ func isCurrentURL(ctx context.Context, URL string) bool {
 }
 
 templ (v MenuItem) Item() {
-	<li>
-		<a
-			if v.URL != "" && v.URL != "#" {
-				class={ templ.KV("active", isCurrentURL(ctx, v.URL)) }
-				href={ templ.URL(v.URL) }
-			} else {
-				href="#"
-			}
-			{ v.Attrs... }
-		>
-			if !v.Icon.IsZeroValue() {
-				@Icon(v.Icon)
-			}
-			if v.Value != "" {
-				{ v.Value }
-			}
-		</a>
-	</li>
+	@Can(v.CanAction, v.CanResource) {
+		<li>
+			<a
+				if v.URL != "" && v.URL != "#" {
+					class={ templ.KV("active", isCurrentURL(ctx, v.URL)) }
+					href={ templ.URL(v.URL) }
+				} else {
+					href="#"
+				}
+				{ v.Attrs... }
+			>
+				if !v.Icon.IsZeroValue() {
+					@Icon(v.Icon)
+				}
+				if v.Value != "" {
+					{ v.Value }
+				}
+			</a>
+		</li>
+	}
 }
 
 type Menu []MenuItem
@@ -105,17 +110,31 @@ templ (m Menu) NewAppBar() {
 					for _, item := range m.ForSection("right") {
 						@item.Item()
 					}
-					<li>
-						<a
-							class="tab"
-							hx-get={ named.URLFor("slide-over-show", "right") }
-							hx-target="#slide-over-target"
-							hx-swap="outerHTML"
-						>
-							@IconSolid("user")
-							Account
-						</a>
-					</li>
+					@Can("manage-account") {
+						<li>
+							<a
+								class="tab"
+								hx-get={ named.URLFor("slide-over-show", "right") }
+								hx-target="#slide-over-target"
+								hx-swap="outerHTML"
+							>
+								@IconSolid("user")
+								Account
+							</a>
+						</li>
+					}
+					@Cannot("manage-account") {
+						<li class="hoverline">
+							<a href="#">
+								Sign in
+							</a>
+						</li>
+						<li class="hoverline">
+							<a href="#" class="tab">
+								Register
+							</a>
+						</li>
+					}
 				</ul>
 			</nav>
 		</div>
@@ -203,8 +222,15 @@ func LeftNav() SideMenu {
 }
 
 templ RightNavHeader() {
-	<span class="title name">Ryan Faerman</span>
-	<span class="subtitle callsign">KQ4JXI</span>
+	<span class="avatar">
+		@Image(ImageAttrs{
+            URL: GravatarURL(ctx, CurrentAccount(ctx), 45),
+            Width: 45,
+            Height: 45, 
+          })
+	</span>
+	<span class="title name">{ CurrentAccount(ctx).Name }</span>
+	<span class="subtitle callsign">{ CurrentAccount(ctx).Callsign().Call }</span>
 }
 
 func RightNav() SideMenu {

@@ -62,23 +62,17 @@ func DecodeInputAttrs(encoded string) (InputAttrs, error) {
 	return i, nil
 }
 
-func selfGravatarURL(ctx context.Context) string {
-	u, err := services.Account.AvatarURLForAccount(ctx)
-	if err != nil {
-		return ""
-	}
-	return u
-}
-
-func callsignGravatarURL(ctx context.Context, callsign string) string {
-	u, err := services.Account.AvatarURLForCallsign(ctx, callsign)
-	if err != nil {
-		return ""
-	}
-	return u
-}
-
 func CurrentAccount(ctx context.Context) *models.Account {
-	m, _ := services.Session.GetAccount(ctx)
-	return m
+	return services.Session.GetAccount(ctx)
+}
+
+func UserCan(ctx context.Context, action string, resources ...any) bool {
+	if action == "" {
+		return true
+	}
+	a := services.Session.GetAccount(ctx)
+	if err := services.Authorization.Can(a, action, resources...); err != nil {
+		return false
+	}
+	return true
 }

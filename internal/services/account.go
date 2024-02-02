@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/models"
@@ -162,35 +161,23 @@ func (s account) Update(ctx context.Context, m *models.Account) error {
 	return err
 }
 
-func (s account) AvatarURLForCallsign(ctx context.Context, callsign string) (string, error) {
-	m, err := s.FindByCallsign(ctx, callsign)
-	if err != nil {
-		return "", err
+func (s account) AvatarURL(ctx context.Context, callsigns ...string) string {
+	var err error
+	account := Session.GetAccount(ctx)
+	if len(callsigns) > 0 {
+		if account.Callsign().Call != callsigns[0] {
+			account, err = s.FindByCallsign(ctx, callsigns[0])
+			if err != nil {
+				return ""
+			}
+		}
 	}
-	email, err := m.PrimaryEmail()
+	email, err := account.PrimaryEmail()
 	if err != nil {
-		return "", err
+		return ""
 	}
 
 	h := sha256.New()
 	h.Write([]byte(strings.TrimSpace(strings.ToLower(email.Address))))
-	return "https://www.gravatar.com/avatar/" + string(h.Sum(nil)), nil
-}
-
-func (s account) AvatarURLForAccount(ctx context.Context) (string, error) {
-	m, err := Session.GetAccount(ctx)
-	if err != nil {
-		return "", err
-	}
-	email, err := m.PrimaryEmail()
-	if err != nil {
-		return "", err
-	}
-	spew.Dump(email.Address)
-
-	h := sha256.New()
-	h.Write([]byte(strings.TrimSpace(strings.ToLower(email.Address))))
-	sum := fmt.Sprintf("%x", h.Sum(nil))
-	spew.Dump(sum)
-	return "https://www.gravatar.com/avatar/" + string(sum), nil
+	return fmt.Sprintf("https://www.gravatar.com/avatar/%x", h.Sum(nil))
 }

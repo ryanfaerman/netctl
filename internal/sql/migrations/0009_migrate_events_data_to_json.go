@@ -7,11 +7,9 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"errors"
-	"fmt"
 )
 
 func init() {
-	fmt.Println("hello world")
 	AddMigration(Up0009, Down0009)
 }
 

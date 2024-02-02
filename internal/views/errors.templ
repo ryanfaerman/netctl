@@ -66,3 +66,23 @@ templ (v Errors) NotFound() {
 		</div>
 	}
 }
+
+templ (v Errors) Unauthorized() {
+	@BarePage() {
+		<div class="modal error not-found">
+			<div class="modal-header">
+				<h1>Unauthorized</h1>
+			</div>
+			<div class="modal-body">
+				<p>You don't seem to be authorized to perform the requested action.</p>
+				<p>
+					If you believe you've received this in error, please contact support 
+					using the reference code below.
+				</p>
+			</div>
+			<div class="modal-footer">
+				@v.referenceCode()
+			</div>
+		</div>
+	}
+}

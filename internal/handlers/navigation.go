@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/ryanfaerman/netctl/internal/middleware"
+	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/internal/views"
 	"github.com/ryanfaerman/netctl/web/named"
 )
@@ -16,6 +17,7 @@ func init() {
 }
 
 func (h Navigation) Routes(r chi.Router) {
+	r.Use(services.Session.Middleware)
 	r.Use(middleware.HTMXOnly)
 	r.Get(named.Route("slide-over-show", "/-/slide-over/show/{side}"), h.SlideOverShow)
 	r.Get(named.Route("slide-over-hide", "/-/slide-over/hide"), h.SlideOverHide)

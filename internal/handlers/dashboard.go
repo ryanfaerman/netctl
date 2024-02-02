@@ -25,9 +25,9 @@ func (h Dashboard) Routes(r chi.Router) {
 
 func (h Dashboard) Index(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
+	account := services.Session.GetAccount(ctx)
 
-	if services.Session.IsAuthenticated(ctx) {
-		account := services.Session.MustGetAccount(ctx)
+	if !account.IsAnonymous() {
 		v := views.Dashboard{
 			Account: account,
 			Ready:   account.Ready(),

@@ -1,92 +1,40 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"reflect"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/ryanfaerman/netctl/internal/events"
+	"github.com/ryanfaerman/netctl/internal/models"
+	"github.com/ryanfaerman/netctl/internal/services"
 )
 
-// Define a sample struct
-type YourStruct struct {
-	ID       string `json:"id"`
-	Callsign string `json:"callsign"`
-	Name     string `json:"name"`
-	Location string `json:"location"`
-	// ... other fields
-}
+type dingus struct{}
 
-var registry = make(map[string]reflect.Type)
-
-func register(e interface{}) {
-	name := fmt.Sprintf("%T", e)
-	fmt.Println("registering", name)
-	registry[name] = reflect.TypeOf(e)
-}
-
-func get(name string) interface{} {
-	return reflect.New(registry[name]).Interface()
-}
-
-func get2(name string) interface{} {
-	instance := reflect.New(registry[name]).Elem().Interface()
-	return reflect.Indirect(reflect.ValueOf(instance)).Interface()
-}
-
-func get3[K any](name string) K {
-	instance := reflect.New(registry[name]).Elem().Interface()
-	return reflect.Indirect(reflect.ValueOf(instance)).Interface().(K)
-}
-
-var handlers = make(map[string]func() any)
-
-func handle[K any]() {
-	n := new(K)
-	spew.Dump(n)
-	name := fmt.Sprintf("%T", *new(K))
-	fmt.Println(name)
-	handlers[name] = func() any {
-		return new(K)
-	}
-}
-
-func decode(kind string, data []byte) any {
-	k := handlers[kind]()
-	json.Unmarshal(data, k)
-	return k
+func (d *dingus) Verbs() []string {
+	return []string{"create"}
 }
 
 func main() {
-	// register(events.NetCheckinHeard{})
-	// register(YourStruct{})
-	//
-	// k := get2("events.NetCheckinHeard")
-	// spew.Dump(k)
-	//
-	// data := `{"id":"01HNDEHNP9BJSGYS5369TPQV04","callsign":"KQ4JXI","name":"","location":"","kind":"Routine","traffic":0}`
-	// json.Unmarshal([]byte(data), &k)
-	// spew.Dump(k)
-	//
-	// name := fmt.Sprintf("%T", k)
-	// fmt.Println(name)
-	// handle[events.NetCheckinHeard]()
-	//
-	// data := `{"id":"01HNDEHNP9BJSGYS5369TPQV04","callsign":"KQ4JXI","name":"","location":"","kind":"Routine","traffic":0}`
-	// fmt.Println("whoop")
-	// k := decode("events.NetCheckinHeard", []byte(data))
-	// spew.Dump(k)
+	can("create", &models.NetCheckin{})
+	can("create", &dingus{})
+	can("delete", &dingus{})
+}
 
-	data := `{"id":"01HNDEHNP9BJSGYS5369TPQV04","callsign":"KQ4JXI","name":"","location":"","kind":"Routine","traffic":0}`
-	k, err := events.Decode("events.NetCheckinHeard", []byte(data))
-	if err != nil {
-		log.Fatal(err)
+func can(action string, m any) {
+	accounts := []*models.Account{
+		models.AccountAnonymous,
+		{ID: 17, Name: "fred"},
+		{ID: 1, Name: "tom"},
 	}
-	switch v := k.(type) {
-	case *events.NetCheckinHeard:
-		fmt.Println(v.Callsign)
-		spew.Dump(v)
+	for i, a := range accounts {
+		fmt.Printf("Can '%s' be done on '%T' by '%s'?  ", action, m, a.Name)
+
+		if err := services.Authorization.Can(a, action, m); err != nil {
+			fmt.Printf("[NO]; %s\n", err.Error())
+		} else {
+			fmt.Print("[YES]\n")
+		}
+		if i > 0 {
+			fmt.Println("---")
+		}
 	}
 }

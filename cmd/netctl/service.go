@@ -50,7 +50,7 @@ var cmdService = &cobra.Command{
 
 		// TODO: Add --skip-recovery flag
 		// TODO: perform recovery
-		services.Event.StartRecoveryService(5 * time.Second) // TODO: make this configurable
+		services.Event.StartRecoveryService(30 * time.Second) // TODO: make this configurable
 
 		if err := handlers.Setup(logger, db); err != nil {
 			return err

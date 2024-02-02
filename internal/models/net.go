@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strings"
 
@@ -149,6 +150,30 @@ func (m *Net) Replay(ctx context.Context, onlyStreams ...string) error {
 	}
 	m.replay(stream)
 
+	return nil
+}
+
+func (m *Net) Verbs() []string {
+	return []string{
+		"schedule",
+		"open",
+		"close",
+		"perform-checkins",
+		"edit",
+	}
+}
+
+func (m *Net) Can(account *Account, action string) error {
+	switch action {
+	case "perform-checkins":
+		if account.IsAnonymous() {
+			return errors.New("anonymous users cannot perform checkins")
+		}
+	case "edit":
+		if account.IsAnonymous() {
+			return errors.New("anonymous users cannot edit nets")
+		}
+	}
 	return nil
 }
 

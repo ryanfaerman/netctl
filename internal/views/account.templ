@@ -21,9 +21,8 @@ templ (v Account) Profile() {
 		<div class="grid-container split">
 			<div>
 				<h1>{ v.Account.Name }</h1>
-				@UserGravatar()
 				@Image(ImageAttrs{
-            URL: selfGravatarURL(ctx),
+            URL: GravatarURL(ctx, v.Account, 250),
             Width: 250,
             Height: 250, 
           })
@@ -31,9 +30,14 @@ templ (v Account) Profile() {
 			</div>
 			<div>
 				<!-- sidebar -->
-				<a href={ templ.URL(named.URLFor("account-edit", v.Account.Callsign().Call)) } class="button">
-					Edit Profile
-				</a>
+				@Can("edit", v.Account) {
+					<a href={ templ.URL(named.URLFor("account-edit", v.Account.Callsign().Call)) } class="button">
+						Edit Profile
+					</a>
+				}
+				@Can("view-metrics") {
+					<p>Here are some metrics</p>
+				}
 			</div>
 		</div>
 	}

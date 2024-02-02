@@ -4,6 +4,7 @@ import "fmt"
 import "strings"
 import "github.com/ryanfaerman/version"
 import "github.com/ryanfaerman/netctl/internal/services"
+import "github.com/ryanfaerman/netctl/config"
 
 func join(glue string, parts ...string) string {
 	return strings.Join(parts, glue)
@@ -33,6 +34,20 @@ templ MetaVersion() {
 	<meta name="version" content={ version.Version.String() }/>
 }
 
-templ UserGravatar() {
-	<img src={ selfGravatarURL(ctx) } class="user-gravatar"/>
+templ Can(action string, resources ...any) {
+	if UserCan(ctx, action, resources...) {
+		{ children... }
+	}
+}
+
+templ Cannot(action string, resources ...any) {
+	if !UserCan(ctx, action, resources...) {
+		{ children... }
+	}
+}
+
+templ FeatureFlag(uri string, defaults ...bool) {
+	if config.Flag.Get(uri, defaults...) {
+		{ children... }
+	}
 }

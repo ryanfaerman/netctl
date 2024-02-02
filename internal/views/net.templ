@@ -134,18 +134,31 @@ templ (v Net) SingleNetSession(streamID string) {
 		{Value: "Preamble", URL: "#", Icon: IconAttrs{Name: "file-lines"}},
 		{Value: "Check Ins", URL: named.URLFor("net-session-show", streamID), Icon: IconAttrs{Name: "list-check"}},
 		{Value: "Reports", URL: "#", Icon: IconAttrs{Name: "receipt"}},
-		{Value: "Settings", URL: "#", Icon: IconAttrs{Name: "sliders"}},
+		{Value: "Settings", URL: "#", Icon: IconAttrs{Name: "sliders"}, CanAction: "edit", CanResource: v.Net},
 	}) {
 		<div class="grid-container split">
 			<div>
-				<div class="sticky mast-head-form">
-					@v.CheckinForm()
+				@Can("perform-checkins", v.Net) {
+					<div class="sticky mast-head-form">
+						@v.CheckinForm()
+						<div class="mast-head-divider"></div>
+					</div>
+				}
+				@Cannot("perform-checkins", v.Net) {
+					<h4>
+						Check-ins
+					</h4>
+					<p>Only registered Net Control stations are permitted to receive check-ins to this net.</p>
 					<div class="mast-head-divider"></div>
-				</div>
-				<div hx-ext="sse" sse-connect={ named.URLFor("sse-source") + "?stream=" + streamID }>
+				}
+				<div
+					hx-ext="sse"
+					sse-connect={ named.URLFor("sse-source") + "?stream=" + streamID }
+					class={ templ.KV("stickable", UserCan(ctx, "perform-checkins", v.Net)) }
+				>
 					@v.TrafficTable(streamID)
 				</div>
-				if len(v.Stream) > 0 {
+				@FeatureFlag("net.session.timeline") {
 					<h3>Timeline</h3>
 					<div class="timeline">
 						for _, event := range v.Stream {
@@ -377,12 +390,19 @@ templ (n Net) CheckinRow(checkin models.NetCheckin, isNew ...bool) {
 							@IconSolid("check")
 						</span>
 					} else {
-						<span
-							title="Not Acknowledged"
-							hx-post={ named.URLFor("checkin-ack", n.Session.ID, checkin.ID) }
-						>
-							@IconRegular("hand")
-						</span>
+						@Can("perform-checkins", n.Net) {
+							<span
+								title="Not Acknowledged"
+								hx-post={ named.URLFor("checkin-ack", n.Session.ID, checkin.ID) }
+							>
+								@IconRegular("hand")
+							</span>
+						}
+						@Cannot("perform-checkins", n.Net) {
+							<span title="Not Acknowledged">
+								@IconRegular("hand")
+							</span>
+						}
 					}
 				</li>
 			</ul>
