@@ -892,7 +892,7 @@ span.callsign {
   left: 0;
   width: 100%;
   height: 5px;
-  background: url("/static/squiggle.png") bottom repeat-x;
+  background: url("/static/assets/squiggle.png") bottom repeat-x;
 }
 
 

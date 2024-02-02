@@ -1,40 +1,62 @@
 package main
 
 import (
-	"fmt"
+	"io/fs"
+	"path/filepath"
+	"strings"
 
-	"github.com/ryanfaerman/netctl/internal/models"
-	"github.com/ryanfaerman/netctl/internal/services"
+	"github.com/davecgh/go-spew/spew"
 )
 
-type dingus struct{}
-
-func (d *dingus) Verbs() []string {
-	return []string{"create"}
+type asset struct {
+	kind     string
+	path     string
+	name     string
+	minified bool
 }
 
 func main() {
-	can("create", &models.NetCheckin{})
-	can("create", &dingus{})
-	can("delete", &dingus{})
-}
+	var assets []asset
 
-func can(action string, m any) {
-	accounts := []*models.Account{
-		models.AccountAnonymous,
-		{ID: 17, Name: "fred"},
-		{ID: 1, Name: "tom"},
-	}
-	for i, a := range accounts {
-		fmt.Printf("Can '%s' be done on '%T' by '%s'?  ", action, m, a.Name)
+	root := "internal/views/"
+	filepath.WalkDir("./"+root, func(path string, d fs.DirEntry, err error) error {
+		switch filepath.Ext(path) {
+		case ".scss":
+			if strings.HasPrefix(d.Name(), "_") {
+				assets = append(assets, asset{
+					kind:     "scss",
+					path:     path,
+					name:     filepath.Join(strings.TrimPrefix(filepath.Dir(path), root), strings.TrimPrefix(d.Name(), "_")),
+					minified: strings.HasSuffix(d.Name(), ".min.scss"),
+				})
+			}
+		case ".js":
+			assets = append(assets, asset{
+				kind:     "js",
+				path:     path,
+				name:     filepath.Join(strings.TrimPrefix(filepath.Dir(path), root), d.Name()),
+				minified: strings.HasSuffix(d.Name(), ".min.js"),
+			})
+		case ".templ", ".go", ".md", ".css":
+			return nil
 
-		if err := services.Authorization.Can(a, action, m); err != nil {
-			fmt.Printf("[NO]; %s\n", err.Error())
-		} else {
-			fmt.Print("[YES]\n")
+		default:
+			if d.IsDir() {
+				return nil
+			}
+			ext := filepath.Ext(path)
+			if d.Name() == ext {
+				return nil
+			}
+			assets = append(assets, asset{
+				kind:     strings.TrimPrefix(ext, "."),
+				path:     path,
+				name:     filepath.Join(strings.TrimPrefix(filepath.Dir(path), root), d.Name()),
+				minified: strings.HasSuffix(d.Name(), ".min"+ext),
+			})
 		}
-		if i > 0 {
-			fmt.Println("---")
-		}
-	}
+		return nil
+	})
+
+	spew.Dump(assets)
 }

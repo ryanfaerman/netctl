@@ -1,6 +1,7 @@
 package views
 
 import "fmt"
+import "strings"
 
 import "github.com/ryanfaerman/netctl/web/named"
 
@@ -32,58 +33,92 @@ templ BarePage() {
 			<meta name="author" content="author"/>
 			@MetaVersion()
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<link rel="stylesheet" href="/static/normalize.css"/>
+			<!--
+      <link rel="stylesheet" href="/static/normalize.css"/>
 			<link rel="stylesheet" href="/static/barebones.css"/>
-			<link rel="stylesheet" href="/static/custom.css"/>
+      -->
+			<link rel="stylesheet" href="/static/styles/main.min.css"/>
+			<!--
 			<link href="/static/fontawesome/css/fontawesome.css" rel="stylesheet"/>
 			<link href="/static/fontawesome/css/all.min.css" rel="stylesheet"/>
+      -->
+			<script src="https://kit.fontawesome.com/a5dc90c9a7.js" crossorigin="anonymous"></script>
 		</head>
 		<body hx-ext="morph">
 			<div id="htmx-alert" class="alert alert-warning sticky-top" hidden></div>
 			{ children... }
-			<script src="/static/htmx.min.js"></script>
-			<script src="/static/idiomorph-ext.min.js"></script>
-			<script src="/static/sse.js"></script>
-			<script src="/static/custom.js"></script>
+			<script src="/static/javascript/htmx.min.js"></script>
+			<script src="/static/javascript/idiomorph-ext.min.js"></script>
+			<script src="/static/javascript/sse.min.js"></script>
+			<script src="/static/javascript/custom.min.js"></script>
 		</body>
 	</html>
 }
 
 type IconAttrs struct {
-	Kind     string
-	Name     string
-	SwapKind string
-	SwapName string
+	Kind string
+	Name string
+
+	Beat     bool
+	Fade     bool
+	BeatFade bool
+	Bounce   bool
+	Flip     bool
+	Shake    bool
+	Spin     bool
+
+	FixedWidth bool
+
+	Badge string
 }
 
 func (i IconAttrs) String() string {
 	if i.Kind == "" {
 		i.Kind = "solid"
 	}
-	if i.SwapName != "" {
-		return fmt.Sprintf("initial fa-%s fa-%s", i.Kind, i.Name)
-	}
-	return fmt.Sprintf("fa-%s fa-%s", i.Kind, i.Name)
-}
 
-func (i IconAttrs) Swapped() string {
-	if i.SwapName == "" {
-		return ""
+	classes := []string{
+		fmt.Sprintf("fa-%s", i.Name),
+		fmt.Sprintf("fa-%s", i.Kind),
 	}
-	if i.SwapKind == "" {
-		i.SwapKind = "solid"
+
+	if i.FixedWidth {
+		classes = append(classes, "fa-fw")
 	}
-	return fmt.Sprintf("hover fa-%s fa-%s", i.SwapKind, i.SwapName)
+
+	if i.Beat {
+		classes = append(classes, "fa-beat")
+	}
+	if i.Fade {
+		classes = append(classes, "fa-fade")
+	}
+	if i.BeatFade {
+		classes = append(classes, "fa-beat-fade")
+	}
+	if i.Bounce {
+		classes = append(classes, "fa-bounce")
+	}
+	if i.Flip {
+		classes = append(classes, "fa-flip")
+	}
+	if i.Shake {
+		classes = append(classes, "fa-shake")
+	}
+	if i.Spin {
+		classes = append(classes, "fa-spin")
+	}
+
+	return strings.Join(classes, " ")
 }
 
 func (i IconAttrs) IsZeroValue() bool { return i.Kind == "" && i.Name == "" }
 
 templ Icon(attrs IconAttrs) {
-	if attrs.Swapped() != "" {
-		<i class="swap-icon">
+	if attrs.Badge != "" {
+		<span class="fa-layers fa-fw">
 			<i class={ attrs.String() }></i>
-			<i class={ attrs.Swapped() }></i>
-		</i>
+			{ attrs.Badge }
+		</span>
 	} else {
 		<i class={ attrs.String() }></i>
 	}

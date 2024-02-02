@@ -395,7 +395,11 @@ templ (n Net) CheckinRow(checkin models.NetCheckin, isNew ...bool) {
 								title="Not Acknowledged"
 								hx-post={ named.URLFor("checkin-ack", n.Session.ID, checkin.ID) }
 							>
-								@IconRegular("hand")
+								@Icon(IconAttrs{
+                    Name: "hand",
+                    Kind: "regular",
+                    Bounce: true,
+                  })
 							</span>
 						}
 						@Cannot("perform-checkins", n.Net) {
