@@ -18,14 +18,20 @@ func (v Account) Nav() Menu {
 
 templ (v Account) Profile() {
 	@Page(v.Nav()) {
-		<div class="grid-container split">
-			<div>
-				<h1>{ v.Account.Name }</h1>
-				@Image(ImageAttrs{
+		<div class="grid-container left-split">
+			<div class="profile-sidebar">
+				<div class="profile-card">
+					@Image(ImageAttrs{
             URL: GravatarURL(ctx, v.Account, 250),
             Width: 250,
-            Height: 250, 
+            Height: 250,
+            Extra: templ.Attributes{
+                "class": "profile avatar",
+            },
           })
+					<h1>{ v.Account.Name }</h1>
+					<h2>{ v.Account.Callsign().Call }</h2>
+				</div>
 				@templ.Raw(v.Account.About)
 			</div>
 			<div>

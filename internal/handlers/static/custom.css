@@ -402,7 +402,6 @@ html {
 .grid-container.split {
   grid-template-columns: 5fr 2fr;
   text-align: left;
-
 }
 
 .grid-container.split .sticky {
@@ -1219,3 +1218,10 @@ i.swap-icon:hover i.hover {
   display: inline-block !important;
 }
 
+
+
+
+.profile.avatar {
+  border: 2px solid var(--border-color-softer);
+  border-radius: 50%;
+}
