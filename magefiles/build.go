@@ -397,16 +397,10 @@ func AssetPipeline() error {
 							src := filepath.Join("tmp/css", dir.Name(), file.Name())
 							dst := filepath.Join("internal/handlers/static", dir.Name(), file.Name())
 							os.MkdirAll(filepath.Dir(dst), 0755)
-							// fmt.Println(src, dst)
 							errs = append(errs, sh.Copy(dst, src))
 						}
 					}
 				}
-				return "", errors.Join(errs...)
-				errs = append(errs, sh.Copy("internal/handlers/static/site.min.css", "tmp/css/site.min.css"))
-				errs = append(errs, sh.Copy("internal/handlers/static/site.min.css.br", "tmp/css/site.min.css.br"))
-				errs = append(errs, sh.Copy("internal/handlers/static/site.min.css.gz", "tmp/css/site.min.css.gz"))
-
 				return "", errors.Join(errs...)
 			},
 		},
