@@ -105,14 +105,18 @@ templ (n Net) Show() {
 					</button>
 				} else {
 					Sessions
-					@Form("new-session", FormAttrs{
-              Action: named.URLFor("net-session-new", n.Net.StreamID),
-              HX: templ.Attributes{
-                "hx-target": "body",
-              },
-            }) {
-						@InputSubmit(InputAttrs{Value: "Start a Session"})
-					}
+					<div class="description">
+						<p>
+							Our purpose is to pass formal written traffic, announce amateur radio events, 
+							deliver  information on severe Weather, and to provide training for new 
+							operators and net  control stations. We also provide emergency communications, 
+							or special sessions when  necessary, and will assist agencies under Homeland 
+							Security, such as FEMA and Broward  County Emergency Management, and 
+							the Broward County Emergency Coordinator, if called upon to do so.
+						</p>
+						<p>Thank you for visiting and we hope you will join us on the air.</p>
+					</div>
+					@ActivityGraph()
 					<ul>
 						for _, id := range n.Net.SessionIDs {
 							<li>
@@ -124,7 +128,98 @@ templ (n Net) Show() {
 					</ul>
 				}
 			</div>
-			<div></div>
+			<div>
+				<div class="sidebar">
+					<div class="sidebar-item">
+						@Form("new-session", FormAttrs{
+              Action: named.URLFor("net-session-new", n.Net.StreamID),
+              HX: templ.Attributes{
+                "hx-target": "body",
+              },
+            }) {
+							@InputSubmit(InputAttrs{Value: "Start a Session"})
+						}
+					</div>
+					<div class="sidebar-item">
+						<details open>
+							<summary>
+								Management Team
+							</summary>
+							<dl>
+								<dt>Manager</dt>
+								<dd>Ken Polkerson [W44BUG]</dd>
+								<dt>Regional Liasons</dt>
+								<dd>Arthur McCallister [W4BUG]</dd>
+								<dd>Arthur McCallister [W4BUG]</dd>
+								<dd>Arthur McCallister [W4BUG]</dd>
+								<dt>Controllers</dt>
+								<dd>Arthur McCallister [W4BUG]</dd>
+								<dd>Arthur McCallister [W4BUG]</dd>
+								<dd>Arthur McCallister [W4BUG]</dd>
+								<dd>Arthur McCallister [W4BUG]</dd>
+							</dl>
+						</details>
+					</div>
+					<div class="sidebar-item">
+						<details open>
+							<summary>
+								Schedule
+							</summary>
+							<dl>
+								<dt>Monday</dt>
+								<dd>18:00 EST</dd>
+								<dt>Tuesday</dt>
+								<dd>18:00 EST</dd>
+								<dt>Wednesday</dt>
+								<dd>18:00 EST</dd>
+								<dt>Thursday</dt>
+								<dd>18:00 EST</dd>
+								<dt>Friday</dt>
+								<dd>18:00 EST</dd>
+								<dt>Sat - Sun</dt>
+								<dd>NO NET</dd>
+							</dl>
+						</details>
+					</div>
+					<div class="sidebar-item">
+						<details>
+							<summary>
+								Radio Settings
+							</summary>
+							<dl>
+								<dt>Type</dt>
+								<dd>Primary</dd>
+								<dt>Frequency</dt>
+								<dd>
+									@IconSolid("arrow-down")
+									146.610
+								</dd>
+								<dd>
+									@IconSolid("arrow-up")
+									146.010
+								</dd>
+								<dt>Tone</dt>
+								<dd>110.9</dd>
+							</dl>
+							<dl>
+								<dt>Type</dt>
+								<dd>Backup</dd>
+								<dt>Frequency</dt>
+								<dd>
+									@IconSolid("arrow-down")
+									146.790
+								</dd>
+								<dd>
+									@IconSolid("arrow-up")
+									146.190
+								</dd>
+								<dt>Tone</dt>
+								<dd>88.5</dd>
+							</dl>
+						</details>
+					</div>
+				</div>
+			</div>
 		</div>
 	}
 }

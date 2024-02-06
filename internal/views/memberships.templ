@@ -1,0 +1,61 @@
+package views
+
+import "github.com/ryanfaerman/netctl/internal/models"
+import "github.com/ryanfaerman/netctl/web/named"
+
+type Membership struct {
+	Kind models.AccountKind
+}
+
+templ (v Membership) Create() {
+	@BarePage() {
+		<div class="modal" id="membership-create-group">
+			<div class="modal-header">
+				<h1>Create a new organization</h1>
+			</div>
+			<div class="modal-body">
+				<p>
+					An organization is a loose collection of stations, joined 
+					together in a common cause. This could be for a local traffic net, 
+					rag-chewing, or emergency preparedness.
+				</p>
+				@Form("group-create", FormAttrs{
+            Action: named.URLFor("group-create", v.Kind.String()),
+          }) {
+					@InputText("name",  InputAttrs{
+            Label: "Name",
+            HelpText: "What should your organization be called?",
+            DisableAutocomplete: true,
+            HX: templ.Attributes{
+              "hx-post": named.URLFor("group-check-slug", v.Kind.String()),
+              "hx-trigger": "input changed delay:500ms",
+              "hx-target": "#slug-check",
+              "hx-swap": "outerHTML",
+            },
+          })
+					@v.SlugField("", "")
+					@InputSubmit(InputAttrs{
+            Value: "Create",
+          })
+				}
+			</div>
+		</div>
+	}
+}
+
+templ (v Membership) SlugField(slug, err string) {
+	<div id="slug-check">
+		@InputText("slug",  InputAttrs{
+    Label: "Organization ID",
+    HelpText: "This is used in URLs and must be globally unique",
+    Error: err,
+    Value: slug,
+    HX: templ.Attributes{
+      "hx-post": named.URLFor("group-check-slug", v.Kind.String()),
+      "hx-trigger": "input changed delay:500ms",
+      "hx-target": "#slug-check",
+      "hx-swap": "outerHTML",
+    },
+  })
+	</div>
+}

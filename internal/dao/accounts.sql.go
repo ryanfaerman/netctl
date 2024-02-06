@@ -28,6 +28,39 @@ func (q *Queries) AssociateSessionWithAccount(ctx context.Context, arg Associate
 	return err
 }
 
+const checkSlugAvailability = `-- name: CheckSlugAvailability :one
+SELECT COUNT(*) as count FROM accounts WHERE slug = ?1
+`
+
+func (q *Queries) CheckSlugAvailability(ctx context.Context, slug string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkSlugAvailability, slug)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createAccount = `-- name: CreateAccount :one
+INSERT INTO accounts (
+  name, kind, slug
+) VALUES (
+  ?1, ?2, ?3
+)
+RETURNING id
+`
+
+type CreateAccountParams struct {
+	Name string
+	Kind int64
+	Slug string
+}
+
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createAccount, arg.Name, arg.Kind, arg.Slug)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createAccountAndReturnId = `-- name: CreateAccountAndReturnId :one
 INSERT INTO accounts (
   createdAt, updatedAt
@@ -45,7 +78,7 @@ func (q *Queries) CreateAccountAndReturnId(ctx context.Context) (int64, error) {
 }
 
 const findAccountByCallsign = `-- name: FindAccountByCallsign :one
-SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about
+SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about, accounts.settings, accounts.slug
 FROM accounts
 JOIN accounts_callsigns ON accounts.id = accounts_callsigns.account_id
 JOIN callsigns ON accounts_callsigns.callsign_id = callsigns.id
@@ -63,12 +96,14 @@ func (q *Queries) FindAccountByCallsign(ctx context.Context, upper string) (Acco
 		&i.Deletedat,
 		&i.Kind,
 		&i.About,
+		&i.Settings,
+		&i.Slug,
 	)
 	return i, err
 }
 
 const findAccountByEmail = `-- name: FindAccountByEmail :one
-SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about
+SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about, accounts.settings, accounts.slug
 FROM accounts
 JOIN emails ON emails.account_id = accounts.id
 WHERE emails.address = ?1
@@ -85,12 +120,14 @@ func (q *Queries) FindAccountByEmail(ctx context.Context, address string) (Accou
 		&i.Deletedat,
 		&i.Kind,
 		&i.About,
+		&i.Settings,
+		&i.Slug,
 	)
 	return i, err
 }
 
 const getAccount = `-- name: GetAccount :one
-SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about
+SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about, accounts.settings, accounts.slug
 FROM accounts
 WHERE id = ?1
 LIMIT 1
@@ -107,8 +144,45 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 		&i.Deletedat,
 		&i.Kind,
 		&i.About,
+		&i.Settings,
+		&i.Slug,
 	)
 	return i, err
+}
+
+const getAccountSetting = `-- name: GetAccountSetting :one
+SELECT json_extract(settings, ?2)
+FROM accounts
+WHERE id = ?1
+`
+
+type GetAccountSettingParams struct {
+	ID       int64
+	Jsonpath interface{}
+}
+
+func (q *Queries) GetAccountSetting(ctx context.Context, arg GetAccountSettingParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getAccountSetting, arg.ID, arg.Jsonpath)
+	var json_extract interface{}
+	err := row.Scan(&json_extract)
+	return json_extract, err
+}
+
+const setAccountSetting = `-- name: SetAccountSetting :exec
+UPDATE accounts
+SET settings = json_set(settings, ?2, ?3)
+WHERE id = ?1
+`
+
+type SetAccountSettingParams struct {
+	ID        int64
+	Jsonpath  interface{}
+	Jsonvalue interface{}
+}
+
+func (q *Queries) SetAccountSetting(ctx context.Context, arg SetAccountSettingParams) error {
+	_, err := q.db.ExecContext(ctx, setAccountSetting, arg.ID, arg.Jsonpath, arg.Jsonvalue)
+	return err
 }
 
 const updateAccount = `-- name: UpdateAccount :one
@@ -118,7 +192,7 @@ SET updatedAt = CURRENT_TIMESTAMP,
     about = ?3,
     kind = ?4
 WHERE id = ?1
-RETURNING id, name, createdat, updatedat, deletedat, kind, about
+RETURNING id, name, createdat, updatedat, deletedat, kind, about, settings, slug
 `
 
 type UpdateAccountParams struct {
@@ -144,12 +218,30 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (A
 		&i.Deletedat,
 		&i.Kind,
 		&i.About,
+		&i.Settings,
+		&i.Slug,
 	)
 	return i, err
 }
 
+const updateAccountSettings = `-- name: UpdateAccountSettings :exec
+UPDATE accounts
+SET settings=json(?2)
+WHERE id = ?1
+`
+
+type UpdateAccountSettingsParams struct {
+	ID       int64
+	Settings interface{}
+}
+
+func (q *Queries) UpdateAccountSettings(ctx context.Context, arg UpdateAccountSettingsParams) error {
+	_, err := q.db.ExecContext(ctx, updateAccountSettings, arg.ID, arg.Settings)
+	return err
+}
+
 const accounts = `-- name: accounts :many
-SELECT id, name, createdat, updatedat, deletedat, kind, about FROM accounts
+SELECT id, name, createdat, updatedat, deletedat, kind, about, settings, slug FROM accounts
 `
 
 func (q *Queries) accounts(ctx context.Context) ([]Account, error) {
@@ -169,6 +261,8 @@ func (q *Queries) accounts(ctx context.Context) ([]Account, error) {
 			&i.Deletedat,
 			&i.Kind,
 			&i.About,
+			&i.Settings,
+			&i.Slug,
 		); err != nil {
 			return nil, err
 		}

@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
+	"dario.cat/mergo"
 	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/models"
@@ -180,4 +182,41 @@ func (s account) AvatarURL(ctx context.Context, callsigns ...string) string {
 	h := sha256.New()
 	h.Write([]byte(strings.TrimSpace(strings.ToLower(email.Address))))
 	return fmt.Sprintf("https://www.gravatar.com/avatar/%x", h.Sum(nil))
+}
+
+func (s account) Setting(ctx context.Context, path string) any {
+	account := Session.GetAccount(ctx)
+	val := account.Setting(ctx, path)
+	global.log.Warn("using setting", "path", path, "val", val)
+
+	return val
+}
+
+func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Settings) error {
+	account, err := a.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err := mergo.Merge(&account.Settings, settings, mergo.WithOverride); err != nil {
+		return err
+	}
+
+	if err := Validation.Apply(account.Settings); err != nil {
+		return err
+	}
+
+	data, err := json.Marshal(account.Settings)
+	if err != nil {
+		return err
+	}
+
+	if err := global.dao.UpdateAccountSettings(ctx, dao.UpdateAccountSettingsParams{
+		ID:       account.ID,
+		Settings: string(data),
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

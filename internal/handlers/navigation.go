@@ -29,9 +29,9 @@ func (h Navigation) SlideOverShow(w http.ResponseWriter, r *http.Request) {
 		side = "right"
 	}
 	if side == "right" {
-		views.RightNav().Show().Render(r.Context(), w)
+		views.RightNav(r.Context()).Show().Render(r.Context(), w)
 	} else {
-		views.LeftNav().Show().Render(r.Context(), w)
+		views.LeftNav(r.Context()).Show().Render(r.Context(), w)
 	}
 }
 

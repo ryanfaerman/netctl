@@ -16,9 +16,21 @@ func (i InputType) String() string {
 	return string(i)
 }
 
+type InputValue struct {
+	Value    string
+	Checked  bool
+	Label    string
+	Name     string
+	HelpText string
+}
+
 type InputAttrs struct {
-	Label       string
-	Value       string
+	Label   string
+	Value   string
+	Checked bool
+
+	Values []InputValue
+
 	HelpText    string
 	Placeholder string
 	Error       string
@@ -32,6 +44,8 @@ type InputAttrs struct {
 	MarkdownPreviewBody string
 
 	Height string
+
+	HX templ.Attributes
 }
 
 func (a InputAttrs) HasLabel() bool       { return len(a.Label) > 0 }
@@ -66,6 +80,7 @@ templ Form(id string, attrs FormAttrs) {
 		}
 		if !attrs.DisableHTMX && attrs.HasAction() {
 			hx-post={ attrs.Action }
+			hx-swap="innerHTML"
 			hx-swap-oob="true"
 		}
 		{ attrs.HX... }
@@ -96,6 +111,7 @@ templ Input(kind InputType, name string, attrs InputAttrs) {
 			if attrs.DisableAutocomplete {
 				autocomplete="off"
 			}
+			{ attrs.HX... }
 		/>
 		<div class="input-annotations u-full-width">
 			if attrs.HasHelpText() {
@@ -210,7 +226,7 @@ templ InputTextArea(name string, attrs InputAttrs) {
 					{ attrs.Value }
 				</textarea>
 				if attrs.MarkdownModePreview {
-					<div class="preview" hx-disable>
+					<div class="preview markdown-body" hx-disable>
 						if attrs.MarkdownPreviewBody != "" {
 							@templ.Raw(attrs.MarkdownPreviewBody)
 						} else {
@@ -233,8 +249,82 @@ templ InputTextArea(name string, attrs InputAttrs) {
 	</div>
 }
 
+templ InputRadioGroup(name string, attrs InputAttrs) {
+	<div class={ "input-group radio-group", templ.KV("error", attrs.HasError()) }>
+		<fieldset>
+			if attrs.HasLabel() {
+				<legend>{ attrs.Label }</legend>
+			}
+			<div class="input-annotations u-full-width">
+				if attrs.HasHelpText() {
+					<div class="help-text">{ attrs.HelpText }</div>
+				}
+				if attrs.HasError() {
+					<div class="error-message">{ attrs.Error }</div>
+				}
+			</div>
+			for _, option := range attrs.Values {
+				<div class="radio-option">
+					<input
+						type="radio"
+						name={ name }
+						value={ option.Value }
+						id={ option.Value }
+						if option.Value == attrs.Value {
+							checked
+						}
+					/>
+					<label for={ option.Value }>
+						{  option.Label }
+					</label>
+					if option.HelpText != "" {
+						<div class="help-text">{ option.HelpText }</div>
+					}
+				</div>
+			}
+		</fieldset>
+	</div>
+}
+
+templ InputCheckboxGroup(name string, attrs InputAttrs) {
+	<div class={ "input-group checkbox-group", templ.KV("error", attrs.HasError()) }>
+		<fieldset>
+			if attrs.HasLabel() {
+				<legend>{ attrs.Label }</legend>
+			}
+			<div class="input-annotations u-full-width">
+				if attrs.HasHelpText() {
+					<div class="help-text">{ attrs.HelpText }</div>
+				}
+				if attrs.HasError() {
+					<div class="error-message">{ attrs.Error }</div>
+				}
+			</div>
+			for _, option := range attrs.Values {
+				<div class="checkbox-option">
+					<input
+						type="checkbox"
+						name={ option.Name }
+						value="1"
+						id={ option.Name }
+						if option.Checked {
+							checked
+						}
+					/>
+					<label for={ option.Name }>
+						{  option.Label }
+					</label>
+					if option.HelpText != "" {
+						<div class="help-text">{ option.HelpText }</div>
+					}
+				</div>
+			}
+		</fieldset>
+	</div>
+}
+
 templ InputSubmit(attrs InputAttrs) {
-	<div class="button-group">
+	<div class="button-group submit">
 		<input
 			type="submit"
 			class="button-primary u-full-width"

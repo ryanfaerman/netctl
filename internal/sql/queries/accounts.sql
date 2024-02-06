@@ -37,9 +37,35 @@ INSERT INTO accounts (
 )
 RETURNING id;
 
+-- name: CreateAccount :one
+INSERT INTO accounts (
+  name, kind, slug
+) VALUES (
+  ?1, ?2, ?3
+)
+RETURNING id;
+
 -- name: AssociateSessionWithAccount :exec
 INSERT INTO accounts_sessions (
   account_id, token, createdBy
 ) VALUES (
   ?1, ?2, ?3
 );
+
+-- name: GetAccountSetting :one
+SELECT json_extract(settings, @jsonpath)
+FROM accounts
+WHERE id = ?1;
+
+-- name: SetAccountSetting :exec
+UPDATE accounts
+SET settings = json_set(settings, @jsonpath, @jsonvalue)
+WHERE id = ?1;
+
+-- name: UpdateAccountSettings :exec
+UPDATE accounts
+SET settings=json(@settings)
+WHERE id = ?1;
+
+-- name: CheckSlugAvailability :one
+SELECT COUNT(*) as count FROM accounts WHERE slug = ?1;

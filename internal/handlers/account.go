@@ -31,8 +31,16 @@ func (h account) Routes(r chi.Router) {
 
 	r.Get(named.Route("account-profile", "/profile/{callsign}"), h.Show)
 	r.Get(named.Route("account-profile-self", "/profile"), h.Show)
-	r.Get(named.Route("account-edit", "/profile/{callsign}/edit"), h.Edit)
 	r.Post(named.Route("account-edit-save", "/profile/{callsign}/edit/-/save"), h.Update)
+
+	// r.Get(named.Route("settings-profile", "/settings/profile"), h.Edit)
+	// r.Get(named.Route("settings-privacy", "/settings/privacy"), h.SettingsPrivacy)
+	// r.Get(named.Route("settings-avatar", "/settings/avatar"), h.SettingsAvatar)
+	// r.Get(named.Route("settings-billing", "/settings/billing"), h.Edit)
+	// r.Get(named.Route("settings-emails", "/settings/emails"), h.Edit)
+	// r.Get(named.Route("settings-sessions", "/settings/sessions"), h.Edit)
+	r.Get(named.Route("settings", "/settings/{namespace}"), h.Settings)
+	r.Post(named.Route("settings-save", "/settings/{namespace}/-/save"), h.SettingsSave)
 }
 
 func (h account) Setup(w http.ResponseWriter, r *http.Request) {
@@ -128,16 +136,10 @@ func (h account) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h account) Edit(w http.ResponseWriter, r *http.Request) {
-	callsign := chi.URLParam(r, "callsign")
 	ctx := services.CSRF.GetContext(r.Context(), r)
-	a, err := services.Account.FindByCallsign(ctx, callsign)
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
+	a := services.Session.GetAccount(r.Context())
 
-	actor := services.Session.GetAccount(r.Context())
-	if err := services.Authorization.Can(actor, "edit", a); err != nil {
+	if err := services.Authorization.Can(a, "edit", a); err != nil {
 		ErrorHandler(err)(w, r)
 		return
 	}
@@ -145,7 +147,90 @@ func (h account) Edit(w http.ResponseWriter, r *http.Request) {
 	v := views.Account{
 		Account: a,
 	}
-	v.Edit().Render(ctx, w)
+	v.Settings("profile", nil).Render(ctx, w)
+}
+
+func (h account) Settings(w http.ResponseWriter, r *http.Request) {
+	ctx := services.CSRF.GetContext(r.Context(), r)
+	namespace := chi.URLParam(r, "namespace")
+
+	a := services.Session.GetAccount(ctx)
+
+	if err := services.Authorization.Can(a, "edit", a); err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+
+	v := views.Account{
+		Account: a,
+	}
+
+	var settings any
+
+	switch namespace {
+	case "privacy":
+		settings = a.Settings.PrivacySettings
+	case "appearance":
+		settings = a.Settings.AppearanceSettings
+	case "clubs":
+		clubs, err := a.Clubs(ctx)
+		if err != nil {
+			ErrorHandler(err)(w, r)
+			return
+		}
+		v.Memberships = clubs
+	case "organizations":
+		orgs, err := a.Organizations(ctx)
+		if err != nil {
+			ErrorHandler(err)(w, r)
+			return
+		}
+		v.Memberships = orgs
+	}
+
+	v.Settings(namespace, settings).Render(ctx, w)
+}
+
+func (h account) SettingsSave(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	ctx := services.CSRF.GetContext(r.Context(), r)
+	a := services.Session.GetAccount(ctx)
+	if err := services.Authorization.Can(a, "edit", a); err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+
+	namespace := chi.URLParam(r, "namespace")
+
+	var (
+		settings     models.Settings
+		viewSettings any
+		err          error
+	)
+
+	v := views.Account{
+		Account: a,
+	}
+
+	switch namespace {
+	case "privacy":
+		err = global.form.Decode(&settings.PrivacySettings, r.Form)
+		viewSettings = settings.PrivacySettings
+	case "appearance":
+		err = global.form.Decode(&settings.AppearanceSettings, r.Form)
+		viewSettings = settings.AppearanceSettings
+	}
+
+	if err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+
+	if err := services.Account.SaveSettings(ctx, a.ID, &settings); err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+	v.Settings(namespace, viewSettings).Render(ctx, w)
 }
 
 func (h account) Update(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +254,7 @@ func (h account) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	a.Name = input.Name
 	a.About = input.About
-	err = services.Account.Update(r.Context(), a)
+	err = services.Account.Update(ctx, a)
 	if err != nil {
 		if errs, ok := err.(services.ValidationError); ok {
 			for field, e := range errs {
@@ -188,6 +273,7 @@ func (h account) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO: return this from the account.update method
 	v.Account = a
+	services.Session.SetAccount(ctx, a)
 
 	v.EditForm().Render(ctx, w)
 }

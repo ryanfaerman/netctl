@@ -1,0 +1,242 @@
+.profile-card {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-areas:
+    "avatar"
+    "name"
+    "callsign"
+    "actions";
+  justify-content: left;
+
+  .avatar {
+    border-radius: 50%;
+    border: 2px solid  var(--border-color-softer);
+    grid-area: avatar;
+    justify-self: center;
+    margin-bottom: 1em;
+
+    &:hover {
+      border-color: var(--border-color);
+      
+    }
+  }
+
+  .name {
+    grid-area: name;
+    font-size: 3.5rem;
+  }
+
+  .callsign {
+    grid-area: callsign;
+    font-family: monospace, monospace;
+    font-size: 2.8rem;
+    color: var(--text-color-softer);
+      
+      
+  }
+
+  .actions {
+    grid-area: actions;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 1.5em;
+    font-size: 1.5rem;
+
+    i {
+      margin-right: 0.5em;
+      color: var(--border-color);
+      width:  1.25em;
+      display: inline-block;
+    }
+  }
+}
+
+.profile-contents {
+
+  h3 {
+    font-size: 2rem;
+    letter-spacing: 0;
+    font-weight: 400;
+    padding-left: 0.2em;
+    border-bottom: 1px solid var(--border-color-softer);
+  }
+
+  .profile-section {
+    margin-bottom: 2em;
+  }
+
+}
+
+.activity-graph {
+  .activity-graph-body {
+    display: grid;
+    grid-template-areas:
+      ".        months"
+      "weekdays days"
+      ". legend";
+    grid-template-columns: 3em 1fr;
+    grid-template-rows: 2em 1fr;
+
+    border: 1px solid var(--border-color-softer);
+    border-radius: 0.4em;
+    padding: 1em;
+
+
+    ol {
+      list-style-type: none;
+
+      
+      &.title.months {
+        grid-area: months; 
+
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        justify-items: center;
+
+        li {
+          justify-self: left;
+          padding-left: 3px;
+          margin: 0;
+        }
+      }
+
+      &.title.weekdays {
+        grid-area: weekdays;
+
+        display: grid;
+        grid-template-rows: repeat(3, 1fr);
+        grid-auto-flow: row;
+        grid-row-gap: 10px;
+        justify-items: center;
+        position: relative;
+        top: 14px;
+        
+        font-size: 0.9em;
+
+        li {
+          margin: 0;
+        }
+
+      }
+    }
+
+    .days {
+      grid-area: days;
+
+      display: grid;
+      grid-template-columns: repeat(53, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      grid-column-gap: 1px;
+      grid-row-gap: 3px;
+      border-radius: 2px;
+      grid-auto-flow: column;
+    }
+
+    .legend {
+      grid-area: legend;
+      display: grid;
+      grid-template-columns: 3em repeat(5, 12px) 3em;
+      grid-auto-flow: column;
+      font-size: 0.8em;
+      color: #999;
+      justify-content: right;
+      position: relative;
+      margin-top: 1em;
+      grid-column-gap: 4px;
+
+      span {
+        position: relative;
+        top: -0.3em;
+        padding-left: 0.3em;
+      }
+    }
+
+    .day {
+      border: 1px solid var(--border-color-softer);
+      background: var(--background-color-softer);
+      height: 10px;
+      width: 10px;
+      justify-self: center;
+      border-radius: 2px;
+
+      &.skip-1 { grid-row-start: 2 }
+      &.skip-2 { grid-row-start: 3 }
+      &.skip-3 { grid-row-start: 4 }
+      &.skip-4 { grid-row-start: 5 }
+      &.skip-5 { grid-row-start: 6 }
+      &.skip-6 { grid-row-start: 7 }
+
+      &.activity-0 { background: var(--background-color-softer) }
+      &.activity-1 { background: hsl(194, 86%, 57%); border-color: hsl(194, 86%, 57%) }
+      &.activity-2 { background: hsl(194, 86%, 47%); border-color: hsl(194, 86%, 47%) }
+      &.activity-3 { background: hsl(194, 86%, 37%); border-color: hsl(194, 86%, 37%) }
+      &.activity-4 { background: hsl(194, 86%, 27%); border-color: hsl(194, 86%, 27%) }
+
+      &:hover {
+        border-color: #000;
+      }
+
+    }
+  }
+}
+
+header.profile-settings {
+  display: grid;
+  position: relative;
+
+  grid-template-areas:
+    "avatar name"
+    "avatar desc";
+  grid-template-columns: 50px 1fr;
+  grid-row-gap: 0.1em;
+
+  .avatar {
+    grid-area: avatar;
+    grid-column: 1 / span 2;
+    border-radius: 50%;
+    border: 1px solid  var(--border-color-softer);
+    overflow: hidden;
+    display: inline-block;
+    margin-right: 1rem;
+    position: relative;
+    top: calc(50% + -25px);
+
+  }
+
+  .account-name {
+    grid-area: name;
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-bottom: 0;
+    margin-top: 1em;
+    line-height: 1.5em;
+    letter-spacing: 0.04em;
+      
+  }
+
+  .context {
+    grid-area: desc;
+    font-size: 1em;
+    color: var(--text-color-softer);
+  }
+
+}
+.flash-message {
+  color: #155724;
+  background-color: #d4edda;
+  border: 2px solid #c3e6cb;
+  border-radius: 0.4em;
+  padding: 0.6em 1em;
+  margin-bottom: 1em;
+  font-size: 1.1em;
+
+  p {
+    vertical-align: middle;
+    display: inline;
+    
+  }
+}
+

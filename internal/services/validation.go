@@ -8,6 +8,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	validator "github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
+	"github.com/leebenson/conform"
 )
 
 type validation struct {
@@ -46,6 +47,8 @@ func (e ValidationError) Error() string {
 // see: https://github.com/go-playground/validator
 func (v validation) Apply(m any) error {
 	output := make(map[string]string)
+
+	conform.Strings(m)
 
 	err := v.validate.Struct(m)
 	if err != nil {

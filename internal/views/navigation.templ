@@ -201,7 +201,7 @@ templ LeftNavHeader() {
 	</div>
 }
 
-func LeftNav() SideMenu {
+func LeftNav(ctx context.Context) SideMenu {
 	return SideMenu{
 		Header:  LeftNavHeader(),
 		OnRight: false,
@@ -233,7 +233,7 @@ templ RightNavHeader() {
 	<span class="subtitle callsign">{ CurrentAccount(ctx).Callsign().Call }</span>
 }
 
-func RightNav() SideMenu {
+func RightNav(ctx context.Context) SideMenu {
 	return SideMenu{
 		Header:  RightNavHeader(),
 		OnRight: true,
@@ -242,8 +242,8 @@ func RightNav() SideMenu {
 				{Value: "Your Profile", URL: named.URLFor("account-profile-self"), Icon: IconAttrs{Name: "user"}},
 				{Value: "Your Logbooks", URL: "#", Icon: IconAttrs{Name: "book"}},
 				{Value: "Your Nets", URL: "#", Icon: IconAttrs{Name: "users-rectangle"}},
-				{Value: "Your Clubs", URL: "#", Icon: IconAttrs{Name: "people-group"}},
-				{Value: "Settings", URL: "#", Icon: IconAttrs{Name: "sliders"}},
+				{Value: "Your Clubs", URL: named.URLFor("settings", "clubs"), Icon: IconAttrs{Name: "people-group"}},
+				{Value: "Settings", URL: named.URLFor("settings", "profile"), Icon: IconAttrs{Name: "sliders"}, CanAction: "edit", CanResource: CurrentAccount(ctx)},
 			},
 			{
 				{Value: "Net Control Docs", URL: "#", Icon: IconAttrs{Name: "book-open"}},
@@ -256,85 +256,15 @@ func RightNav() SideMenu {
 	}
 }
 
-templ SlideOver(side string) {
-	<div id="slide-over-target">
-		<div
-			class="slide-overlay"
-			hx-get={ named.URLFor("slide-over-hide") }
-			hx-target="#slide-over-target"
-			hx-swap="outerHTML"
-		></div>
-		<div class="slide-over" data-slide-from={ side }>
-			<header>
-				<span class="title name">Ryan Faerman</span>
-				<span class="subtitle callsign">KQ4JXI</span>
-				<a
-					class="close"
-					hx-get={ named.URLFor("slide-over-hide") }
-					hx-target="#slide-over-target"
-					hx-swap="outerHTML"
-				>
-					@IconSolid("xmark")
-				</a>
-			</header>
-			<div class="content">
-				<ul>
-					<li>
-						<a href={ templ.URL(named.URLFor("account-profile-self")) }>
-							@IconSolid("user")
-							Your Profile
-						</a>
-					</li>
-				</ul>
-				<ul>
-					<li>
-						<a href="#">
-							@IconSolid("book")
-							Your Logbooks
-						</a>
-					</li>
-					<li>
-						<a href="#">
-							@IconSolid("users-rectangle")
-							Your Nets
-						</a>
-					</li>
-					<li>
-						<a href="#">
-							@IconSolid("people-group")
-							Your Clubs
-						</a>
-					</li>
-					<li>
-						<a href="#">
-							@IconSolid("sliders")
-							Settings
-						</a>
-					</li>
-				</ul>
-				<ul>
-					<li>
-						<a href="#">
-							@IconSolid("book-open")
-							Net Control Docs
-						</a>
-					</li>
-					<li>
-						<a href="#">
-							@IconSolid("clipboard-question")
-							Net Control Support
-						</a>
-					</li>
-				</ul>
-				<ul>
-					<li>
-						<a href="#">
-							@IconSolid("sign-out")
-							Sign Out
-						</a>
-					</li>
-				</ul>
-			</div>
-		</div>
+templ Nav(section string, m Menu) {
+	<div class="section">
+		if section != "" {
+			<h2>{ section }</h2>
+		}
+		<ul>
+			for _, item := range m {
+				@item.Item()
+			}
+		</ul>
 	</div>
 }

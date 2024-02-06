@@ -1,62 +1,27 @@
 package main
 
 import (
-	"io/fs"
-	"path/filepath"
-	"strings"
-
+	"dario.cat/mergo"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ryanfaerman/netctl/internal/models"
+	"github.com/ryanfaerman/netctl/internal/services"
 )
 
-type asset struct {
-	kind     string
-	path     string
-	name     string
-	minified bool
+func show(s models.Settings) {
+	spew.Dump(s)
 }
 
 func main() {
-	var assets []asset
+	s := &models.PrivacySettings{
+		Location: "PROTECTED",
+	}
+	if err := mergo.Merge(s, s.Defaults()); err != nil {
+		panic(err.Error())
+	}
 
-	root := "internal/views/"
-	filepath.WalkDir("./"+root, func(path string, d fs.DirEntry, err error) error {
-		switch filepath.Ext(path) {
-		case ".scss":
-			if strings.HasPrefix(d.Name(), "_") {
-				assets = append(assets, asset{
-					kind:     "scss",
-					path:     path,
-					name:     filepath.Join(strings.TrimPrefix(filepath.Dir(path), root), strings.TrimPrefix(d.Name(), "_")),
-					minified: strings.HasSuffix(d.Name(), ".min.scss"),
-				})
-			}
-		case ".js":
-			assets = append(assets, asset{
-				kind:     "js",
-				path:     path,
-				name:     filepath.Join(strings.TrimPrefix(filepath.Dir(path), root), d.Name()),
-				minified: strings.HasSuffix(d.Name(), ".min.js"),
-			})
-		case ".templ", ".go", ".md", ".css":
-			return nil
+	if err := services.Validation.Apply(s); err != nil {
+		spew.Dump(err)
+	}
 
-		default:
-			if d.IsDir() {
-				return nil
-			}
-			ext := filepath.Ext(path)
-			if d.Name() == ext {
-				return nil
-			}
-			assets = append(assets, asset{
-				kind:     strings.TrimPrefix(ext, "."),
-				path:     path,
-				name:     filepath.Join(strings.TrimPrefix(filepath.Dir(path), root), d.Name()),
-				minified: strings.HasSuffix(d.Name(), ".min"+ext),
-			})
-		}
-		return nil
-	})
-
-	spew.Dump(assets)
+	show(models.Settings(s))
 }

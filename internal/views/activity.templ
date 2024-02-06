@@ -1,0 +1,51 @@
+package views
+
+templ ActivityGraph() {
+	<div class="profile-section activity-graph">
+		<div class="activity-graph-header">
+			<h3>Activity</h3>
+		</div>
+		<div class="activity-graph-body">
+			<ol class="title months">
+				<li>Feb</li>
+				<li>Mar</li>
+				<li>Apr</li>
+				<li>May</li>
+				<li>Jun</li>
+				<li>Jul</li>
+				<li>Aug</li>
+				<li>Sep</li>
+				<li>Oct</li>
+				<li>Nov</li>
+				<li>Dec</li>
+				<li>Jan</li>
+			</ol>
+			<ol class="title weekdays">
+				<li>Mon</li>
+				<li>Wed</li>
+				<li>Fri</li>
+			</ol>
+			<div class="days">
+				for i :=0; i <= 364; i++ {
+					<div
+						class={ "day", 
+                    templ.KV("skip-3", i==0), 
+                    templ.KV("activity-4", i%3 == 0), 
+                    templ.KV("activity-3", i%4==0), 
+                    templ.KV("activity-2", i%5==0), 
+                    templ.KV("activity-1", i%6==0) }
+					></div>
+				}
+			</div>
+			<div class="legend">
+				<span>Less</span>
+				<div class="day activity-0"></div>
+				<div class="day activity-1"></div>
+				<div class="day activity-2"></div>
+				<div class="day activity-3"></div>
+				<div class="day activity-4"></div>
+				<span>More</span>
+			</div>
+		</div>
+	</div>
+}

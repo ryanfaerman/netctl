@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/go-chi/chi"
+	"github.com/go-playground/form"
 	sse "github.com/r3labs/sse/v2"
 
 	"github.com/ryanfaerman/netctl/hook"
@@ -18,8 +19,10 @@ var global = struct {
 	handlers []routable
 	log      *log.Logger
 	db       *sql.DB
+	form     *form.Decoder
 }{
-	log: log.With("pkg", "handlers"),
+	log:  log.With("pkg", "handlers"),
+	form: form.NewDecoder(),
 }
 
 func ogger(l *log.Logger) { global.log = l.With("pkg", "handlers") }

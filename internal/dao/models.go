@@ -17,6 +17,8 @@ type Account struct {
 	Deletedat sql.NullTime
 	Kind      int64
 	About     string
+	Settings  string
+	Slug      string
 }
 
 type AccountsCallsign struct {
@@ -81,6 +83,14 @@ type EventsRecovery struct {
 	Created      time.Time
 }
 
+type Membership struct {
+	ID        int64
+	AccountID int64
+	MemberOf  int64
+	RoleID    int64
+	CreatedAt time.Time
+}
+
 type Net struct {
 	ID       int64
 	Name     string
@@ -95,6 +105,14 @@ type NetSession struct {
 	NetID    int64
 	StreamID string
 	Created  time.Time
+}
+
+type Role struct {
+	ID          int64
+	Name        string
+	AccountID   int64
+	Permissions int64
+	Ranking     int64
 }
 
 type Session struct {

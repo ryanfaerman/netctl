@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -125,6 +126,7 @@ func (session) Verify(ctx context.Context, token string) error {
 	}
 
 	global.session.Put(ctx, "account", u)
+	global.session.Put(ctx, "account_id", u.ID)
 
 	return nil
 }
@@ -139,9 +141,21 @@ func (session) Destroy(ctx context.Context) error {
 var ErrNoAccountInSession = errors.New("no account in session")
 
 func (session) GetAccount(ctx context.Context) *models.Account {
-	account, ok := global.session.Get(ctx, "account").(models.Account)
+	id, ok := global.session.Get(ctx, "account_id").(int64)
 	if !ok {
 		return models.AccountAnonymous
 	}
-	return &account
+
+	account, err := models.FindAccountByID(ctx, id)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			global.log.Error("unable to find account by id", "id", id, "error", err)
+		}
+		return models.AccountAnonymous
+	}
+	return account
+}
+
+func (session) SetAccount(ctx context.Context, account *models.Account) {
+	global.session.Put(ctx, "account_id", account.ID)
 }

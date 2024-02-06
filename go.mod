@@ -3,6 +3,7 @@ module github.com/ryanfaerman/netctl
 go 1.21
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/99designs/gqlgen v0.17.36
 	github.com/a-h/templ v0.2.513
 	github.com/alexedwards/scs/sqlite3store v0.0.0-20231113091146-cef4b05350c8
@@ -12,16 +13,20 @@ require (
 	github.com/chmike/securecookie v1.3.5
 	github.com/davecgh/go-spew v1.1.1
 	github.com/essentialkaos/branca/v2 v2.0.1
+	github.com/forPelevin/gomoji v1.1.8
 	github.com/go-chi/chi v1.5.4
 	github.com/go-loremipsum/loremipsum v1.1.3
+	github.com/go-playground/form v3.1.4+incompatible
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/google/go-cmp v0.6.0
 	github.com/jellydator/ttlcache/v3 v3.1.1
 	github.com/justinas/nosurf v1.1.1
+	github.com/leebenson/conform v1.2.2
 	github.com/magefile/mage v1.15.0
 	github.com/microcosm-cc/bluemonday v1.0.26
+	github.com/mozillazg/go-unidecode v0.2.0
 	github.com/mrz1836/postmark v1.6.1
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
@@ -35,6 +40,7 @@ require (
 	github.com/vearutop/statigz v1.4.0
 	github.com/webview/webview_go v0.0.0-20230901181450-5a14030a9070
 	github.com/yuin/goldmark v1.4.13
+	github.com/yuin/goldmark-emoji v1.0.2
 	golang.org/x/sync v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	modernc.org/sqlite v1.28.0
@@ -54,6 +60,7 @@ require (
 	github.com/cubicdaiya/gonp v1.0.4 // indirect
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/etgryphon/stringUp v0.0.0-20121020160746-31534ccd8cac // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
@@ -82,7 +89,7 @@ require (
 	github.com/pingcap/log v0.0.0-20210906054005-afc726e70354 // indirect
 	github.com/pingcap/tidb/parser v0.0.0-20220725134311-c80026e61f00 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/riza-io/grpc-go v0.2.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
@@ -106,6 +113,7 @@ require (
 	google.golang.org/grpc v1.59.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/uint128 v1.3.0 // indirect

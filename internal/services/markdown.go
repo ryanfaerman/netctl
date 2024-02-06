@@ -5,6 +5,7 @@ import (
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
+	emoji "github.com/yuin/goldmark-emoji"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
@@ -25,6 +26,7 @@ var Markdown = markdown{
 			html.WithHardWraps(),
 			html.WithXHTML(),
 		),
+		goldmark.WithExtensions(emoji.Emoji),
 	),
 	sanitizer: bluemonday.UGCPolicy(),
 }

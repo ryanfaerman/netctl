@@ -11,4 +11,7 @@ sql:
           - column: events.event_data
             go_type:
               type: string
+          - column: accounts.settings
+            go_type:
+              type: string
 
