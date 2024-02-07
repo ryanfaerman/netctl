@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/davecgh/go-spew/spew"
@@ -56,10 +58,48 @@ func (h Membership) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	spew.Dump(group)
+	spew.Dump(r.Form.Get("callsign"))
 
-	if err := services.Membership.Create(ctx, services.Session.GetAccount(ctx), &group); err != nil {
+	if err := services.Membership.Create(ctx, services.Session.GetAccount(ctx), &group, r.Form.Get("callsign")); err != nil {
 		// TODO: handle this more gracefully
-		ErrorHandler(err)(w, r)
+		spew.Dump(err)
+		viewInput := views.MembershipCreateFormInput{
+			Name:     group.Name,
+			Slug:     group.Slug,
+			Callsign: r.Form.Get("callsign"),
+		}
+		viewErr := views.MembershipCreateFormError{}
+		switch {
+		case errors.Is(err, services.ErrAccountSetupInvalidCallsign):
+			viewErr.Callsign = "Invalid callsign"
+		case errors.Is(err, services.ErrClubRequiresCallsign):
+			viewErr.Callsign = "Clubs require a callsign"
+		case errors.Is(err, services.ErrAccountSetupCallsignTaken):
+			viewErr.Callsign = "Callsign already in use"
+		case errors.Is(err, services.ErrAccountSetupCallsignIndividual):
+			viewErr.Callsign = "Callsign must be for a club, not an individual"
+		case errors.Is(err, services.ErrCallsignCreationFailed):
+			viewErr.Callsign = "Unable to save callsign, try again"
+		default:
+			if errs, ok := err.(services.ValidationError); ok {
+				for field, e := range errs {
+					switch field {
+					case "Account.Name":
+						viewErr.Name = e
+					case "Account.Slug":
+						viewErr.Slug = e
+					}
+				}
+			} else {
+				ErrorHandler(err)(w, r)
+				return
+			}
+		}
+
+		v := views.Membership{
+			Kind: kind,
+		}
+		v.CreateFormWithError(viewInput, viewErr).Render(ctx, w)
 		return
 	}
 
@@ -69,33 +109,31 @@ func (h Membership) Create(w http.ResponseWriter, r *http.Request) {
 	case models.AccountKindOrganization:
 		w.Header().Set("HX-Redirect", named.URLFor("settings", "organizations"))
 	}
-	return
-
-	v := views.Membership{
-		Kind: kind,
-	}
-	v.Create().Render(ctx, w)
 }
 
 func (h Membership) CheckSlug(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	kind := models.ParseAccountKind(chi.URLParam(r, "kind"))
 	name := r.Form.Get("name")
-	spew.Dump(r.Form)
 
 	v := views.Membership{
 		Kind: kind,
 	}
-	slug := r.Form.Get("slug")
-	if slug == "" {
+
+	var slug string
+	if r.URL.Query().Get("source") != "slug" {
+		fmt.Println("WAT")
 		slug = services.Slugger.Generate(r.Context(), name)
+	} else {
+		fmt.Println("GONZO")
+		slug = r.Form.Get("slug")
 	}
 	var err error
 	slug, err = services.Slugger.ValidateUniqueForAccount(r.Context(), slug)
 	if err != nil {
-		v.SlugField(slug, "That organization ID is already in use").Render(r.Context(), w)
+		v.SlugField(views.MembershipCreateFormInput{Slug: slug}, views.MembershipCreateFormError{Slug: "That organization ID is already in use"}).Render(r.Context(), w)
 		return
 	}
 
-	v.SlugField(slug, "").Render(r.Context(), w)
+	v.SlugField(views.MembershipCreateFormInput{Slug: slug}, views.MembershipCreateFormError{}).Render(r.Context(), w)
 }

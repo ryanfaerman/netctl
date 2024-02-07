@@ -1,0 +1,44 @@
+.membership-list {
+  .membership {
+    display: grid;
+    grid-template:
+      "name actions";
+    grid-template-columns: 1fr 1fr;
+    grid-column-gap: 1rem;
+
+    padding: 0.5rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1em;
+
+    .group {
+      grid-area: name;
+      align-self: center;
+
+      a {
+        text-decoration: none;
+        margin-right: 1em;
+        font-size: 1.1em;
+      }
+    }
+
+    .badge {
+      border: 1px solid var(--border-color-softer);
+      border-radius: 0.4em;
+      padding: 0.2em 0.5em;
+    }
+
+    .actions {
+      grid-area: actions;
+      justify-self: end;
+      align-self: center;
+    }
+
+  }
+}
+
+.button {
+  &.danger {
+    color: var(--danger-color);
+  }
+}

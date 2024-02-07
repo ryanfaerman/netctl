@@ -11,18 +11,50 @@ templ (v Membership) Create() {
 	@BarePage() {
 		<div class="modal" id="membership-create-group">
 			<div class="modal-header">
-				<h1>Create a new organization</h1>
+				if v.Kind == models.AccountKindClub {
+					<h1>Create a new club</h1>
+				}
+				if v.Kind == models.AccountKindOrganization {
+					<h1>Create a new organization</h1>
+				}
 			</div>
 			<div class="modal-body">
-				<p>
-					An organization is a loose collection of stations, joined 
-					together in a common cause. This could be for a local traffic net, 
-					rag-chewing, or emergency preparedness.
-				</p>
-				@Form("group-create", FormAttrs{
+				if v.Kind == models.AccountKindClub {
+					<p>
+						An amateur radio club is an organization formally recognized by 
+						the FCC as a club. Clubs must have their own valid callsign.
+					</p>
+				}
+				if v.Kind == models.AccountKindOrganization {
+					<p>
+						An organization is a loose collection of stations, joined 
+						together in a common cause. This could be for a local traffic net, 
+						rag-chewing, or emergency preparedness.
+					</p>
+				}
+				@v.CreateFormWithError(MembershipCreateFormInput{}, MembershipCreateFormError{})
+			</div>
+		</div>
+	}
+}
+
+type MembershipCreateFormInput struct {
+	Name     string
+	Callsign string
+	Slug     string
+}
+
+type MembershipCreateFormError struct {
+	Name     string
+	Callsign string
+	Slug     string
+}
+
+templ (v Membership) CreateFormWithError(input MembershipCreateFormInput, errs MembershipCreateFormError) {
+	@Form("group-create", FormAttrs{
             Action: named.URLFor("group-create", v.Kind.String()),
           }) {
-					@InputText("name",  InputAttrs{
+		@InputText("name",  InputAttrs{
             Label: "Name",
             HelpText: "What should your organization be called?",
             DisableAutocomplete: true,
@@ -32,26 +64,37 @@ templ (v Membership) Create() {
               "hx-target": "#slug-check",
               "hx-swap": "outerHTML",
             },
+            Error: errs.Name,
+            Value: input.Name,
           })
-					@v.SlugField("", "")
-					@InputSubmit(InputAttrs{
+		switch v.Kind {
+			case models.AccountKindClub:
+				@InputText("callsign",  InputAttrs{
+                  Label: "Callsign",
+                  HelpText: "The callsign for your club",
+                  DisableAutocomplete: true,
+                  Error: errs.Callsign,
+                  Value: input.Callsign,
+                                  
+                })
+			case models.AccountKindOrganization:
+				@v.SlugField(input, errs)
+		}
+		@InputSubmit(InputAttrs{
             Value: "Create",
           })
-				}
-			</div>
-		</div>
 	}
 }
 
-templ (v Membership) SlugField(slug, err string) {
+templ (v Membership) SlugField(input MembershipCreateFormInput, errs MembershipCreateFormError) {
 	<div id="slug-check">
 		@InputText("slug",  InputAttrs{
     Label: "Organization ID",
     HelpText: "This is used in URLs and must be globally unique",
-    Error: err,
-    Value: slug,
+    Error: errs.Slug,
+    Value: input.Slug,
     HX: templ.Attributes{
-      "hx-post": named.URLFor("group-check-slug", v.Kind.String()),
+      "hx-post": named.URLFor("group-check-slug", v.Kind.String()) + "?source=slug",
       "hx-trigger": "input changed delay:500ms",
       "hx-target": "#slug-check",
       "hx-swap": "outerHTML",

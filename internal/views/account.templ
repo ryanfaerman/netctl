@@ -235,10 +235,12 @@ templ (v Account) MembershipOverview(kind models.AccountKind) {
 		<div class="membership-list">
 			for _, m := range v.Memberships {
 				<div class="membership">
-					<a href="#" class="group">
-						{ m.Target.Name }
-					</a>
-					<span class="role badge">{ m.Role.Name }</span>
+					<div class="group">
+						<a href="#">
+							{ m.Target.Name }
+						</a>
+						<span class="role badge">{ m.Role.Name }</span>
+					</div>
 					<div class="actions">
 						<a href="#" class="button">Settings</a>
 						<a href="#" class="button danger">Leave</a>
