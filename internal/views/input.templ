@@ -141,13 +141,28 @@ templ Select(name string, attrs InputAttrs) {
 		if attrs.HasLabel() {
 			<label for={ name }>{ attrs.Label }</label>
 		}
-		<select id={ name } name={ name } class="u-full-width">
+		<select
+			id={ name }
+			name={ name }
+			class="u-full-width"
+			{ attrs.HX... }
+		>
 			for _, option := range attrs.Options {
 				if attrs.HasValue() && option == attrs.Value {
 					<option value={ option } selected>{ option }</option>
 				} else {
 					<option value={ option }>{ option }</option>
 				}
+			}
+			for _, o := range attrs.Values {
+				<option
+					value={ o.Value }
+					if o.Value == attrs.Value {
+						selected
+					}
+				>
+					{ o.Label }
+				</option>
 			}
 		</select>
 		if attrs.HasHelpText() {

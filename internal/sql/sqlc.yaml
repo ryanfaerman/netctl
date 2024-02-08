@@ -3,6 +3,8 @@ sql:
   - schema: "migrations/"
     queries: "queries/"
     engine: "sqlite"
+    database:
+      uri: "sqlite:///Users/ryanfaerman/Library/Caches/netctl/netctl.db?_pragma=journal_mode(WAL)&_pragma=foreign_keys(on)"
     gen:
       go:
         package: "dao"

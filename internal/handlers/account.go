@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi"
 
 	validator "github.com/go-playground/validator/v10"
@@ -12,6 +14,8 @@ import (
 	"github.com/ryanfaerman/netctl/internal/services"
 	"github.com/ryanfaerman/netctl/internal/views"
 	"github.com/ryanfaerman/netctl/web/named"
+
+	. "github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
 type account struct{}
@@ -41,6 +45,8 @@ func (h account) Routes(r chi.Router) {
 	// r.Get(named.Route("settings-sessions", "/settings/sessions"), h.Edit)
 	r.Get(named.Route("settings", "/settings/{namespace}"), h.Settings)
 	r.Post(named.Route("settings-save", "/settings/{namespace}/-/save"), h.SettingsSave)
+
+	r.Get("/-/find-accounts", h.Find)
 }
 
 func (h account) Setup(w http.ResponseWriter, r *http.Request) {
@@ -276,4 +282,55 @@ func (h account) Update(w http.ResponseWriter, r *http.Request) {
 	services.Session.SetAccount(ctx, a)
 
 	v.EditForm().Render(ctx, w)
+}
+
+func (h account) Find(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ByEmail:")
+	results, err := FindOne[models.Account](r.Context(), ByEmail("ryan@faerman.net"))
+	if err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+	spew.Dump(results)
+
+	fmt.Println("ByCallsign:")
+	results, err = FindOne[models.Account](r.Context(), ByCallsign("kq4jxi"))
+	if err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+	spew.Dump(results)
+
+	fmt.Println("ByID:")
+	results, err = FindOne[models.Account](r.Context(), ByID(1))
+	if err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+	spew.Dump(results)
+
+	fmt.Println("ByDistance:")
+	account := services.Session.GetAccount(r.Context())
+	if account.IsAnonymous() {
+		ErrorHandler(fmt.Errorf("you must be logged in to use this feature"))(w, r)
+		return
+	}
+	lat, lon, err := services.Account.Geolocation(r.Context(), account)
+	if err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+	found, err := Find[models.Account](r.Context(), ByDistance(lat, lon, 10*1.609344), ByKind(int(models.AccountKindClub)))
+	if err != nil {
+		ErrorHandler(err)(w, r)
+		return
+	}
+	spew.Dump(found)
+	// fmt.Println("ByNothing:")
+	// results, err = FindOne[models.Account](r.Context())
+	// if err != nil {
+	// 	ErrorHandler(err)(w, r)
+	// 	return
+	// }
+	// spew.Dump(results)
 }

@@ -11,11 +11,12 @@ func _() {
 	_ = x[AccountKindUser-0]
 	_ = x[AccountKindClub-1]
 	_ = x[AccountKindOrganization-2]
+	_ = x[AccoundKindAny-3]
 }
 
-const _AccountKind_name = "usercluborganization"
+const _AccountKind_name = "usercluborganizationany"
 
-var _AccountKind_index = [...]uint8{0, 4, 8, 20}
+var _AccountKind_index = [...]uint8{0, 4, 8, 20, 23}
 
 func (i AccountKind) String() string {
 	if i < 0 || i >= AccountKind(len(_AccountKind_index)-1) {

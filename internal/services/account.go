@@ -220,3 +220,8 @@ func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Se
 
 	return nil
 }
+
+func (s account) Geolocation(ctx context.Context, m *models.Account) (float64, float64, error) {
+	call := m.Callsign()
+	return call.Latitude, call.Longitude, nil
+}

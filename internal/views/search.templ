@@ -1,0 +1,70 @@
+package views
+
+import "github.com/ryanfaerman/netctl/internal/models"
+import "github.com/ryanfaerman/netctl/web/named"
+
+type Search struct {
+	Query    string
+	Found    []*models.Account
+	Distance string
+	Unit     string
+	Kind     models.AccountKind
+}
+
+templ (v Search) Results() {
+	@Page(Menu{
+     {Value: "Clubs", URL: named.URLFor("find-local", models.AccountKindClub.String()), Icon: IconAttrs{Name: "people-group"}}, 
+     {Value: "Organizations", URL: named.URLFor("find-local", models.AccountKindOrganization.String()), Icon: IconAttrs{Name: "landmark"}}, 
+     {Value: "Stations", URL: named.URLFor("find-local", models.AccountKindUser.String()), Icon: IconAttrs{Name: "walkie-talkie"}}, 
+    }) {
+		<div class="grid-container split">
+			<div>
+				@v.ResultList()
+			</div>
+			<div>
+				<!-- sidebar -->
+				@Form("search", FormAttrs{}) {
+					@Select("distance", InputAttrs{
+              Label: "Distance",
+              Values: []InputValue{
+                  {Value: "5", Label: "5 Miles"},
+                  {Value: "10", Label: "10 Miles"},
+                  {Value: "25", Label: "25 Miles"},
+                  {Value: "50", Label: "50 Miles"},
+                  {Value: "100", Label: "100 Miles"},
+                },
+              Value: "5",
+              HX: templ.Attributes{
+                  "hx-get": named.URLFor("find-local", v.Kind.String()),
+                  "hx-trigger": "change delay:500ms",
+                  "hx-target": ".search-results",
+                  "hx-swap": "outerHTML",
+                },
+            })
+				}
+			</div>
+		</div>
+	}
+}
+
+templ (v Search) ResultList() {
+	<div class="search-results">
+		switch v.Kind {
+			case models.AccountKindClub:
+				<h1>Local clubs within { v.Distance } { v.Unit } of you</h1>
+			case models.AccountKindOrganization:
+				<h1>Local organizations within { v.Distance } { v.Unit } of you</h1>
+			case models.AccountKindUser:
+				<h1>Local stations within { v.Distance } { v.Unit } of you</h1>
+		}
+		if len(v.Found) == 0 {
+			<p>No results</p>
+		} else {
+			for _, account := range v.Found {
+				<div class="search-result">
+					<h2>{ account.Name }</h2>
+				</div>
+			}
+		}
+	</div>
+}

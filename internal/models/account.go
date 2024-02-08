@@ -3,14 +3,15 @@ package models
 import (
 	"context"
 	"encoding/gob"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
-	"dario.cat/mergo"
 	"github.com/ryanfaerman/netctl/internal/dao"
+
+	. "github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
 type AccountKind int
@@ -20,6 +21,7 @@ const (
 	AccountKindUser         AccountKind = iota // user
 	AccountKindClub                            // club
 	AccountKindOrganization                    // organization
+	AccoundKindAny                             // any
 )
 
 func ParseAccountKind(s string) AccountKind {
@@ -52,6 +54,8 @@ type Account struct {
 	CreatedAt time.Time
 	DeletedAt time.Time
 	Deleted   bool
+
+	Distance float64
 }
 
 func init() {
@@ -176,79 +180,42 @@ func (m *Account) Organizations(ctx context.Context) ([]*Membership, error) {
 }
 
 func FindAccountByID(ctx context.Context, id int64) (*Account, error) {
-	raw, err := global.dao.GetAccount(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	u := Account{
-		ID:        raw.ID,
-		Name:      raw.Name,
-		About:     raw.About,
-		Kind:      AccountKind(raw.Kind),
-		CreatedAt: raw.Createdat,
-	}
-	if raw.Deletedat.Valid {
-		u.DeletedAt = raw.Deletedat.Time
-		u.Deleted = true
-	}
+	_, file, line, _ := runtime.Caller(1)
+	global.log.Warn(
+		"DEPRECATED FUNCTION",
+		"func", "FindAccountByID",
+		"use", "FindOne[Account](ctx, ByID(id))",
+		"file", file,
+		"line", line,
+	)
 
-	if err := json.Unmarshal([]byte(raw.Settings), &u.Settings); err != nil {
-		fmt.Println("error unmarshalling settings", err)
-		return &u, err
-	}
-
-	if err := mergo.Merge(&u.Settings, DefaultSettings); err != nil {
-		panic(err.Error())
-		return &u, err
-	}
-
-	return &u, nil
+	return FindOne[Account](ctx, ByID(id))
 }
 
 func FindAccountByEmail(ctx context.Context, email string) (*Account, error) {
-	raw, err := global.dao.FindAccountByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	u := Account{
-		ID:        raw.ID,
-		Name:      raw.Name,
-		About:     raw.About,
-		Kind:      AccountKind(raw.Kind),
-		CreatedAt: raw.Createdat,
-		Settings:  DefaultSettings,
-	}
-	if raw.Deletedat.Valid {
-		u.DeletedAt = raw.Deletedat.Time
-		u.Deleted = true
-	}
-	if err := json.Unmarshal([]byte(raw.Settings), &u.Settings); err != nil {
-		return &u, err
-	}
-	return &u, nil
+	_, file, line, _ := runtime.Caller(1)
+	global.log.Warn(
+		"DEPRECATED FUNCTION",
+		"func", "FindAccountByEmail",
+		"use", "FindOne[Account](ctx, ByEmail(email))",
+		"file", file,
+		"line", line,
+	)
+
+	return FindOne[Account](ctx, ByEmail(email))
 }
 
 func FindAccountByCallsign(ctx context.Context, callsign string) (*Account, error) {
-	raw, err := global.dao.FindAccountByCallsign(ctx, callsign)
-	if err != nil {
-		return nil, err
-	}
-	u := Account{
-		ID:        raw.ID,
-		Name:      raw.Name,
-		About:     raw.About,
-		Kind:      AccountKind(raw.Kind),
-		CreatedAt: raw.Createdat,
-		Settings:  DefaultSettings,
-	}
-	if raw.Deletedat.Valid {
-		u.DeletedAt = raw.Deletedat.Time
-		u.Deleted = true
-	}
-	if err := json.Unmarshal([]byte(raw.Settings), &u.Settings); err != nil {
-		return &u, err
-	}
-	return &u, nil
+	_, file, line, _ := runtime.Caller(1)
+	global.log.Warn(
+		"DEPRECATED FUNCTION",
+		"func", "FindAccountByCallsign",
+		"use", "FindOne[Account](ctx, ByCallsign(email))",
+		"file", file,
+		"line", line,
+	)
+
+	return FindOne[Account](ctx, ByCallsign(callsign))
 }
 
 func (u *Account) Callsigns() ([]Callsign, error) {
