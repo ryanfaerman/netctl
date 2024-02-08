@@ -9,6 +9,10 @@ import (
 	"github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
+func (m Account) FindCacheKey() string {
+	return "accounts"
+}
+
 func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error) {
 	var (
 		raw   dao.Account
@@ -119,6 +123,13 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 		}
 		if err := json.Unmarshal([]byte(raw.Settings), &a.Settings); err != nil {
 			return nil, err
+		}
+
+		switch {
+		case queries.HasField("callsigns"):
+			if _, err := (&a).Callsigns(); err != nil {
+				return nil, err
+			}
 		}
 
 		found[i] = &a

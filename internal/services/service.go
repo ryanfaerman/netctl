@@ -2,7 +2,9 @@ package services
 
 import (
 	"database/sql"
+	"fmt"
 	"sync"
+	"time"
 
 	scs "github.com/alexedwards/scs/v2"
 	"github.com/r3labs/sse/v2"
@@ -67,8 +69,14 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 
 		err = models.Setup(logger, db)
 
-		global.session.Store = sqlite3store.New(global.db)
+		lifetimeStr := config.Get("session.lifetime", "240h")
+		lifetime, err := time.ParseDuration(lifetimeStr)
+		if err != nil {
+			panic(fmt.Sprintf("unable to parse session.lifetime: %s", err))
+		}
 
+		global.session.Store = sqlite3store.New(global.db)
+		global.session.Lifetime = lifetime
 		global.session.Cookie.Name = config.Get("session.name", "_session")
 		global.session.Cookie.Path = config.Get("session.path", "/")
 	})

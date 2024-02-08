@@ -1,6 +1,10 @@
 package finders
 
-import "slices"
+import (
+	"fmt"
+	"slices"
+	"strings"
+)
 
 type QueryType int
 
@@ -16,8 +20,21 @@ type Query struct {
 	Type   QueryType
 }
 
+func (q Query) String() string {
+	return fmt.Sprintf("Query{Fields: %v, Values: %v, Type: %v}", q.Fields, q.Values, q.Type)
+}
+
 // QuerySet is a collection of queries
 type QuerySet []Query
+
+func (qs QuerySet) String() string {
+	var b strings.Builder
+	for _, q := range qs {
+		b.WriteString(q.String())
+		b.WriteString(";")
+	}
+	return b.String()
+}
 
 type QueryFunc func() (Query, error)
 

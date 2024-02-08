@@ -12,11 +12,19 @@ import (
 	"github.com/mrz1836/postmark"
 	"github.com/ryanfaerman/netctl/config"
 	"github.com/ryanfaerman/netctl/internal/models"
+
+	ttlcache "github.com/jellydator/ttlcache/v3"
 )
 
-type session struct{}
+type session struct {
+	accountCache *ttlcache.Cache[int64, *models.Account]
+}
 
-var Session session
+var Session = session{
+	accountCache: ttlcache.New[int64, *models.Account](
+		ttlcache.WithTTL[int64, *models.Account](global.session.Lifetime),
+	),
+}
 
 type sessionPayload struct {
 	Token string
@@ -25,6 +33,7 @@ type sessionPayload struct {
 
 func init() {
 	gob.Register(sessionPayload{})
+	go Session.accountCache.Start()
 }
 
 func (session) IsAuthenticated(ctx context.Context) bool {
@@ -140,10 +149,18 @@ func (session) Destroy(ctx context.Context) error {
 
 var ErrNoAccountInSession = errors.New("no account in session")
 
-func (session) GetAccount(ctx context.Context) *models.Account {
+func (s session) GetAccount(ctx context.Context) *models.Account {
 	id, ok := global.session.Get(ctx, "account_id").(int64)
 	if !ok {
 		return models.AccountAnonymous
+	}
+	if id < 0 {
+		return models.AccountAnonymous
+	}
+
+	if s.accountCache.Has(id) {
+		global.log.Debug("getting account from cache")
+		return s.accountCache.Get(id).Value()
 	}
 
 	account, err := models.FindAccountByID(ctx, id)
@@ -153,9 +170,11 @@ func (session) GetAccount(ctx context.Context) *models.Account {
 		}
 		return models.AccountAnonymous
 	}
+	s.accountCache.Set(id, account, ttlcache.DefaultTTL)
 	return account
 }
 
-func (session) SetAccount(ctx context.Context, account *models.Account) {
+func (s session) SetAccount(ctx context.Context, account *models.Account) {
 	global.session.Put(ctx, "account_id", account.ID)
+	s.accountCache.Delete(account.ID)
 }

@@ -56,6 +56,8 @@ type Account struct {
 	Deleted   bool
 
 	Distance float64
+
+	callsigns []Callsign
 }
 
 func init() {
@@ -219,6 +221,10 @@ func FindAccountByCallsign(ctx context.Context, callsign string) (*Account, erro
 }
 
 func (u *Account) Callsigns() ([]Callsign, error) {
+	if len(u.callsigns) > 0 {
+		fmt.Println("using preloaded callsigns")
+		return u.callsigns, nil
+	}
 	var callsigns []Callsign
 	rows, err := global.dao.FindCallsignsForAccount(context.Background(), u.ID)
 	if err != nil {
@@ -244,6 +250,8 @@ func (u *Account) Callsigns() ([]Callsign, error) {
 		}
 		callsigns = append(callsigns, callsign)
 	}
+	u.callsigns = callsigns
+
 	return callsigns, nil
 }
 
