@@ -166,7 +166,9 @@ templ (v Settings) ProfileForm(val models.ProfileSettings, errs map[string]strin
 }
 
 templ (v Settings) ProfileContext() {
-	something context
+	<a href={ templ.URL(named.URLFor("account-profile", v.Account.Slug)) } class="button">
+		View Public Profile
+	</a>
 }
 
 templ (v Settings) PrivacyForm(val models.PrivacySettings, errs map[string]string) {
