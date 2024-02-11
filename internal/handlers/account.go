@@ -116,8 +116,6 @@ func (h account) Show(w http.ResponseWriter, r *http.Request) {
 
 	ctx := services.CSRF.GetContext(r.Context(), r)
 
-	account.About = services.Markdown.MustRenderString(account.About)
-
 	v := views.Account{
 		Account: account,
 	}

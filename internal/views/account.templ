@@ -1,6 +1,7 @@
 package views
 
 import "github.com/ryanfaerman/netctl/internal/models"
+import "github.com/ryanfaerman/netctl/internal/services"
 import "github.com/ryanfaerman/netctl/web/named"
 
 import "strings"
@@ -76,7 +77,7 @@ templ (v Account) Profile() {
 				if v.Account.About != "" {
 					<h3>Profile</h3>
 					<div class="profile-section profile-intro markdown-body">
-						@templ.Raw(v.Account.About)
+						@templ.Raw(services.Markdown.MustRenderString(v.Account.About))
 					</div>
 				} else {
 					<p>We'd love to tell you more about { v.Account.Name }, but they haven't shared anything.</p>
