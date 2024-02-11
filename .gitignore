@@ -2,3 +2,8 @@ bin/
 dist/
 tmp/
 
+internal/views/*_templ.go
+internal/dao/*.go
+internal/handlers/static/styles/
+internal/handlers/static/javascript/
+internal/handlers/static/assets/
