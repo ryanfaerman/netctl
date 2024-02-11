@@ -213,6 +213,16 @@ func Generate() error {
 func GenerateTempl() error {
 	log.Info("Generate templ components", "state", "starting")
 	started := time.Now()
+	{
+		output, err := sh.Output("git", "status", "--porcelain")
+		if err != nil {
+			return err
+		}
+		if !strings.Contains(output, "templ") {
+			log.Warn("Generate templ components", "state", "skipped", "cause", "no changes", "elapsed", time.Since(started).String())
+			return nil
+		}
+	}
 	output, err := sh.Output("templ", "generate")
 	log.Info("Generate templ components", "state", "complete", "elapsed", time.Since(started).String(), "results", output)
 	return err
@@ -227,6 +237,19 @@ type asset struct {
 
 func AssetPipeline() error {
 	log.Info("Asset pipeline", "state", "starting")
+
+	started := time.Now()
+
+	{
+		output, err := sh.Output("git", "status", "--porcelain")
+		if err != nil {
+			return err
+		}
+		if !strings.Contains(output, "internal/views/styles") && !strings.Contains(output, "internal/views/javascript") && !strings.Contains(output, "internal/views/assets") {
+			log.Warn("Asset pipeline", "state", "skipped", "cause", "no changes", "elapsed", time.Since(started).String())
+			return nil
+		}
+	}
 
 	var assets []asset
 	steps := []struct {
@@ -411,7 +434,6 @@ func AssetPipeline() error {
 		pipelineErr error
 	)
 
-	started := time.Now()
 	for _, step := range steps {
 		if pipelineErr != nil {
 			fmt.Fprintf(&b, "( ) %s\n", step.name)

@@ -31,8 +31,13 @@ var (
 			case "logfmt":
 				logger.SetFormatter(log.LogfmtFormatter)
 			}
+			lvl, err := log.ParseLevel(globalLogLevel)
+			if err != nil {
+				logger.Warn("Failed to parse log level, defaulting to info", "error", err, "original", globalLogLevel)
+				lvl = log.InfoLevel
+			}
 
-			logger.SetLevel(log.ParseLevel(globalLogLevel))
+			logger.SetLevel(lvl)
 
 			config.Logger = logger
 			if globalConfigPath != "" {

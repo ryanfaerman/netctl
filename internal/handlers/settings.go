@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/davecgh/go-spew/spew"
@@ -104,9 +103,6 @@ func (h settings) SettingsSave(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	namespace := chi.URLParam(r, "namespace")
 	slug := chi.URLParam(r, "slug")
-	if slug == "" {
-		panic("at the disco")
-	}
 
 	// currentUser can come from cache, but we don't want
 	// the cached version, in case a permission or other
@@ -133,10 +129,6 @@ func (h settings) SettingsSave(w http.ResponseWriter, r *http.Request) {
 	} else {
 		account = currentUser
 	}
-
-	fmt.Println("at start", slug)
-	spew.Dump(account)
-	spew.Dump(currentUser)
 
 	if err := services.Authorization.Can(r.Context(), currentUser, "edit", account); err != nil {
 		ErrorHandler(err)(w, r)
@@ -193,7 +185,6 @@ func (h settings) SettingsSave(w http.ResponseWriter, r *http.Request) {
 					settingsErrs["activityGraphs"] = e
 
 				}
-				// v.EditFormWithErrors(input, inputErrs).Render(ctx, w)
 				v.ShowWithErrors(namespace, viewSettings, settingsErrs).Render(ctx, w)
 				return
 			}
@@ -202,11 +193,6 @@ func (h settings) SettingsSave(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-
-	fmt.Println("account")
-	spew.Dump(account)
-	fmt.Println("currentUser")
-	spew.Dump(currentUser)
 
 	if err := services.Account.SaveSettings(ctx, account.ID, &settings); err != nil {
 		ErrorHandler(err)(w, r)
