@@ -21,3 +21,21 @@ RETURNING id;
 INSERT INTO memberships (
   account_id, member_of, role_id, created_at
 ) VALUES (?1, ?2, ?3, CURRENT_TIMESTAMP);
+
+-- name: FindMembershipForAccountMember :one
+SELECT 
+  memberships.*,
+  roles.name as role_name,
+  roles.permissions as permissions
+FROM memberships 
+Join roles on memberships.role_id = roles.id
+WHERE memberships.account_id = ?1 AND member_of = ?2;
+
+-- name: HasPermissionOnAccount :one
+select memberships.* 
+from memberships 
+join roles on memberships.role_id = roles.id  
+where 
+  memberships.account_id=@account_id
+  and member_of=@member_of
+  and (roles.permissions & @permission) > 0;

@@ -10,9 +10,11 @@ import (
 	"strings"
 
 	"dario.cat/mergo"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ryanfaerman/netctl/hamdb"
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/models"
+	. "github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
 type account struct{}
@@ -29,6 +31,10 @@ func (account) FindByEmail(ctx context.Context, email string) (*models.Account, 
 
 func (account) FindByCallsign(ctx context.Context, callsign string) (*models.Account, error) {
 	return models.FindAccountByCallsign(ctx, callsign)
+}
+
+func (account) FindBySlug(ctx context.Context, slug string) (*models.Account, error) {
+	return FindOne[models.Account](ctx, BySlug(slug))
 }
 
 func (s account) CreateWithEmail(ctx context.Context, email string) (*models.Account, error) {
@@ -202,6 +208,8 @@ func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Se
 		return err
 	}
 
+	fmt.Println("right before validation")
+	spew.Dump(account.Settings)
 	if err := Validation.Apply(account.Settings); err != nil {
 		return err
 	}
@@ -210,6 +218,9 @@ func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Se
 	if err != nil {
 		return err
 	}
+	fmt.Println("right before save")
+	spew.Dump(data)
+	spew.Dump(account.Settings)
 
 	if err := global.dao.UpdateAccountSettings(ctx, dao.UpdateAccountSettingsParams{
 		ID:       account.ID,
@@ -217,6 +228,10 @@ func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Se
 	}); err != nil {
 		return err
 	}
+	fmt.Println("right after save")
+	spew.Dump(account)
+
+	Session.ClearAccountCache(ctx, account)
 
 	return nil
 }

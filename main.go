@@ -1,27 +1,18 @@
 package main
 
 import (
-	"dario.cat/mergo"
+	"fmt"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ryanfaerman/netctl/internal/models"
-	"github.com/ryanfaerman/netctl/internal/services"
 )
 
-func show(s models.Settings) {
-	spew.Dump(s)
-}
-
 func main() {
-	s := &models.PrivacySettings{
-		Location: "PROTECTED",
-	}
-	if err := mergo.Merge(s, s.Defaults()); err != nil {
-		panic(err.Error())
-	}
+	spew.Dump(
+		uint(models.PermissionEdit),
+		uint(models.PermissionRunNet),
+		uint(models.PermissionDingle),
+	)
 
-	if err := services.Validation.Apply(s); err != nil {
-		spew.Dump(err)
-	}
-
-	show(models.Settings(s))
+	fmt.Println("custom", uint(models.PermissionEdit|models.PermissionDingle))
 }

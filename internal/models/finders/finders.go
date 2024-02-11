@@ -115,3 +115,12 @@ func ClearFinderCache[K FinderCacher]() {
 		cache.DeleteAll()
 	}
 }
+
+func EnforceValue[K any](queries QuerySet, key string) (K, error) {
+	k := *new(K)
+	v, ok := queries.ValueForField(key).(K)
+	if !ok {
+		return k, ErrInvalidFieldType
+	}
+	return v, nil
+}

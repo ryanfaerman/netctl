@@ -56,6 +56,14 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 		}
 		raw, err = global.dao.FindAccountByCallsign(ctx, val)
 		raws = append(raws, raw)
+	case queries.HasWhere("slug"):
+		val, ok := queries.ValueForField("slug").(string)
+		if !ok {
+			return nil, finders.ErrInvalidFieldType
+		}
+		raw, err = global.dao.GetAccountBySlug(ctx, val)
+		raws = append(raws, raw)
+
 	case queries.HasWhere("distance", "kind"):
 		vals := queries.ValuesForField("distance")
 		if len(vals) < 3 {
@@ -116,6 +124,7 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 			Kind:      AccountKind(raw.Kind),
 			CreatedAt: raw.Createdat,
 			Settings:  DefaultSettings,
+			Slug:      raw.Slug,
 		}
 		if raw.Deletedat.Valid {
 			a.DeletedAt = raw.Deletedat.Time
@@ -124,6 +133,9 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 		if err := json.Unmarshal([]byte(raw.Settings), &a.Settings); err != nil {
 			return nil, err
 		}
+
+		a.Name = a.Settings.ProfileSettings.Name
+		a.About = a.Settings.ProfileSettings.About
 
 		switch {
 		case queries.HasField("callsigns"):

@@ -71,7 +71,7 @@ func UserCan(ctx context.Context, action string, resources ...any) bool {
 		return true
 	}
 	a := services.Session.GetAccount(ctx)
-	if err := services.Authorization.Can(a, action, resources...); err != nil {
+	if err := services.Authorization.Can(ctx, a, action, resources...); err != nil {
 		return false
 	}
 	return true

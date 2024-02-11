@@ -39,3 +39,21 @@ func ByKind(kind int) QueryFunc {
 		return Query{Type: QueryWhere, Fields: []string{"kind"}, Values: []any{kind}}, nil
 	}
 }
+
+func BySlug(slug string) QueryFunc {
+	return func() (Query, error) {
+		return Query{Type: QueryWhere, Fields: []string{"slug"}, Values: []any{slug}}, nil
+	}
+}
+
+func ByMemberOf(accountID int64) QueryFunc {
+	return func() (Query, error) {
+		return Query{Type: QueryWhere, Fields: []string{"member_of"}, Values: []any{accountID}}, nil
+	}
+}
+
+func ByAccount(accountID int64) QueryFunc {
+	return func() (Query, error) {
+		return Query{Type: QueryWhere, Fields: []string{"account_id"}, Values: []any{accountID}}, nil
+	}
+}

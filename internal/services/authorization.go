@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -10,7 +11,7 @@ import (
 
 // Canner allows a resource to define if an account can perform a given action.
 type Canner interface {
-	Can(account *models.Account, action string) error
+	Can(ctx context.Context, account *models.Account, action string) error
 }
 
 // Verber is used to allow a resource to define the actions it supports.
@@ -84,7 +85,7 @@ var DefaultPolicy = Policy{
 // If the action is not valid for the resource, ErrInvalidAction
 // is returned. Where validity is defined by the resource
 // implementing the optional Verber interface.
-func (a *authz) Can(account *models.Account, action string, resources ...any) error {
+func (a *authz) Can(ctx context.Context, account *models.Account, action string, resources ...any) error {
 	l := global.log.With("action", action, "service", "authorization")
 	if account == nil {
 		account = models.AccountAnonymous
@@ -106,7 +107,7 @@ func (a *authz) Can(account *models.Account, action string, resources ...any) er
 		}
 
 		if r, ok := resource.(Canner); ok {
-			if err := r.Can(account, action); err != nil {
+			if err := r.Can(ctx, account, action); err != nil {
 				err = errors.Join(ErrNotAuthorized, err)
 				l.Debug("not authorized", "err", err.Error())
 				return err

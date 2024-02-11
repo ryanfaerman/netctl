@@ -160,7 +160,9 @@ func (s session) GetAccount(ctx context.Context) *models.Account {
 
 	if s.accountCache.Has(id) {
 		global.log.Debug("getting account from cache")
-		return s.accountCache.Get(id).Value()
+		account := s.accountCache.Get(id).Value()
+		account.Cached = true
+		return account
 	}
 
 	account, err := models.FindAccountByID(ctx, id)
@@ -176,5 +178,9 @@ func (s session) GetAccount(ctx context.Context) *models.Account {
 
 func (s session) SetAccount(ctx context.Context, account *models.Account) {
 	global.session.Put(ctx, "account_id", account.ID)
+	s.accountCache.Delete(account.ID)
+}
+
+func (s session) ClearAccountCache(ctx context.Context, account *models.Account) {
 	s.accountCache.Delete(account.ID)
 }

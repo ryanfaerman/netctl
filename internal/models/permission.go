@@ -3,12 +3,13 @@ package models
 import "strings"
 
 //go:generate stringer -type=Permission -trimprefix=Permission
-type Permission uint
+type Permission int64
 
 const (
 	PermissionNone Permission = 0
 	PermissionEdit Permission = 1 << iota
 	PermissionRunNet
+	PermissionDingle
 
 	PermissionOwner = PermissionEdit | PermissionRunNet
 )

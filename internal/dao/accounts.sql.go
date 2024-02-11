@@ -150,6 +150,30 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 	return i, err
 }
 
+const getAccountBySlug = `-- name: GetAccountBySlug :one
+SELECT accounts.id, accounts.name, accounts.createdat, accounts.updatedat, accounts.deletedat, accounts.kind, accounts.about, accounts.settings, accounts.slug
+FROM accounts
+WHERE UPPER(slug) = UPPER(?1)
+LIMIT 1
+`
+
+func (q *Queries) GetAccountBySlug(ctx context.Context, slug string) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccountBySlug, slug)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Createdat,
+		&i.Updatedat,
+		&i.Deletedat,
+		&i.Kind,
+		&i.About,
+		&i.Settings,
+		&i.Slug,
+	)
+	return i, err
+}
+
 const getAccountSetting = `-- name: GetAccountSetting :one
 SELECT json_extract(settings, ?2)
 FROM accounts

@@ -3,9 +3,8 @@ package models
 type Settings struct {
 	PrivacySettings    `json:"privacy"`
 	AppearanceSettings `json:"appearance"`
+	ProfileSettings    `json:"profile"`
 }
-
-var t = true
 
 var DefaultSettings = Settings{
 	PrivacySettings: PrivacySettings{

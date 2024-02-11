@@ -1,0 +1,284 @@
+package views
+
+import "github.com/ryanfaerman/netctl/internal/models"
+import "github.com/ryanfaerman/netctl/web/named"
+
+import "strings"
+
+type Settings struct {
+	Account     *models.Account
+	Memberships []*models.Membership
+	Delegated   bool
+}
+
+func (v Settings) TopNav() Menu {
+	return Menu{
+		{Value: "Profile", URL: named.URLFor("account-profile", v.Account.Callsign().Call), Icon: IconAttrs{Name: "file-lines"}},
+	}
+}
+
+func (v Settings) URLFor(namespace string) string {
+	if v.Delegated {
+		return named.URLFor("delegated-settings", strings.ToLower(v.Account.Slug), namespace)
+	}
+	return named.URLFor("settings", namespace)
+}
+
+func (v Settings) SaveURLFor(namespace string) string {
+	if v.Delegated {
+		return named.URLFor("delegated-settings-save", strings.ToLower(v.Account.Slug), namespace)
+	}
+	return named.URLFor("settings-save", namespace)
+}
+
+templ (v Settings) SidebarNav() {
+	@Nav("", Menu{
+          {Value: "Public Profile", URL: v.URLFor("profile"), Icon: IconAttrs{Name: "user", FixedWidth: true}},
+          {Value: "Privacy", URL: v.URLFor("privacy"), Icon: IconAttrs{Name: "shield-halved", FixedWidth: true}},
+          {Value: "Avatar", URL: v.URLFor("avatar"), Icon: IconAttrs{Name: "image", Kind: "regular", FixedWidth: true}},
+          {Value: "Appearance", URL: v.URLFor("appearance"), Icon: IconAttrs{Name: "paintbrush", Kind: "solid", FixedWidth: true}},
+        })
+	@Nav("Access", Menu{
+          {Value: "Billing & Plans", URL: v.URLFor("billing"), Icon: IconAttrs{Name: "credit-card", FixedWidth: true}},
+          {Value: "Emails", URL: v.URLFor("emails"), Icon: IconAttrs{Name: "envelope", FixedWidth: true}},
+          {Value: "Sessions", URL: v.URLFor("sessions"), Icon: IconAttrs{Name: "tower-broadcast", FixedWidth: true}},
+          {Value: "Organizations", URL: v.URLFor("organizations"), Icon: IconAttrs{Name: "landmark", FixedWidth: true}},
+          {Value: "Clubs", URL: v.URLFor("clubs"), Icon: IconAttrs{Name: "people-group", FixedWidth: true}},
+        })
+	@Nav("Archives", Menu{
+          {Value: "Checkins", URL: "#", Icon: IconAttrs{Name: "list-check", FixedWidth: true}},
+          {Value: "Security Logs", URL: "#", Icon: IconAttrs{Name: "scroll", FixedWidth: true}},
+        })
+}
+
+templ (v Settings) Header() {
+	<header class="grid-container profile-settings">
+		@Image(ImageAttrs{
+            URL: GravatarURL(ctx, v.Account, 48),
+            Width: 48,
+            Height: 48,
+            Extra: templ.Attributes{
+                "class": "avatar",
+            },
+          })
+		<h1 class="account-name">{ v.Account.Name }</h1>
+		switch v.Account.Kind {
+			case models.AccountKindUser:
+				<p class="account-kind">
+					Settings for your personal profile
+				</p>
+			case models.AccountKindOrganization:
+				<p class="account-kind">
+					Settings for your organization
+				</p>
+			case models.AccountKindClub:
+				<p class="account-kind">
+					Settings for your club
+				</p>
+		}
+		@v.ContextSwitcher()
+	</header>
+}
+
+templ (v Settings) ContextSwitcher() {
+	<div class="context-switcher">
+		Change Context
+	</div>
+}
+
+templ (v Settings) Sidebar() {
+	<div class="grid-container left-split with-context">
+		<div class="nav sidebar">
+			@v.SidebarNav()
+		</div>
+	</div>
+}
+
+templ (v Settings) Show(section string, settings any) {
+	@v.ShowWithErrors(section, settings, map[string]string{})
+}
+
+templ (v Settings) ShowWithErrors(section string, settings any, settingsErrs map[string]string) {
+	@Page(v.TopNav()) {
+		@v.Header()
+		<div class="grid-container left-split with-context">
+			<div class="nav sidebar">
+				@v.SidebarNav()
+			</div>
+			<div>
+				switch section {
+					case "profile":
+						@v.ProfileForm(settings.(models.ProfileSettings), settingsErrs)
+					case "privacy":
+						@v.PrivacyForm(settings.(models.PrivacySettings), settingsErrs)
+					case "avatar":
+						@v.AvatarForm()
+					case "appearance":
+						@v.AppearanceForm(settings.(models.AppearanceSettings), settingsErrs)
+					case "clubs":
+						@v.MembershipOverview(models.AccountKindClub)
+					case "organizations":
+						@v.MembershipOverview(models.AccountKindOrganization)
+				}
+			</div>
+			<div>
+				<!-- context content -->
+				switch section {
+					case "profile":
+						@v.ProfileContext()
+					case "privacy":
+						@v.PrivacyContext()
+					case "avatar":
+						@v.AvatarContext()
+					case "appearance":
+						@v.AppearanceContext()
+					case "organizations":
+						@v.MembershipContext(models.AccountKindOrganization)
+					case "clubs":
+						@v.MembershipContext(models.AccountKindClub)
+				}
+			</div>
+		</div>
+	}
+}
+
+templ (v Settings) ProfileForm(val models.ProfileSettings, errs map[string]string) {
+	@Form("edit-account", FormAttrs{
+          Action: v.SaveURLFor("profile"),
+        }) {
+		@InputText("name", InputAttrs{
+            Label: "Name",
+            Value: val.Name,
+            Error: errs["name"],
+            HelpText: "Your name as you'd like to be called on the air",
+          })
+		@InputTextArea("about", InputAttrs{
+      Label: "About you",
+      Placeholder: "Tell us about yourself",
+      Value: val.About,
+      Error: errs["about"],
+      Height: "30rem",
+    })
+		@InputSubmit(InputAttrs{
+            Value: "Save",
+          })
+	}
+}
+
+templ (v Settings) ProfileContext() {
+	something context
+}
+
+templ (v Settings) PrivacyForm(val models.PrivacySettings, errs map[string]string) {
+	@Form("privacy", FormAttrs{
+      Action: v.SaveURLFor("privacy"),
+      
+    }) {
+		@InputRadioGroup("location", InputAttrs{
+      Label: "Show location on profile?",
+      Values: []InputValue{
+          {Value: "public", Label: "Yes", HelpText: "Anyone can see your location"},
+          {Value: "protected", Label: "Users Only", HelpText: "Only users with an account will see your location"},
+          {Value: "private", Label: "No", HelpText: "Your location won't be directly visible on your profile"},
+        },
+      Value: val.Location,
+      HelpText: "Control how your location is shared.",
+    })
+		@InputRadioGroup("visibility", InputAttrs{
+      Label: "Profile visiblity",
+      Values: []InputValue{
+          {Value: "public", Label: "Yes", HelpText: "Anyone can see your profile"},
+          {Value: "protected", Label: "Users Only", HelpText: "Only users with an account can see your profile"},
+          {Value: "private", Label: "Private", HelpText: "Don't show up in any search results"},
+        },
+      Value: val.Visiblility,
+      HelpText: "Manage overall profile visiblity.",
+    })
+		@InputSubmit(InputAttrs{
+      Value: "Save",
+    })
+	}
+}
+
+templ (v Settings) PrivacyContext() {
+	<div class="callout notice">
+		<strong>A note about privacy</strong>
+		<p>
+			It's important to remember that, while we will do our best to enforce 
+			these privacy settings, your callsign is an identifier with the FCC or 
+			other government agency.
+		</p>
+		<p>
+			Government records are generally publicly available and 
+			much of the information will be accessible according to the laws in your country.
+		</p>
+	</div>
+}
+
+templ (v Settings) AppearanceForm(val models.AppearanceSettings, errs map[string]string) {
+	@Form("appearance", FormAttrs{
+      Action: v.SaveURLFor("appearance"),
+    }) {
+		@InputRadioGroup("activity-graphs", InputAttrs{
+      Label: "Activity Graph",
+      Values: []InputValue{
+        {Value: "on", Label: "Enable activity graphs", HelpText: "Show the activity graph on your profile?"},
+        {Value: "off", Label: "Disable Activity Graph", HelpText: "Show the activity graph on your profile?"},
+      },
+      Value: val.ActivityGraphs,
+    })
+		@InputSubmit(InputAttrs{
+      Value: "Save",
+    })
+	}
+}
+
+templ (v Settings) AppearanceContext() {
+	<p>
+		Appearance settings are used to control how your profile is displayed to other users.
+	</p>
+}
+
+templ (v Settings) AvatarForm() {
+	<p>
+		Your avatar is managed with gravatar, a service that links your 
+		email address with an image of your choosing.
+	</p>
+}
+
+templ (v Settings) AvatarContext() {
+}
+
+templ (v Settings) MembershipOverview(kind models.AccountKind) {
+	if len(v.Memberships) == 0 {
+		Looks like you don't have any memberships yet.
+		Wanna join a club?
+		<a href={ templ.URL(named.URLFor("group-new", kind.String())) } class="button">
+			Create a club
+		</a>
+	} else {
+		<h3>{ kind.String() } Memberships</h3>
+		<div class="membership-list">
+			for _, m := range v.Memberships {
+				<div class="membership">
+					<div class="group">
+						<a href="#">
+							{ m.Target.Name }
+						</a>
+						<span class="role badge">{ m.Role.Name }</span>
+					</div>
+					<div class="actions">
+						<a href="#" class="button">Settings</a>
+						<a href="#" class="button danger">Leave</a>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ (v Settings) MembershipContext(kind models.AccountKind) {
+	<a href={ templ.URL(named.URLFor("group-new", kind.String())) } class="button">
+		Create a { kind.String() }
+	</a>
+}

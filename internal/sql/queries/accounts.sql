@@ -7,6 +7,12 @@ FROM accounts
 WHERE id = ?1
 LIMIT 1;
 
+-- name: GetAccountBySlug :one
+SELECT accounts.*
+FROM accounts
+WHERE UPPER(slug) = UPPER(@slug)
+LIMIT 1;
+
 -- name: UpdateAccount :one
 UPDATE accounts
 SET updatedAt = CURRENT_TIMESTAMP,

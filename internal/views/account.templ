@@ -3,6 +3,8 @@ package views
 import "github.com/ryanfaerman/netctl/internal/models"
 import "github.com/ryanfaerman/netctl/web/named"
 
+import "strings"
+
 type Account struct {
 	Account       *models.Account
 	Clubs         []*models.Membership
@@ -34,9 +36,15 @@ templ (v Account) Profile() {
 					<h1 class="account-name">{ v.Account.Name }</h1>
 					<h2 class="callsign">{ v.Account.Callsign().Call }</h2>
 					@Can("edit", v.Account) {
-						<a href={ templ.URL(named.URLFor("settings", "profile")) } class="button">
-							Edit profile
-						</a>
+						if CurrentAccount(ctx) != v.Account {
+							<a href={ templ.URL(named.URLFor("delegated-settings", strings.ToLower(v.Account.Slug), "profile")) } class="button">
+								Edit { v.Account.Kind.String() }
+							</a>
+						} else {
+							<a href={ templ.URL(named.URLFor("settings", "profile")) } class="button">
+								Edit profile
+							</a>
+						}
 					}
 					<ul>
 						<li>

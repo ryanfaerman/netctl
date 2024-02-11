@@ -58,6 +58,8 @@ type Account struct {
 	Distance float64
 
 	callsigns []Callsign
+
+	Cached bool
 }
 
 func init() {
@@ -70,14 +72,21 @@ func (m *Account) Verbs() []string {
 	}
 }
 
-func (m *Account) Can(account *Account, action string) error {
+func (m *Account) Can(ctx context.Context, account *Account, action string) error {
 	switch action {
 	case "edit":
 		if account.IsAnonymous() {
 			return errors.New("anonymous users cannot edit accounts")
 		}
 		if account.ID != m.ID {
-			return errors.New("cannot edit another user's account")
+			memberships, err := Find[Membership](ctx, ByAccount(account.ID), ByMemberOf(m.ID), WithPermission(int64(PermissionEdit)))
+			if err != nil {
+				return fmt.Errorf("unable to check permission: %w", err)
+			}
+			if len(memberships) == 0 {
+				return errors.New("cannot edit another user's account")
+			}
+
 		}
 	case "view":
 		// if account.IsAnonymous() {

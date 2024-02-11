@@ -54,6 +54,46 @@ func (q *Queries) CreateRoleOnAccount(ctx context.Context, arg CreateRoleOnAccou
 	return id, err
 }
 
+const findMembershipForAccountMember = `-- name: FindMembershipForAccountMember :one
+SELECT 
+  memberships.id, memberships.account_id, memberships.member_of, memberships.role_id, memberships.created_at,
+  roles.name as role_name,
+  roles.permissions as permissions
+FROM memberships 
+Join roles on memberships.role_id = roles.id
+WHERE memberships.account_id = ?1 AND member_of = ?2
+`
+
+type FindMembershipForAccountMemberParams struct {
+	AccountID int64
+	MemberOf  int64
+}
+
+type FindMembershipForAccountMemberRow struct {
+	ID          int64
+	AccountID   int64
+	MemberOf    int64
+	RoleID      int64
+	CreatedAt   time.Time
+	RoleName    string
+	Permissions int64
+}
+
+func (q *Queries) FindMembershipForAccountMember(ctx context.Context, arg FindMembershipForAccountMemberParams) (FindMembershipForAccountMemberRow, error) {
+	row := q.db.QueryRowContext(ctx, findMembershipForAccountMember, arg.AccountID, arg.MemberOf)
+	var i FindMembershipForAccountMemberRow
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.MemberOf,
+		&i.RoleID,
+		&i.CreatedAt,
+		&i.RoleName,
+		&i.Permissions,
+	)
+	return i, err
+}
+
 const getAccountKindMemberships = `-- name: GetAccountKindMemberships :many
 SELECT 
   a.id, a.name, a.createdat, a.updatedat, a.deletedat, a.kind, a.about, a.settings, a.slug,
@@ -126,4 +166,33 @@ func (q *Queries) GetAccountKindMemberships(ctx context.Context, arg GetAccountK
 		return nil, err
 	}
 	return items, nil
+}
+
+const hasPermissionOnAccount = `-- name: HasPermissionOnAccount :one
+select memberships.id, memberships.account_id, memberships.member_of, memberships.role_id, memberships.created_at 
+from memberships 
+join roles on memberships.role_id = roles.id  
+where 
+  memberships.account_id=?1
+  and member_of=?2
+  and (roles.permissions & ?3) > 0
+`
+
+type HasPermissionOnAccountParams struct {
+	AccountID  int64
+	MemberOf   int64
+	Permission int64
+}
+
+func (q *Queries) HasPermissionOnAccount(ctx context.Context, arg HasPermissionOnAccountParams) (Membership, error) {
+	row := q.db.QueryRowContext(ctx, hasPermissionOnAccount, arg.AccountID, arg.MemberOf, arg.Permission)
+	var i Membership
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.MemberOf,
+		&i.RoleID,
+		&i.CreatedAt,
+	)
+	return i, err
 }

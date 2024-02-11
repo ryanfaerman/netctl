@@ -163,7 +163,7 @@ func (m *Net) Verbs() []string {
 	}
 }
 
-func (m *Net) Can(account *Account, action string) error {
+func (m *Net) Can(ctx context.Context, account *Account, action string) error {
 	switch action {
 	case "perform-checkins":
 		if account.IsAnonymous() {

@@ -11,12 +11,14 @@ func _() {
 	_ = x[PermissionNone-0]
 	_ = x[PermissionEdit-2]
 	_ = x[PermissionRunNet-4]
+	_ = x[PermissionDingle-8]
 }
 
 const (
 	_Permission_name_0 = "None"
 	_Permission_name_1 = "Edit"
 	_Permission_name_2 = "RunNet"
+	_Permission_name_3 = "Dingle"
 )
 
 func (i Permission) String() string {
@@ -27,6 +29,8 @@ func (i Permission) String() string {
 		return _Permission_name_1
 	case i == 4:
 		return _Permission_name_2
+	case i == 8:
+		return _Permission_name_3
 	default:
 		return "Permission(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

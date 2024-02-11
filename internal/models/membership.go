@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"dario.cat/mergo"
@@ -16,6 +17,16 @@ type Membership struct {
 
 	CreatedAt time.Time
 	ID        int64
+}
+
+func (m *Membership) Can(ctx context.Context, account *Account, action string) error {
+	p := ParsePermission(action)
+
+	if !m.Role.Permissions.Has(p) {
+		return fmt.Errorf("account %s does not have permission %s", m.Account.Name, p)
+	}
+
+	return nil
 }
 
 func FindMemberships(ctx context.Context, account *Account, kind AccountKind) ([]*Membership, error) {

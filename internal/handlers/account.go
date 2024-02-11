@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -33,9 +32,9 @@ func (h account) Routes(r chi.Router) {
 		r.Post(named.Route("account-setup-apply", "/account/setup"), h.Setup)
 	})
 
-	r.Get(named.Route("account-profile", "/profile/{callsign}"), h.Show)
+	r.Get(named.Route("account-profile", "/profile/{slug}"), h.Show)
 	r.Get(named.Route("account-profile-self", "/profile"), h.Show)
-	r.Post(named.Route("account-edit-save", "/profile/{callsign}/edit/-/save"), h.Update)
+	// r.Post(named.Route("account-edit-save", "/profile/{callsign}/edit/-/save"), h.Update)
 
 	// r.Get(named.Route("settings-profile", "/settings/profile"), h.Edit)
 	// r.Get(named.Route("settings-privacy", "/settings/privacy"), h.SettingsPrivacy)
@@ -43,10 +42,11 @@ func (h account) Routes(r chi.Router) {
 	// r.Get(named.Route("settings-billing", "/settings/billing"), h.Edit)
 	// r.Get(named.Route("settings-emails", "/settings/emails"), h.Edit)
 	// r.Get(named.Route("settings-sessions", "/settings/sessions"), h.Edit)
-	r.Get(named.Route("settings", "/settings/{namespace}"), h.Settings)
-	r.Post(named.Route("settings-save", "/settings/{namespace}/-/save"), h.SettingsSave)
-
-	r.Get("/-/find-accounts", h.Find)
+	// r.Get(named.Route("settings", "/settings/{namespace}"), h.Settings)
+	// r.Post(named.Route("settings-save", "/settings/{namespace}/-/save"), h.SettingsSave)
+	//
+	// r.Get(named.Route("delegated-settings", "/settings/{slug}/{namespace}"), h.Settings)
+	// r.Post(named.Route("delegated-settings-save", "/settings/{slug}/{namespace}/-/save"), h.SettingsSave)
 }
 
 func (h account) Setup(w http.ResponseWriter, r *http.Request) {
@@ -103,21 +103,21 @@ func (h account) Show(w http.ResponseWriter, r *http.Request) {
 		err     error
 	)
 
-	callsign := chi.URLParam(r, "callsign")
+	slug := chi.URLParam(r, "slug")
 
 	user := services.Session.GetAccount(r.Context())
-	if user.IsAnonymous() && callsign == "" {
+	if user.IsAnonymous() && slug == "" {
 		ErrorHandler(services.ErrNotAuthorized)(w, r)
 		return
 	}
 
-	if callsign == "" && callsign != user.Callsign().Call {
+	if slug == "" && slug != user.Slug {
 		http.Redirect(w, r, named.URLFor("account-profile", user.Callsign().Call), http.StatusSeeOther)
 		return
 	}
 
-	if callsign != user.Callsign().Call {
-		account, err = services.Account.FindByCallsign(r.Context(), callsign)
+	if slug != user.Slug {
+		account, err = services.Account.FindBySlug(r.Context(), slug)
 		if err != nil {
 			ErrorHandler(err)(w, r)
 			return
@@ -126,7 +126,7 @@ func (h account) Show(w http.ResponseWriter, r *http.Request) {
 		account = user
 	}
 
-	if err := services.Authorization.Can(user, "view", account); err != nil {
+	if err := services.Authorization.Can(r.Context(), user, "view", account); err != nil {
 		ErrorHandler(err)(w, r)
 		return
 	}
@@ -145,7 +145,7 @@ func (h account) Edit(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	a := services.Session.GetAccount(r.Context())
 
-	if err := services.Authorization.Can(a, "edit", a); err != nil {
+	if err := services.Authorization.Can(r.Context(), a, "edit", a); err != nil {
 		ErrorHandler(err)(w, r)
 		return
 	}
@@ -159,34 +159,47 @@ func (h account) Edit(w http.ResponseWriter, r *http.Request) {
 func (h account) Settings(w http.ResponseWriter, r *http.Request) {
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	namespace := chi.URLParam(r, "namespace")
+	slug := chi.URLParam(r, "slug")
 
-	a := services.Session.GetAccount(ctx)
+	currentUser := services.Session.GetAccount(ctx)
 
-	if err := services.Authorization.Can(a, "edit", a); err != nil {
+	var account *models.Account
+	if slug != "" {
+		a, err := FindOne[models.Account](ctx, BySlug(slug))
+		if err != nil {
+			ErrorHandler(err)(w, r)
+			return
+		}
+		account = a
+	} else {
+		account = currentUser
+	}
+
+	if err := services.Authorization.Can(r.Context(), currentUser, "edit", account); err != nil {
 		ErrorHandler(err)(w, r)
 		return
 	}
 
 	v := views.Account{
-		Account: a,
+		Account: account,
 	}
 
 	var settings any
 
 	switch namespace {
 	case "privacy":
-		settings = a.Settings.PrivacySettings
+		settings = account.Settings.PrivacySettings
 	case "appearance":
-		settings = a.Settings.AppearanceSettings
+		settings = account.Settings.AppearanceSettings
 	case "clubs":
-		clubs, err := a.Clubs(ctx)
+		clubs, err := account.Clubs(ctx)
 		if err != nil {
 			ErrorHandler(err)(w, r)
 			return
 		}
 		v.Memberships = clubs
 	case "organizations":
-		orgs, err := a.Organizations(ctx)
+		orgs, err := account.Organizations(ctx)
 		if err != nil {
 			ErrorHandler(err)(w, r)
 			return
@@ -201,7 +214,7 @@ func (h account) SettingsSave(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	ctx := services.CSRF.GetContext(r.Context(), r)
 	a := services.Session.GetAccount(ctx)
-	if err := services.Authorization.Can(a, "edit", a); err != nil {
+	if err := services.Authorization.Can(r.Context(), a, "edit", a); err != nil {
 		ErrorHandler(err)(w, r)
 		return
 	}
@@ -264,6 +277,7 @@ func (h account) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errs, ok := err.(services.ValidationError); ok {
 			for field, e := range errs {
+				spew.Dump(errs)
 				switch field {
 				case "Account.Name":
 					inputErrs.Name = e
@@ -282,55 +296,4 @@ func (h account) Update(w http.ResponseWriter, r *http.Request) {
 	services.Session.SetAccount(ctx, a)
 
 	v.EditForm().Render(ctx, w)
-}
-
-func (h account) Find(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ByEmail:")
-	results, err := FindOne[models.Account](r.Context(), ByEmail("ryan@faerman.net"))
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
-	spew.Dump(results)
-
-	fmt.Println("ByCallsign:")
-	results, err = FindOne[models.Account](r.Context(), ByCallsign("kq4jxi"))
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
-	spew.Dump(results)
-
-	fmt.Println("ByID:")
-	results, err = FindOne[models.Account](r.Context(), ByID(1))
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
-	spew.Dump(results)
-
-	fmt.Println("ByDistance:")
-	account := services.Session.GetAccount(r.Context())
-	if account.IsAnonymous() {
-		ErrorHandler(fmt.Errorf("you must be logged in to use this feature"))(w, r)
-		return
-	}
-	lat, lon, err := services.Account.Geolocation(r.Context(), account)
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
-	found, err := Find[models.Account](r.Context(), ByDistance(lat, lon, 10*1.609344), ByKind(int(models.AccountKindClub)))
-	if err != nil {
-		ErrorHandler(err)(w, r)
-		return
-	}
-	spew.Dump(found)
-	// fmt.Println("ByNothing:")
-	// results, err = FindOne[models.Account](r.Context())
-	// if err != nil {
-	// 	ErrorHandler(err)(w, r)
-	// 	return
-	// }
-	// spew.Dump(results)
 }
