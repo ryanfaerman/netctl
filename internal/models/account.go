@@ -182,12 +182,16 @@ func (m *Account) PrimaryEmail() (Email, error) {
 	return Email{}, errors.New("no primary email")
 }
 
+func (m *Account) Delegated(ctx context.Context) ([]*Membership, error) {
+	return Find[Membership](ctx, ByAccount(m.ID))
+}
+
 func (m *Account) Clubs(ctx context.Context) ([]*Membership, error) {
-	return FindMemberships(ctx, m, AccountKindClub)
+	return Find[Membership](ctx, ByAccount(m.ID), ByKind(int(AccountKindClub)))
 }
 
 func (m *Account) Organizations(ctx context.Context) ([]*Membership, error) {
-	return FindMemberships(ctx, m, AccountKindOrganization)
+	return Find[Membership](ctx, ByAccount(m.ID), ByKind(int(AccountKindOrganization)))
 }
 
 func FindAccountByID(ctx context.Context, id int64) (*Account, error) {

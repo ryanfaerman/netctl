@@ -6,3 +6,10 @@ type Role struct {
 	Permissions Permission `form:"permissions" json:"permissions" validate:"required"`
 	Ranking     int64      `form:"ranking" json:"ranking"`
 }
+
+var RoleNone = &Role{
+	Name:        "None",
+	ID:          -1,
+	Permissions: PermissionNone,
+	Ranking:     -1,
+}

@@ -11,11 +11,25 @@ JOIN memberships AS m ON a.id = m.member_of
 JOIN roles AS r on m.role_id = r.id
 WHERE m.account_id = ?1 AND a.kind = ?2;
 
+-- name: GetMembershipsForAccount :many
+SELECT memberships.*
+FROM memberships
+WHERE account_id = ?1;
+
+-- name: GetMembershipsForAccountAndKind :many
+SELECT memberships.*
+FROM memberships
+JOIN accounts ON memberships.member_of = accounts.id
+WHERE memberships.account_id = ?1 AND accounts.kind = ?2;
+
 -- name: CreateRoleOnAccount :one
 INSERT INTO roles (
   name, account_id, permissions, ranking
 ) VALUES (?1, ?2, ?3, ?4)
 RETURNING id;
+
+-- name: GetRole :one
+SELECT * FROM roles WHERE id = ?1;
 
 -- name: CreateMembership :exec
 INSERT INTO memberships (

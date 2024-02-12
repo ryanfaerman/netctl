@@ -37,8 +37,8 @@ WHERE distance <= ?3;
 
 const callsignsWithinRange = `-- name: CallsignsWithinRange :many
 SELECT
-  accounts.id, accounts.name, accounts.createdat, accounts.updatedat, 
-  accounts.deletedat, accounts.kind, accounts.about, 
+  accounts.id, accounts.createdat, accounts.updatedat, 
+  accounts.deletedat, accounts.kind, 
   accounts.settings, accounts.slug,
   6371 * 2 * ASIN(SQRT(POWER(SIN((?1 - ABS(latitude)) * pi()/180 / 2), 2) +
     COS(?1 * pi()/180 ) * COS(ABS(latitude) * pi()/180) *
@@ -79,12 +79,10 @@ func (s search) CallsignsWithinRange(ctx context.Context, arg CallsignsWithinRan
 
 		err := rows.Scan(
 			&raw.ID,
-			&raw.Name,
 			&raw.Createdat,
 			&raw.Updatedat,
 			&raw.Deletedat,
 			&raw.Kind,
-			&raw.About,
 			&raw.Settings,
 			&raw.Slug,
 			&i.Distance,
@@ -94,8 +92,6 @@ func (s search) CallsignsWithinRange(ctx context.Context, arg CallsignsWithinRan
 		}
 
 		i.ID = raw.ID
-		i.Name = raw.Name
-		i.About = raw.About
 		i.Slug = raw.Slug
 		i.Kind = models.AccountKind(raw.Kind)
 		i.CreatedAt = raw.Createdat
@@ -111,6 +107,9 @@ func (s search) CallsignsWithinRange(ctx context.Context, arg CallsignsWithinRan
 		if err := mergo.Merge(&i.Settings, models.DefaultSettings); err != nil {
 			return nil, err
 		}
+
+		i.Name = i.Settings.Name
+		i.About = i.Settings.About
 
 		items = append(items, &i)
 	}

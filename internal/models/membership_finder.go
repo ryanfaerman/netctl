@@ -20,17 +20,17 @@ func (m Membership) Find(ctx context.Context, queries finders.QuerySet) (any, er
 	default:
 		return nil, finders.ErrInvalidWhere
 	case queries.HasWhere("account_id", "member_of") && queries.HasField("permission"):
-		memberOf, err := finders.EnforceValue[int64](queries, "member_of")
-		if err != nil {
-			return nil, err
+		memberOf, ok := finders.EnforceValue[int64](queries, "member_of")
+		if ok != nil {
+			return nil, ok
 		}
-		accountID, err := finders.EnforceValue[int64](queries, "account_id")
-		if err != nil {
-			return nil, err
+		accountID, ok := finders.EnforceValue[int64](queries, "account_id")
+		if ok != nil {
+			return nil, ok
 		}
-		permission, err := finders.EnforceValue[int64](queries, "permission")
-		if err != nil {
-			return nil, err
+		permission, ok := finders.EnforceValue[int64](queries, "permission")
+		if ok != nil {
+			return nil, ok
 		}
 
 		raw, err = global.dao.HasPermissionOnAccount(ctx, dao.HasPermissionOnAccountParams{
@@ -39,7 +39,29 @@ func (m Membership) Find(ctx context.Context, queries finders.QuerySet) (any, er
 			Permission: permission,
 		})
 		raws = append(raws, raw)
+	case queries.HasWhere("account_id", "kind"):
+		accountID, ok := finders.EnforceValue[int64](queries, "account_id")
+		if ok != nil {
+			return nil, ok
+		}
+		kind, ok := finders.EnforceValue[int](queries, "kind")
+		if ok != nil {
+			return nil, ok
+		}
+
+		raws, err = global.dao.GetMembershipsForAccountAndKind(ctx, dao.GetMembershipsForAccountAndKindParams{
+			AccountID: accountID,
+			Kind:      int64(kind),
+		})
+	case queries.HasWhere("account_id"):
+		accountID, ok := finders.EnforceValue[int64](queries, "account_id")
+		if ok != nil {
+			return nil, ok
+		}
+		raws, err = global.dao.GetMembershipsForAccount(ctx, accountID)
+
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -47,15 +69,9 @@ func (m Membership) Find(ctx context.Context, queries finders.QuerySet) (any, er
 	found = make([]*Membership, len(raws))
 	for i, raw := range raws {
 		found[i] = &Membership{
-			Account: &Account{
-				ID: raw.AccountID,
-			},
-			Target: &Account{
-				ID: raw.MemberOf,
-			},
-			Role: &Role{
-				ID: raw.RoleID,
-			},
+			AccountID: raw.AccountID,
+			TargetID:  raw.MemberOf,
+			RoleID:    raw.RoleID,
 			CreatedAt: raw.CreatedAt,
 			ID:        raw.ID,
 		}

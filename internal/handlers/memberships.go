@@ -84,7 +84,7 @@ func (h Membership) Create(w http.ResponseWriter, r *http.Request) {
 			if errs, ok := err.(services.ValidationError); ok {
 				for field, e := range errs {
 					switch field {
-					case "Account.Name":
+					case "Account.Settings.ProfileSettings.Name":
 						viewErr.Name = e
 					case "Account.Slug":
 						viewErr.Slug = e

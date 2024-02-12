@@ -62,27 +62,33 @@ templ (v Settings) Header() {
             },
           })
 		<h1 class="account-name">{ v.Account.Name }</h1>
-		switch v.Account.Kind {
-			case models.AccountKindUser:
-				<p class="account-kind">
+		<p class="account-context">
+			switch v.Account.Kind {
+				case models.AccountKindUser:
 					Settings for your personal profile
-				</p>
-			case models.AccountKindOrganization:
-				<p class="account-kind">
+				case models.AccountKindOrganization:
 					Settings for your organization
-				</p>
-			case models.AccountKindClub:
-				<p class="account-kind">
+				case models.AccountKindClub:
 					Settings for your club
-				</p>
-		}
-		@v.ContextSwitcher()
+			}
+			&nbsp;
+			<a
+				{ ModalActivatorAttrs("settings-context-switcher")... }
+			>
+				@Icon(IconAttrs{
+        Name: "right-left",
+        Kind: "solid",
+      })
+				&nbsp;
+				Switch settings context
+			</a>
+		</p>
 	</header>
 }
 
 templ (v Settings) ContextSwitcher() {
 	<div class="context-switcher">
-		Change Context
+		@ModalActivatorFor("settings-context-switcher")
 	</div>
 }
 
@@ -264,13 +270,15 @@ templ (v Settings) MembershipOverview(kind models.AccountKind) {
 			for _, m := range v.Memberships {
 				<div class="membership">
 					<div class="group">
-						<a href="#">
-							{ m.Target.Name }
+						<a href={ templ.URL(named.URLFor("account-profile", m.Target(ctx).Slug)) }>
+							{ m.Target(ctx).Name }
 						</a>
-						<span class="role badge">{ m.Role.Name }</span>
+						<span class="role badge">{ m.Role(ctx).Name }</span>
 					</div>
 					<div class="actions">
-						<a href="#" class="button">Settings</a>
+						<a href={ templ.URL(named.URLFor("delegated-settings", strings.ToLower(m.Target(ctx).Slug), "profile")) } class="button">
+							Settings
+						</a>
 						<a href="#" class="button danger">Leave</a>
 					</div>
 				</div>

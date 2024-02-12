@@ -1,0 +1,94 @@
+package views
+
+import "strings"
+import "github.com/ryanfaerman/netctl/web/named"
+import "github.com/ryanfaerman/netctl/internal/models"
+
+type Modal struct {
+	Name   string
+	Header string
+}
+
+func ModalActivatorFor(name string) templ.Component {
+	m := Modal{Name: name}
+	return m.Activator()
+}
+
+templ ModalOverlay(active bool) {
+	<div
+		id="overlay"
+		class={ "overlay modal-wrapper", templ.KV("active", active) }
+		if active {
+			hx-get={ named.URLFor("modal-hide") }
+			hx-target="#overlay"
+			hx-swap="outerHTML"
+			hx-trigger="click target:#overlay"
+		}
+	>
+		{ children... }
+	</div>
+}
+
+func ModalActivatorAttrs(name string) templ.Attributes {
+	return templ.Attributes{
+		"hx-get":     named.URLFor("modal-show", name),
+		"hx-target":  "#overlay",
+		"hx-swap":    "outerHTML",
+		"hx-trigger": "click",
+	}
+
+}
+
+templ (v Modal) Activator() {
+	<button
+		class="btn btn-primary"
+	>
+		Show Modal
+	</button>
+}
+
+templ (v Modal) Show(heading string) {
+	@ModalOverlay(true) {
+		<div
+			class="true-modal"
+		>
+			<div class="modal-header">
+				if heading != "" {
+					<h2>{ heading }</h2>
+					<a
+						class="close"
+						hx-get={ named.URLFor("modal-hide") }
+						hx-target="#overlay"
+						hx-swap="outerHTML"
+					>
+						@IconSolid("xmark")
+					</a>
+				}
+			</div>
+			<div class="modal-body">
+				{ children... }
+			</div>
+		</div>
+	}
+}
+
+templ (v Modal) SettingsContextSwitcher(accounts []*models.Account) {
+	@v.Show("Switch Context") {
+		for _, account := range accounts {
+			@Can("edit", account) {
+				<div class="account">
+					if CurrentAccount(ctx) != account {
+						<a href={ templ.URL(named.URLFor("delegated-settings", strings.ToLower(account.Slug), "profile")) }>
+							{ account.Name }
+						</a>
+					} else {
+						<a href={ templ.URL(named.URLFor("settings", "profile")) }>
+							{ account.Name }
+						</a>
+					}
+					<span class="kind">{ account.Kind.String() }</span>
+				</div>
+			}
+		}
+	}
+}

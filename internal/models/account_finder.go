@@ -119,8 +119,6 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 	for i, raw := range raws {
 		a := Account{
 			ID:        raw.ID,
-			Name:      raw.Name,
-			About:     raw.About,
 			Kind:      AccountKind(raw.Kind),
 			CreatedAt: raw.Createdat,
 			Settings:  DefaultSettings,
@@ -197,12 +195,10 @@ func callsignsWithinRange(ctx context.Context, arg callsignsWithinRangeParams) (
 
 		err := rows.Scan(
 			&raw.ID,
-			&raw.Name,
 			&raw.Createdat,
 			&raw.Updatedat,
 			&raw.Deletedat,
 			&raw.Kind,
-			&raw.About,
 			&raw.Settings,
 			&raw.Slug,
 			&distance,

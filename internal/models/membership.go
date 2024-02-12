@@ -2,77 +2,62 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"runtime"
 	"time"
 
-	"dario.cat/mergo"
-	"github.com/ryanfaerman/netctl/internal/dao"
+	"github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
 type Membership struct {
-	Account *Account `json:"account"`
-	Target  *Account `json:"target"`
-	Role    *Role    `json:"role" validate:"required"`
+	AccountID int64
+
+	TargetID int64
+	RoleID   int64
 
 	CreatedAt time.Time
 	ID        int64
 }
 
+func (m *Membership) Account(ctx context.Context) (*Account, error) {
+	return finders.FindOne[Account](ctx, finders.ByID(m.AccountID))
+}
+
+func (m *Membership) Target(ctx context.Context) *Account {
+	a, err := finders.FindOne[Account](ctx, finders.ByID(m.TargetID))
+	if err != nil {
+		global.log.Error("error finding account", "error", err)
+		return AccountAnonymous
+	}
+	return a
+}
+
+func (m *Membership) Role(ctx context.Context) *Role {
+	r, err := finders.FindOne[Role](ctx, finders.ByID(m.RoleID))
+	if err != nil {
+		return RoleNone
+	}
+	return r
+}
+
 func (m *Membership) Can(ctx context.Context, account *Account, action string) error {
 	p := ParsePermission(action)
 
-	if !m.Role.Permissions.Has(p) {
-		return fmt.Errorf("account %s does not have permission %s", m.Account.Name, p)
+	if !m.Role(ctx).Permissions.Has(p) {
+		return fmt.Errorf("account %d does not have permission %s", m.AccountID, p)
 	}
 
 	return nil
 }
 
 func FindMemberships(ctx context.Context, account *Account, kind AccountKind) ([]*Membership, error) {
-	var memberships []*Membership
-	raws, err := global.dao.GetAccountKindMemberships(ctx, dao.GetAccountKindMembershipsParams{
-		AccountID: account.ID,
-		Kind:      int64(kind),
-	})
-	if err != nil {
-		return memberships, err
-	}
-	for _, raw := range raws {
-		target := &Account{
-			ID:        raw.ID,
-			Name:      raw.Name,
-			About:     raw.About,
-			CreatedAt: raw.Createdat,
-			Kind:      AccountKind(raw.Kind),
-		}
-		if err := json.Unmarshal([]byte(raw.Settings), &target.Settings); err != nil {
-			return memberships, err
-		}
-
-		if err := mergo.Merge(&target.Settings, DefaultSettings); err != nil {
-			return memberships, err
-		}
-
-		if raw.Deletedat.Valid {
-			target.DeletedAt = raw.Deletedat.Time
-			target.Deleted = true
-		}
-
-		role := &Role{
-			ID:          raw.RoleID,
-			Name:        raw.RoleName,
-			Permissions: Permission(raw.RolePermissions),
-			Ranking:     raw.RoleRanking,
-		}
-
-		memberships = append(memberships, &Membership{
-			Account:   account,
-			Target:    target,
-			Role:      role,
-			CreatedAt: raw.MembershipCreatedAt,
-			ID:        raw.ID,
-		})
-	}
-	return memberships, nil
+	_, file, line, _ := runtime.Caller(1)
+	global.log.Warn(
+		"DEPRECATED FUNCTION",
+		"func", "FindMemberships",
+		"use", "Find[Membership](ctx, ByAccount(ID)",
+		"file", file,
+		"line", line,
+	)
+	return finders.Find[Membership](ctx, finders.ByAccount(account.ID), finders.ByKind(int(kind)))
 }

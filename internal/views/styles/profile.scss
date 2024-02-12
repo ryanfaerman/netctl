@@ -217,10 +217,14 @@ header.profile-settings {
       
   }
 
-  .context {
+  .account-context {
     grid-area: desc;
     font-size: 1em;
     color: var(--text-color-softer);
+
+    a {
+      cursor: pointer;
+    }
   }
 
 }

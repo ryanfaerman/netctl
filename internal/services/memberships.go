@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -25,6 +26,8 @@ func (s membership) Create(ctx context.Context, owner, m *models.Account, callsi
 	if owner.IsAnonymous() {
 		return fmt.Errorf("anonymous users cannot create organizations")
 	}
+
+	m.Settings.ProfileSettings.Name = m.Name
 	if err := Validation.Apply(m); err != nil {
 		return err
 	}
@@ -108,14 +111,26 @@ func (s membership) Create(ctx context.Context, owner, m *models.Account, callsi
 	}
 
 	id, err := qtx.CreateAccount(ctx, dao.CreateAccountParams{
-		Name: m.Name,
 		Kind: int64(m.Kind),
 		Slug: m.Slug,
 	})
 	if err != nil {
 		return fmt.Errorf("error creating account: %w", err)
 	}
+
 	m.ID = id
+
+	data, err := json.Marshal(m.Settings)
+	if err != nil {
+		return err
+	}
+	if err := qtx.UpdateAccountSettings(ctx, dao.UpdateAccountSettingsParams{
+		ID:       m.ID,
+		Settings: string(data),
+	}); err != nil {
+		return err
+	}
+
 	spew.Dump("new account", m)
 
 	if callsignID != 0 {

@@ -60,7 +60,7 @@ func (h settings) Settings(w http.ResponseWriter, r *http.Request) {
 		account = currentUser
 	}
 
-	if err := services.Authorization.Can(r.Context(), currentUser, "edit", account); err != nil {
+	if err := services.Authorization.Can(ctx, currentUser, "edit", account); err != nil {
 		ErrorHandler(err)(w, r)
 		return
 	}

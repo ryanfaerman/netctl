@@ -46,6 +46,7 @@ templ BarePage() {
 		</head>
 		<body hx-ext="morph">
 			<div id="htmx-alert" class="alert alert-warning sticky-top" hidden></div>
+			@ModalOverlay(false)
 			{ children... }
 			<script src="/static/javascript/htmx.min.js"></script>
 			<script src="/static/javascript/idiomorph-ext.min.js"></script>

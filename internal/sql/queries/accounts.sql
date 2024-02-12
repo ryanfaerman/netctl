@@ -13,14 +13,6 @@ FROM accounts
 WHERE UPPER(slug) = UPPER(@slug)
 LIMIT 1;
 
--- name: UpdateAccount :one
-UPDATE accounts
-SET updatedAt = CURRENT_TIMESTAMP,
-    name = ?2,
-    about = ?3,
-    kind = ?4
-WHERE id = ?1
-RETURNING *;
 
 -- name: FindAccountByEmail :one
 SELECT accounts.*
@@ -45,9 +37,9 @@ RETURNING id;
 
 -- name: CreateAccount :one
 INSERT INTO accounts (
-  name, kind, slug
+  kind, slug
 ) VALUES (
-  ?1, ?2, ?3
+  ?1, ?2
 )
 RETURNING id;
 
