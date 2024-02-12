@@ -5,16 +5,17 @@ import (
 )
 
 type Email struct {
-	ID int64
+	Address string
+
+	IsPrimary    bool
+	IsPublic     bool
+	IsNotifiable bool
+	IsVerified   bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
 
-	Address      string
-	IsPrimary    bool
-	IsPublic     bool
-	IsNotifiable bool
-	VerifiedAt   time.Time
-	IsVerified   bool
+	VerifiedAt time.Time
+	ID         int64
 }

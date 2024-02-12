@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"database/sql"
+	"net/http"
 	"sync"
 
 	"github.com/charmbracelet/log"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi"
 	"github.com/go-playground/form"
 	sse "github.com/r3labs/sse/v2"
@@ -58,6 +60,9 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 		web.HookServerRoutes.Register(func(e hook.Event[web.Router]) {
 			for _, h := range global.handlers {
 				e.Payload.Routes().Group(h.Routes)
+				e.Payload.Routes().NotFound(func(w http.ResponseWriter, r *http.Request) {
+					spew.Dump(r)
+				})
 			}
 		})
 

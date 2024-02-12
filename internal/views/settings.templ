@@ -4,10 +4,12 @@ import "github.com/ryanfaerman/netctl/internal/models"
 import "github.com/ryanfaerman/netctl/web/named"
 
 import "strings"
+import "fmt"
 
 type Settings struct {
 	Account     *models.Account
 	Memberships []*models.Membership
+	Emails      []*models.Email
 	Delegated   bool
 }
 
@@ -125,6 +127,8 @@ templ (v Settings) ShowWithErrors(section string, settings any, settingsErrs map
 						@v.MembershipOverview(models.AccountKindClub)
 					case "organizations":
 						@v.MembershipOverview(models.AccountKindOrganization)
+					case "emails":
+						@v.EmailsForm()
 				}
 			</div>
 			<div>
@@ -142,6 +146,8 @@ templ (v Settings) ShowWithErrors(section string, settings any, settingsErrs map
 						@v.MembershipContext(models.AccountKindOrganization)
 					case "clubs":
 						@v.MembershipContext(models.AccountKindClub)
+					case "emails":
+						@v.EmailsContext()
 				}
 			</div>
 		</div>
@@ -291,4 +297,39 @@ templ (v Settings) MembershipContext(kind models.AccountKind) {
 	<a href={ templ.URL(named.URLFor("group-new", kind.String())) } class="button">
 		Create a { kind.String() }
 	</a>
+}
+
+func DaEmails(account *models.Account) []models.Email {
+	emails, err := account.Emails()
+	if err != nil {
+		fmt.Println(err.Error())
+		panic("oh noes... no emails")
+	}
+	return emails
+}
+
+templ (v Settings) EmailsForm() {
+	<h3>Emails</h3>
+	<div class="emails">
+		for _, e := range DaEmails(v.Account) {
+			<div class="email">
+				<div class="email-address">
+					{ e.Address }
+				</div>
+				<div class="email-actions">
+					<a href="#" class="button danger">Remove</a>
+				</div>
+			</div>
+		}
+		@InputEmail("email", InputAttrs{
+      Label: "Add Email",
+      Placeholder: "Add an email address",
+    })
+	</div>
+}
+
+templ (v Settings) EmailsContext() {
+	<p>
+		Emails are used to send you notifications and other important information.
+	</p>
 }

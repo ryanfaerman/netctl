@@ -34,6 +34,7 @@ require (
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/ryanfaerman/version v0.0.1
+	github.com/simukti/sqldb-logger v0.0.0-20230108155151-646c1a075551
 	github.com/spf13/cobra v1.8.0
 	github.com/sqlc-dev/sqlc v1.25.0
 	github.com/unrolled/render v1.6.0
