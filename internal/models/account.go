@@ -42,8 +42,9 @@ var AccountAnonymous = &Account{
 }
 
 type Account struct {
-	ID   int64
-	Slug string `form:"slug" json:"slug"`
+	ID       int64
+	Slug     string `form:"slug" json:"slug"`
+	StreamID string `json:"stream_id"`
 
 	Name  string `form:"name" validate:"required"`
 	About string `form:"about" json:"about"`
@@ -142,31 +143,8 @@ func (m *Account) Setting(ctx context.Context, path string) any {
 	return raw
 }
 
-func (u *Account) Emails() ([]Email, error) {
-	var emails []Email
-	rows, err := global.dao.GetEmailsForAccount(context.Background(), u.ID)
-	if err != nil {
-		return emails, err
-	}
-	for _, row := range rows {
-		email := Email{
-			ID:           row.ID,
-			CreatedAt:    row.Createdat,
-			UpdatedAt:    row.Updatedat,
-			Address:      row.Address,
-			IsPrimary:    row.Isprimary,
-			IsPublic:     row.Ispublic,
-			IsNotifiable: row.Isnotifiable,
-		}
-
-		if row.Verifiedat.Valid {
-			email.VerifiedAt = row.Verifiedat.Time
-			email.IsVerified = true
-		}
-
-		emails = append(emails, email)
-	}
-	return emails, nil
+func (u *Account) Emails() ([]*Email, error) {
+	return Find[Email](context.Background(), ByAccount(u.ID))
 }
 
 func (m *Account) PrimaryEmail() (Email, error) {
@@ -174,10 +152,8 @@ func (m *Account) PrimaryEmail() (Email, error) {
 	if err != nil {
 		return Email{}, err
 	}
-	for _, email := range emails {
-		if email.IsPrimary {
-			return email, nil
-		}
+	if len(emails) > 0 {
+		return *emails[0], nil
 	}
 	return Email{}, errors.New("no primary email")
 }
@@ -235,7 +211,6 @@ func FindAccountByCallsign(ctx context.Context, callsign string) (*Account, erro
 
 func (u *Account) Callsigns() ([]Callsign, error) {
 	if len(u.callsigns) > 0 {
-		fmt.Println("using preloaded callsigns")
 		return u.callsigns, nil
 	}
 	var callsigns []Callsign
@@ -278,6 +253,14 @@ func (m *Account) Callsign() Callsign {
 	}
 
 	return calls[0]
+}
+
+func (m *Account) Location() (float64, float64) {
+	if m.Settings.LocationSettings.HasLocation() {
+		return m.Settings.LocationSettings.Location()
+	}
+	callsign := m.Callsign()
+	return callsign.Latitude, callsign.Longitude
 }
 
 var (

@@ -123,6 +123,7 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 			CreatedAt: raw.Createdat,
 			Settings:  DefaultSettings,
 			Slug:      raw.Slug,
+			StreamID:  raw.StreamID,
 		}
 		if raw.Deletedat.Valid {
 			a.DeletedAt = raw.Deletedat.Time
@@ -135,6 +136,18 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 		a.Name = a.Settings.ProfileSettings.Name
 		a.About = a.Settings.ProfileSettings.About
 
+		if !a.Settings.LocationSettings.HasLocation() {
+			callsigns, err := a.Callsigns()
+			if err == nil {
+				if len(callsigns) > 0 {
+					callsign := callsigns[0]
+					a.Settings.LocationSettings.Latitude = callsign.Latitude
+					a.Settings.LocationSettings.Longitude = callsign.Longitude
+				}
+			}
+		}
+
+		fmt.Println(a.Settings.LocationSettings)
 		switch {
 		case queries.HasField("callsigns"):
 			if _, err := (&a).Callsigns(); err != nil {

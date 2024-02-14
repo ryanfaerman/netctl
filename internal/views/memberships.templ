@@ -40,12 +40,14 @@ templ (v Membership) Create() {
 
 type MembershipCreateFormInput struct {
 	Name     string
+	Email    string
 	Callsign string
 	Slug     string
 }
 
 type MembershipCreateFormError struct {
 	Name     string
+	Email    string
 	Callsign string
 	Slug     string
 }
@@ -67,6 +69,13 @@ templ (v Membership) CreateFormWithError(input MembershipCreateFormInput, errs M
             Error: errs.Name,
             Value: input.Name,
           })
+		@InputEmail("email", InputAttrs{
+          Label: "Email",
+          HelpText: "This is the email address we'll use to contact you",
+          DisableAutocomplete: true,
+          Error: errs.Email,
+          Value: input.Email,
+        })
 		switch v.Kind {
 			case models.AccountKindClub:
 				@InputText("callsign",  InputAttrs{

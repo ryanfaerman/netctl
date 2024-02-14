@@ -36,6 +36,7 @@ func (v Settings) SaveURLFor(namespace string) string {
 templ (v Settings) SidebarNav() {
 	@Nav("", Menu{
           {Value: "Public Profile", URL: v.URLFor("profile"), Icon: IconAttrs{Name: "user", FixedWidth: true}},
+          {Value: "Time & Location", URL: v.URLFor("geolocation"), Icon: IconAttrs{Name: "clock", Kind: "regular", FixedWidth: true}},
           {Value: "Privacy", URL: v.URLFor("privacy"), Icon: IconAttrs{Name: "shield-halved", FixedWidth: true}},
           {Value: "Avatar", URL: v.URLFor("avatar"), Icon: IconAttrs{Name: "image", Kind: "regular", FixedWidth: true}},
           {Value: "Appearance", URL: v.URLFor("appearance"), Icon: IconAttrs{Name: "paintbrush", Kind: "solid", FixedWidth: true}},
@@ -123,12 +124,14 @@ templ (v Settings) ShowWithErrors(section string, settings any, settingsErrs map
 						@v.AvatarForm()
 					case "appearance":
 						@v.AppearanceForm(settings.(models.AppearanceSettings), settingsErrs)
+					case "geolocation":
+						@v.GeolocationForm(settings.(models.LocationSettings), settingsErrs)
 					case "clubs":
 						@v.MembershipOverview(models.AccountKindClub)
 					case "organizations":
 						@v.MembershipOverview(models.AccountKindOrganization)
 					case "emails":
-						@v.EmailsForm()
+						@v.EmailsForm(settings.(*models.Email), settingsErrs)
 				}
 			</div>
 			<div>
@@ -142,6 +145,8 @@ templ (v Settings) ShowWithErrors(section string, settings any, settingsErrs map
 						@v.AvatarContext()
 					case "appearance":
 						@v.AppearanceContext()
+					case "geolocation":
+						@v.GeolocationContext()
 					case "organizations":
 						@v.MembershipContext(models.AccountKindOrganization)
 					case "clubs":
@@ -253,6 +258,40 @@ templ (v Settings) AppearanceContext() {
 	</p>
 }
 
+templ (v Settings) GeolocationForm(val models.LocationSettings, errs map[string]string) {
+	@Form("geolocation", FormAttrs{
+      Action: v.SaveURLFor("geolocation"),
+    }) {
+		@InputText("timeOffset", InputAttrs{
+      Label: "Time Offset",
+      Value: fmt.Sprintf("%d", val.TimeOffset),
+      Error: errs["timeOffset"],
+      HelpText: "Your local time offset from UTC",
+    })
+		@InputText("latitude", InputAttrs{
+      Label: "Latitude",
+      Value: fmt.Sprintf("%f",val.Latitude),
+      Error: errs["latitude"],
+      HelpText: "The latitude of your station location",
+    })
+		@InputText("longitude", InputAttrs{
+      Label: "Longitude",
+      Value: fmt.Sprintf("%f", val.Longitude),
+      Error: errs["longitude"],
+      HelpText: "The longitude of your station location",
+    })
+		@InputSubmit(InputAttrs{
+      Value: "Save",
+    })
+	}
+}
+
+templ (v Settings) GeolocationContext() {
+	<p>
+		These settings are used to manage your station's location and time offset. The default values are based on your callsign.
+	</p>
+}
+
 templ (v Settings) AvatarForm() {
 	<p>
 		Your avatar is managed with gravatar, a service that links your 
@@ -299,7 +338,7 @@ templ (v Settings) MembershipContext(kind models.AccountKind) {
 	</a>
 }
 
-func DaEmails(account *models.Account) []models.Email {
+func DaEmails(account *models.Account) []*models.Email {
 	emails, err := account.Emails()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -308,7 +347,7 @@ func DaEmails(account *models.Account) []models.Email {
 	return emails
 }
 
-templ (v Settings) EmailsForm() {
+templ (v Settings) EmailsForm(val *models.Email, errs map[string]string) {
 	<h3>Emails</h3>
 	<div class="emails">
 		for _, e := range DaEmails(v.Account) {
@@ -321,10 +360,20 @@ templ (v Settings) EmailsForm() {
 				</div>
 			</div>
 		}
-		@InputEmail("email", InputAttrs{
+		@Form("appearance", FormAttrs{
+      Action: v.SaveURLFor("emails"),
+    }) {
+			@InputEmail("email", InputAttrs{
       Label: "Add Email",
       Placeholder: "Add an email address",
+      Value: val.Address,
+      Error: errs["email"],
+
     })
+			@InputSubmit(InputAttrs{
+      Value: "Save",
+    })
+		}
 	</div>
 }
 

@@ -5,12 +5,9 @@ import (
 )
 
 type Email struct {
-	Address string
+	Address string `form:"email" validate:"required,email"`
 
-	IsPrimary    bool
-	IsPublic     bool
-	IsNotifiable bool
-	IsVerified   bool
+	IsVerified bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

@@ -4,6 +4,7 @@ type Settings struct {
 	PrivacySettings    `json:"privacy"`
 	AppearanceSettings `json:"appearance"`
 	ProfileSettings    `json:"profile"`
+	LocationSettings   `json:"location"`
 }
 
 var DefaultSettings = Settings{

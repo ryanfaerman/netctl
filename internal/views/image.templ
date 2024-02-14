@@ -29,7 +29,7 @@ func (v ImageAttrs) height() string {
 }
 
 func GravatarURL(ctx context.Context, account *models.Account, size int) string {
-	url := services.Account.AvatarURL(ctx, account.Callsign().Call)
+	url := services.Account.AvatarURL(ctx, account.Slug)
 	return fmt.Sprintf("%s?s=%d&d=robohash", url, size)
 }
 

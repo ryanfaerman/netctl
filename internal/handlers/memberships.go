@@ -52,19 +52,17 @@ func (h Membership) Create(w http.ResponseWriter, r *http.Request) {
 		Kind:     kind,
 	}
 
-	spew.Dump(r.Form)
 	if err := global.form.Decode(&group, r.Form); err != nil {
 		ErrorHandler(err)(w, r)
 		return
 	}
-	spew.Dump(group)
-	spew.Dump(r.Form.Get("callsign"))
 
-	if err := services.Membership.Create(ctx, services.Session.GetAccount(ctx), &group, r.Form.Get("callsign")); err != nil {
+	if err := services.Membership.Create(ctx, services.Session.GetAccount(ctx), &group, r.Form.Get("email"), r.Form.Get("callsign")); err != nil {
 		// TODO: handle this more gracefully
 		spew.Dump(err)
 		viewInput := views.MembershipCreateFormInput{
 			Name:     group.Name,
+			Email:    r.Form.Get("email"),
 			Slug:     group.Slug,
 			Callsign: r.Form.Get("callsign"),
 		}

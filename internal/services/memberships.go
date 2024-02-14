@@ -22,7 +22,7 @@ var (
 	ErrCallsignCreationFailed = errors.New("unable to create callsign")
 )
 
-func (s membership) Create(ctx context.Context, owner, m *models.Account, callsigns ...string) error {
+func (s membership) Create(ctx context.Context, owner, m *models.Account, email string, callsigns ...string) error {
 	if owner.IsAnonymous() {
 		return fmt.Errorf("anonymous users cannot create organizations")
 	}
@@ -132,6 +132,15 @@ func (s membership) Create(ctx context.Context, owner, m *models.Account, callsi
 	}
 
 	spew.Dump("new account", m)
+	if email == "" {
+		return errors.New("email is required")
+	}
+	if err := qtx.AddVerifiedEmailForAccount(ctx, dao.AddVerifiedEmailForAccountParams{
+		AccountID: m.ID,
+		Address:   email,
+	}); err != nil {
+		return err
+	}
 
 	if callsignID != 0 {
 		if err := qtx.AssociateCallsignWithAccount(ctx, dao.AssociateCallsignWithAccountParams{
