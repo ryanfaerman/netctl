@@ -64,14 +64,12 @@ templ (v Account) Profile() {
 						</li>
 					</ul>
 				</div>
-				<!--
 				<div class="section clubs">
 					<h3>Clubs</h3>
 				</div>
 				<div class="section organizations">
 					<h3>Organizations</h3>
 				</div>
-        -->
 			</div>
 			<div class="profile-contents">
 				if v.Account.About != "" {
@@ -84,6 +82,25 @@ templ (v Account) Profile() {
 				}
 				@Can("view-activity-graph", v.Account) {
 					@ActivityGraph()
+				}
+				if v.Account.Kind != models.AccountKindUser {
+					<h3>Members</h3>
+					<div class="profile-cards">
+						for _, m := range v.Account.Members(ctx) {
+							<div class="profile-card">
+								@Image(ImageAttrs{
+                URL: GravatarURL(ctx, m.Account(ctx), 250),
+                Width: 64,
+                Height: 64,
+                Extra: templ.Attributes{
+                    "class": "avatar",
+                },
+              })
+								<h4 class="account-name">{ m.Account(ctx).Name }</h4>
+								<h5 class="callsign">{ m.Account(ctx).Callsign().Call }</h5>
+							</div>
+						}
+					</div>
 				}
 			</div>
 		</div>

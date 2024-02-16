@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"sync"
@@ -43,7 +44,7 @@ type ctxKey int
 const (
 	ctxKeyCSRF ctxKey = iota
 	ctxKeyUser
-	ctxKeyAccount
+	ctxKeyTX
 )
 
 var setupOnce sync.Once
@@ -82,4 +83,34 @@ func Setup(logger *log.Logger, db *sql.DB) error {
 	})
 
 	return err
+}
+
+func database(ctx context.Context) *sql.DB {
+	return nil
+}
+
+func transaction(ctx context.Context, fn func(context.Context, *dao.Queries) error) error {
+	var (
+		tx  *sql.Tx
+		err error
+		ok  bool
+	)
+	tx, ok = ctx.Value(ctxKeyTX).(*sql.Tx)
+	if !ok {
+		tx, err = global.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		ctx = context.WithValue(ctx, ctxKeyTX, tx)
+		defer tx.Rollback()
+	}
+
+	err = fn(ctx, global.dao.WithTx(tx))
+	if err != nil {
+		return err
+	}
+	if ok {
+		return tx.Commit()
+	}
+	return nil
 }

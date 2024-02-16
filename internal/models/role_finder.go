@@ -7,6 +7,10 @@ import (
 	"github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
+func (m Role) FindCacheKey() string {
+	return "roles"
+}
+
 func (m Role) Find(ctx context.Context, queries finders.QuerySet) (any, error) {
 	var (
 		raw   dao.Role

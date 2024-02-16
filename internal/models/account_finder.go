@@ -3,7 +3,7 @@ package models
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"time"
 
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/models/finders"
@@ -11,6 +11,10 @@ import (
 
 func (m Account) FindCacheKey() string {
 	return "accounts"
+}
+
+func (m *Account) FindCacheDuration() time.Duration {
+	return 10 * time.Minute
 }
 
 func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error) {
@@ -102,7 +106,6 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 		if qerr == nil {
 			defer func() {
 				for i := range found {
-					fmt.Println("setting distance on", i, distances[i])
 					found[i].Distance = distances[i]
 				}
 			}()
@@ -147,7 +150,6 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 			}
 		}
 
-		fmt.Println(a.Settings.LocationSettings)
 		switch {
 		case queries.HasField("callsigns"):
 			if _, err := (&a).Callsigns(); err != nil {

@@ -2,6 +2,7 @@ package finders
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	ttlcache "github.com/jellydator/ttlcache/v3"
@@ -19,6 +20,21 @@ type Finder interface {
 type FinderCacher interface {
 	Finder
 	FindCacheKey() string
+}
+
+type FinderCacheDurationer interface {
+	FinderCacher
+	FindCacheDuration() time.Duration
+}
+
+type FinderCacheCapacitor interface {
+	FinderCacher
+	FindCacheCapacity() uint64
+}
+
+type FinderCacherDurationerCapacitor interface {
+	FinderCacheDurationer
+	FinderCacheCapacitor
 }
 
 // Find the all instances of a Finder type, given a set of queries.
@@ -61,15 +77,43 @@ func FindOne[K Finder](ctx context.Context, queries ...QueryFunc) (*K, error) {
 
 var caches = make(map[string]*ttlcache.Cache[string, any])
 
-func FindCached[K FinderCacher](ctx context.Context, ttl time.Duration, queries ...QueryFunc) ([]*K, error) {
+const (
+	DefaultCacheTTL      = 5 * time.Minute
+	DefaultCacheCapacity = 1000
+)
+
+func FindCached[K FinderCacher](ctx context.Context, queries ...QueryFunc) ([]*K, error) {
 	k := *new(K)
 	cacheKey := k.FindCacheKey()
 
 	cache, ok := caches[cacheKey]
 	if !ok {
-		cache = ttlcache.New[string, any](
-			ttlcache.WithTTL[string, any](ttl),
-		)
+		var maybe any
+		maybe = k
+		switch T := maybe.(type) {
+		case FinderCacherDurationerCapacitor:
+			fmt.Println("CacheDurationerCapacitor")
+			cache = ttlcache.New[string, any](
+				ttlcache.WithTTL[string, any](T.FindCacheDuration()),
+				ttlcache.WithCapacity[string, any](T.FindCacheCapacity()),
+			)
+		case FinderCacheCapacitor:
+			fmt.Println("CacheCapacitor")
+			cache = ttlcache.New[string, any](
+				ttlcache.WithTTL[string, any](DefaultCacheTTL),
+				ttlcache.WithCapacity[string, any](T.FindCacheCapacity()),
+			)
+		case FinderCacheDurationer:
+			fmt.Println("CacheDurationer")
+			cache = ttlcache.New[string, any](
+				ttlcache.WithTTL[string, any](T.FindCacheDuration()),
+			)
+		default:
+			fmt.Println("Default")
+			cache = ttlcache.New[string, any](
+				ttlcache.WithTTL[string, any](DefaultCacheTTL),
+			)
+		}
 		go cache.Start()
 		caches[cacheKey] = cache
 	}
@@ -94,11 +138,11 @@ func FindCached[K FinderCacher](ctx context.Context, ttl time.Duration, queries 
 
 	cache.Set(qsKey, results, ttlcache.DefaultTTL)
 
-	return nil, nil
+	return results, nil
 }
 
-func FindOneCached[K FinderCacher](ctx context.Context, ttl time.Duration, queries ...QueryFunc) (*K, error) {
-	results, err := FindCached[K](ctx, ttl, queries...)
+func FindOneCached[K FinderCacher](ctx context.Context, queries ...QueryFunc) (*K, error) {
+	results, err := FindCached[K](ctx, queries...)
 	if err != nil {
 		return nil, err
 	}

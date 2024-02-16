@@ -7,6 +7,10 @@ import (
 	"github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
+func (m Membership) FindCacheKey() string {
+	return "memberships"
+}
+
 // Find[Membership](ctx, ByAccount(1), ByMember(of), WithPermission(PermissionEdit))
 func (m Membership) Find(ctx context.Context, queries finders.QuerySet) (any, error) {
 	var (
@@ -59,6 +63,13 @@ func (m Membership) Find(ctx context.Context, queries finders.QuerySet) (any, er
 			return nil, ok
 		}
 		raws, err = global.dao.GetMembershipsForAccount(ctx, accountID)
+
+	case queries.HasWhere("member_of"):
+		memberOf, ok := finders.EnforceValue[int64](queries, "member_of")
+		if ok != nil {
+			return nil, ok
+		}
+		raws, err = global.dao.GetMembersOfAccount(ctx, memberOf)
 
 	}
 

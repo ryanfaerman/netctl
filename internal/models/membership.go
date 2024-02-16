@@ -19,8 +19,13 @@ type Membership struct {
 	ID        int64
 }
 
-func (m *Membership) Account(ctx context.Context) (*Account, error) {
-	return finders.FindOne[Account](ctx, finders.ByID(m.AccountID))
+func (m *Membership) Account(ctx context.Context) *Account {
+	account, err := finders.FindOneCached[Account](ctx, finders.ByID(m.AccountID))
+	if err != nil {
+		fmt.Println("error finding account", "error", err)
+		return nil
+	}
+	return account
 }
 
 func (m *Membership) Target(ctx context.Context) *Account {

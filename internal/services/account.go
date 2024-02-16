@@ -86,85 +86,100 @@ func (s account) Setup(ctx context.Context, id int64, name, callsign string) err
 	if err != nil {
 		return err
 	}
-	account.Settings.ProfileSettings.Name = name
 
-	accountCallsign, err := global.dao.FindAccountByCallsign(ctx, callsign)
-	if err != nil {
-		if err != sql.ErrNoRows {
+	return transaction(ctx, func(ctx context.Context, qtx *dao.Queries) error {
+		fmt.Println("inside setup transaction")
+		accountCallsign, err := qtx.FindAccountByCallsign(ctx, callsign)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
+		} else {
+			if account.ID != accountCallsign.ID {
+				return ErrAccountSetupCallsignTaken
+			}
+		}
+
+		fccCallsign, err := hamdb.Lookup(ctx, callsign)
+		if err != nil {
+			return ErrAccountSetupInvalidCallsign
+		}
+		if fccCallsign.Class == hamdb.ClubClass {
+			return ErrAccountSetupCallsignClub
+		}
+
+		// tx, err := global.db.BeginTx(ctx, nil)
+		// if err != nil {
+		// 	return err
+		// }
+		// defer tx.Rollback()
+
+		callsignID, err := qtx.CreateCallsignAndReturnId(ctx, dao.CreateCallsignAndReturnIdParams{
+			Callsign: fccCallsign.Call,
+			Class:    int64(fccCallsign.Class),
+			Expires: sql.NullTime{
+				Time:  fccCallsign.Expires.Value,
+				Valid: fccCallsign.Expires.Known,
+			},
+			Status: int64(fccCallsign.Status),
+			Latitude: sql.NullFloat64{
+				Float64: fccCallsign.Lat.Value,
+				Valid:   fccCallsign.Lat.Known,
+			},
+			Longitude: sql.NullFloat64{
+				Float64: fccCallsign.Lon.Value,
+				Valid:   fccCallsign.Lon.Known,
+			},
+			Firstname:  sql.NullString{String: fccCallsign.FirstName, Valid: true},
+			Middlename: sql.NullString{String: fccCallsign.MiddleInitial, Valid: true},
+			Lastname:   sql.NullString{String: fccCallsign.LastName, Valid: true},
+			Suffix:     sql.NullString{String: fccCallsign.Suffix, Valid: true},
+			Address:    sql.NullString{String: fccCallsign.Address, Valid: true},
+			City:       sql.NullString{String: fccCallsign.City, Valid: true},
+			State:      sql.NullString{String: fccCallsign.State, Valid: true},
+			Zip:        sql.NullString{String: fccCallsign.Zip, Valid: true},
+			Country:    sql.NullString{String: fccCallsign.Country, Valid: true},
+		})
+		if err != nil {
+			return errors.New("unable to create callsign")
+		}
+
+		if err := qtx.AssociateCallsignWithAccount(ctx, dao.AssociateCallsignWithAccountParams{
+			AccountID:  account.ID,
+			CallsignID: callsignID,
+		}); err != nil {
 			return err
 		}
-	} else {
-		if account.ID != accountCallsign.ID {
-			return ErrAccountSetupCallsignTaken
+
+		account.Settings.ProfileSettings.Name = name
+		account.Settings.ProfileSettings.Slug = strings.ToLower(fccCallsign.Call)
+		account.Settings.LocationSettings.Latitude = fccCallsign.Lat.Value
+		account.Settings.LocationSettings.Longitude = fccCallsign.Lon.Value
+
+		if err := s.SaveSettings(ctx, account.ID, &account.Settings); err != nil {
+			return err
 		}
-	}
 
-	fccCallsign, err := hamdb.Lookup(ctx, callsign)
-	if err != nil {
-		return ErrAccountSetupInvalidCallsign
-	}
-	if fccCallsign.Class == hamdb.ClubClass {
-		return ErrAccountSetupCallsignClub
-	}
-
-	tx, err := global.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	qtx := global.dao.WithTx(tx)
-
-	callsignID, err := qtx.CreateCallsignAndReturnId(ctx, dao.CreateCallsignAndReturnIdParams{
-		Callsign: fccCallsign.Call,
-		Class:    int64(fccCallsign.Class),
-		Expires: sql.NullTime{
-			Time:  fccCallsign.Expires.Value,
-			Valid: fccCallsign.Expires.Known,
-		},
-		Status: int64(fccCallsign.Status),
-		Latitude: sql.NullFloat64{
-			Float64: fccCallsign.Lat.Value,
-			Valid:   fccCallsign.Lat.Known,
-		},
-		Longitude: sql.NullFloat64{
-			Float64: fccCallsign.Lon.Value,
-			Valid:   fccCallsign.Lon.Known,
-		},
-		Firstname:  sql.NullString{String: fccCallsign.FirstName, Valid: true},
-		Middlename: sql.NullString{String: fccCallsign.MiddleInitial, Valid: true},
-		Lastname:   sql.NullString{String: fccCallsign.LastName, Valid: true},
-		Suffix:     sql.NullString{String: fccCallsign.Suffix, Valid: true},
-		Address:    sql.NullString{String: fccCallsign.Address, Valid: true},
-		City:       sql.NullString{String: fccCallsign.City, Valid: true},
-		State:      sql.NullString{String: fccCallsign.State, Valid: true},
-		Zip:        sql.NullString{String: fccCallsign.Zip, Valid: true},
-		Country:    sql.NullString{String: fccCallsign.Country, Valid: true},
+		// data, err := json.Marshal(account.Settings)
+		// if err != nil {
+		// 	return err
+		// }
+		//
+		// if err := qtx.UpdateAccountSettings(ctx, dao.UpdateAccountSettingsParams{
+		// 	ID:       account.ID,
+		// 	Settings: string(data),
+		// }); err != nil {
+		// 	return err
+		// }
+		return nil
 	})
-	if err != nil {
-		return errors.New("unable to create callsign")
-	}
-
-	if err := qtx.AssociateCallsignWithAccount(ctx, dao.AssociateCallsignWithAccountParams{
-		AccountID:  account.ID,
-		CallsignID: callsignID,
-	}); err != nil {
-		return err
-	}
-
-	account.Settings.LocationSettings.Latitude = fccCallsign.Lat.Value
-	account.Settings.LocationSettings.Longitude = fccCallsign.Lon.Value
-	if err := s.SaveSettings(ctx, account.ID, &account.Settings); err != nil {
-		return err
-	}
-
-	return tx.Commit()
 }
 
 func (s account) AvatarURL(ctx context.Context, slugs ...string) string {
 	var err error
 	account := Session.GetAccount(ctx)
 	if len(slugs) > 0 {
+		fmt.Println("slugs", slugs)
 		if slugs[0] != account.Slug {
 			account, err = s.FindBySlug(ctx, slugs[0])
 		}
@@ -175,8 +190,10 @@ func (s account) AvatarURL(ctx context.Context, slugs ...string) string {
 
 	email, err := account.PrimaryEmail()
 	if err != nil {
+		fmt.Println("error getting primary email", "error", err)
 		return ""
 	}
+	fmt.Println(email.Address)
 
 	h := sha256.New()
 	h.Write([]byte(strings.TrimSpace(strings.ToLower(email.Address))))
@@ -192,32 +209,36 @@ func (s account) Setting(ctx context.Context, path string) any {
 }
 
 func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Settings) error {
-	account, err := a.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
+	return transaction(ctx, func(ctx context.Context, qtx *dao.Queries) error {
+		fmt.Println("inside save settings transaction")
+		account, err := a.FindByID(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	if err := mergo.Merge(&account.Settings, settings, mergo.WithOverride); err != nil {
-		return err
-	}
+		if err := mergo.Merge(&account.Settings, settings, mergo.WithOverride); err != nil {
+			return err
+		}
 
-	if err := Validation.Apply(account.Settings); err != nil {
-		return err
-	}
+		if err := Validation.Apply(account.Settings); err != nil {
+			return err
+		}
 
-	data, err := json.Marshal(account.Settings)
-	if err != nil {
-		return err
-	}
+		data, err := json.Marshal(account.Settings)
+		if err != nil {
+			return err
+		}
 
-	if err := global.dao.UpdateAccountSettings(ctx, dao.UpdateAccountSettingsParams{
-		ID:       account.ID,
-		Settings: string(data),
-	}); err != nil {
-		return err
-	}
+		if err := qtx.UpdateAccountSettings(ctx, dao.UpdateAccountSettingsParams{
+			ID:       account.ID,
+			Settings: string(data),
+		}); err != nil {
+			return err
+		}
 
-	Session.ClearAccountCache(ctx, account)
+		Session.ClearAccountCache(ctx, account)
+		return nil
+	})
 
 	return nil
 }

@@ -46,7 +46,7 @@ type Account struct {
 	Slug     string `form:"slug" json:"slug"`
 	StreamID string `json:"stream_id"`
 
-	Name  string `form:"name" validate:"required"`
+	Name  string `form:"name" json:"name" validate:"required"`
 	About string `form:"about" json:"about"`
 	Kind  AccountKind
 
@@ -156,6 +156,14 @@ func (m *Account) PrimaryEmail() (Email, error) {
 		return *emails[0], nil
 	}
 	return Email{}, errors.New("no primary email")
+}
+
+func (m *Account) Members(ctx context.Context) []*Membership {
+	members, err := Find[Membership](ctx, ByMemberOf(m.ID))
+	if err != nil {
+		return []*Membership{}
+	}
+	return members
 }
 
 func (m *Account) Delegated(ctx context.Context) ([]*Membership, error) {

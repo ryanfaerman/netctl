@@ -16,6 +16,11 @@ SELECT memberships.*
 FROM memberships
 WHERE account_id = ?1;
 
+-- name: GetMembersOfAccount :many
+SELECT memberships.*
+FROM memberships
+WHERE member_of = ?1;
+
 -- name: GetMembershipsForAccountAndKind :many
 SELECT memberships.*
 FROM memberships
