@@ -97,6 +97,7 @@ func transaction(ctx context.Context, fn func(context.Context, *dao.Queries) err
 	)
 	tx, ok = ctx.Value(ctxKeyTX).(*sql.Tx)
 	if !ok {
+		fmt.Println("starting transaction")
 		tx, err = global.db.BeginTx(ctx, nil)
 		if err != nil {
 			return err
@@ -104,12 +105,14 @@ func transaction(ctx context.Context, fn func(context.Context, *dao.Queries) err
 		ctx = context.WithValue(ctx, ctxKeyTX, tx)
 		defer tx.Rollback()
 	}
+	fmt.Println("are we ok?", ok)
 
 	err = fn(ctx, global.dao.WithTx(tx))
 	if err != nil {
 		return err
 	}
-	if ok {
+	if !ok {
+		fmt.Println("committing")
 		return tx.Commit()
 	}
 	return nil

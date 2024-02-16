@@ -255,6 +255,8 @@ func (h settings) SettingsSave(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
+		fmt.Println("settings handler calling save settings")
+		spew.Dump(settings)
 		if err := services.Account.SaveSettings(ctx, account.ID, &settings); err != nil {
 			ErrorHandler(err)(w, r)
 			return

@@ -85,6 +85,7 @@ func FindEventsForCallsign(eventType string, callsign string) (EventStream, erro
 
 type RecoveredEvent struct {
 	RegisteredFn string
+	SessionToken string
 	Event        Event
 	ID           int64
 }
@@ -107,6 +108,7 @@ func FindRecoverableEvents(ctx context.Context) ([]RecoveredEvent, error) {
 		stream[i] = RecoveredEvent{
 			ID:           raw.RecoveryID,
 			RegisteredFn: raw.RegisteredFn,
+			SessionToken: raw.SessionToken,
 			Event: Event{
 				ID:        raw.ID,
 				At:        raw.Created,

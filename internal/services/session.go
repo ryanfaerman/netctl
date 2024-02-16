@@ -143,7 +143,6 @@ func (session) Verify(ctx context.Context, token string) error {
 func (session) Destroy(ctx context.Context) error {
 	global.log.Info("session destroyed")
 	global.session.Clear(ctx)
-	global.session.Destroy(ctx)
 	return nil
 }
 

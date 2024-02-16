@@ -108,7 +108,6 @@ func (s membership) Create(ctx context.Context, owner, m *models.Account, email 
 			}
 			callsignID = id
 			m.Slug = license.Call
-			m.Settings.ProfileSettings.Slug = license.Call
 		}
 
 		id, err := qtx.CreateAccount(ctx, dao.CreateAccountParams{
@@ -120,6 +119,7 @@ func (s membership) Create(ctx context.Context, owner, m *models.Account, email 
 		}
 
 		m.ID = id
+		m.Settings.ProfileSettings.Slug = m.Slug
 
 		if err := Account.SaveSettings(ctx, m.ID, &m.Settings); err != nil {
 			return err

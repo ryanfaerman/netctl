@@ -147,15 +147,15 @@ func (u *Account) Emails() ([]*Email, error) {
 	return Find[Email](context.Background(), ByAccount(u.ID))
 }
 
-func (m *Account) PrimaryEmail() (Email, error) {
+func (m *Account) PrimaryEmail() Email {
 	emails, err := m.Emails()
 	if err != nil {
-		return Email{}, err
+		return Email{}
 	}
 	if len(emails) > 0 {
-		return *emails[0], nil
+		return *emails[0]
 	}
-	return Email{}, errors.New("no primary email")
+	return Email{}
 }
 
 func (m *Account) Members(ctx context.Context) []*Membership {
@@ -217,57 +217,27 @@ func FindAccountByCallsign(ctx context.Context, callsign string) (*Account, erro
 	return FindOne[Account](ctx, ByCallsign(callsign))
 }
 
-func (u *Account) Callsigns() ([]Callsign, error) {
-	if len(u.callsigns) > 0 {
-		return u.callsigns, nil
-	}
-	var callsigns []Callsign
-	rows, err := global.dao.FindCallsignsForAccount(context.Background(), u.ID)
-	if err != nil {
-		return callsigns, err
-	}
-	for _, row := range rows {
-		callsign := Callsign{
-			ID:         row.ID,
-			Call:       row.Callsign,
-			Expires:    row.Expires.Time,
-			Status:     row.Status,
-			Latitude:   row.Latitude.Float64,
-			Longitude:  row.Longitude.Float64,
-			Firstname:  row.Firstname.String,
-			Middlename: row.Middlename.String,
-			Lastname:   row.Lastname.String,
-			Suffix:     row.Suffix.String,
-			Address:    row.Address.String,
-			City:       row.City.String,
-			State:      row.State.String,
-			Zip:        row.Zip.String,
-			Country:    row.Country.String,
-		}
-		callsigns = append(callsigns, callsign)
-	}
-	u.callsigns = callsigns
-
-	return callsigns, nil
+func (u *Account) Callsigns(ctx context.Context) ([]*Callsign, error) {
+	return Find[Callsign](ctx, ByAccount(u.ID))
 }
 
-func (m *Account) Callsign() Callsign {
-	calls, err := m.Callsigns()
+func (m *Account) Callsign(ctx context.Context) *Callsign {
+	calls, err := m.Callsigns(ctx)
 	if err != nil {
-		return Callsign{}
+		return &Callsign{}
 	}
 	if len(calls) == 0 {
-		return Callsign{}
+		return &Callsign{}
 	}
 
 	return calls[0]
 }
 
-func (m *Account) Location() (float64, float64) {
+func (m *Account) Location(ctx context.Context) (float64, float64) {
 	if m.Settings.LocationSettings.HasLocation() {
 		return m.Settings.LocationSettings.Location()
 	}
-	callsign := m.Callsign()
+	callsign := m.Callsign(ctx)
 	return callsign.Latitude, callsign.Longitude
 }
 

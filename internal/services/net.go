@@ -101,6 +101,7 @@ func (n net) ValidateCheckinHeard(ctx context.Context, event models.Event) error
 }
 
 func (n net) ValidateCheckin(ctx context.Context, stream string, checkin *models.NetCheckin) error {
+	// return errors.New("break on purpose")
 	license, err := hamdb.Lookup(ctx, checkin.Callsign.AsHeard)
 	if err != nil {
 		if err == hamdb.ErrNotFound {

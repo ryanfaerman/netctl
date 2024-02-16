@@ -97,7 +97,7 @@ func (h account) Show(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if slug == "" && slug != user.Slug {
-		http.Redirect(w, r, named.URLFor("account-profile", user.Callsign().Call), http.StatusSeeOther)
+		http.Redirect(w, r, named.URLFor("account-profile", user.Callsign(r.Context()).Call), http.StatusSeeOther)
 		return
 	}
 

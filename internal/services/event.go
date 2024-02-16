@@ -40,7 +40,7 @@ func (e *event) Create(ctx context.Context, stream string, evt any) error {
 
 	id, err := global.dao.CreateEvent(ctx, dao.CreateEventParams{
 		StreamID:  stream,
-		AccountID: 1,
+		AccountID: Session.GetAccount(ctx).ID,
 		EventType: fmt.Sprintf("%T", evt),
 		EventData: string(d),
 	})
@@ -62,7 +62,7 @@ func (e *event) Create(ctx context.Context, stream string, evt any) error {
 		Event:     j,
 	}
 
-	go e.Publish(context.Background(), event)
+	go e.Publish(context.WithoutCancel(ctx), event)
 
 	return nil
 }
@@ -88,7 +88,7 @@ func (e *event) Publish(ctx context.Context, event models.Event) error {
 	}
 	wg := workgroup.New(5) // TODO: make this configurable
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute) // TODO: make this configurable
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Minute) // TODO: make this configurable
 	defer cancel()
 
 	for _, sub := range e.subscribers[event.Name] {
@@ -102,9 +102,11 @@ func (e *event) Publish(ctx context.Context, event models.Event) error {
 			}
 
 			l.Debug("creating recovery tombstone")
+
 			recoveryID, err := global.dao.CreateEventRecovery(ctx, dao.CreateEventRecoveryParams{
 				EventsID:     event.ID,
 				RegisteredFn: sub.name,
+				SessionToken: global.session.Token(ctx),
 			})
 			if err != nil {
 				l.Error("error creating recovery tombstone", "error", err)
@@ -145,6 +147,14 @@ func (e *event) Recover(ctx context.Context) error {
 
 	wg := workgroup.New(5) // TODO: make this configurable
 	for _, recovered := range recovereds {
+		ctx, err := global.session.Load(ctx, recovered.SessionToken)
+		if err != nil {
+			// cannot load the session, so it must not exist,
+			// thus... maybe we just delete these events? or log it?
+			// really need to think of a good approach here, cause that info would get lost if they log out.
+			// maybe need to have logout not delete the actual token, just the data within.
+			return fmt.Errorf("unable to load session: %w", err)
+		}
 		for _, sub := range e.subscribers[recovered.Event.Name] {
 			l = l.With("subscriber", sub.name, "event", recovered.Event.Name)
 			if recovered.RegisteredFn != sub.name {

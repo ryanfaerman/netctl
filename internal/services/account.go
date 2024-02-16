@@ -188,12 +188,7 @@ func (s account) AvatarURL(ctx context.Context, slugs ...string) string {
 		return ""
 	}
 
-	email, err := account.PrimaryEmail()
-	if err != nil {
-		fmt.Println("error getting primary email", "error", err)
-		return ""
-	}
-	fmt.Println(email.Address)
+	email := account.PrimaryEmail()
 
 	h := sha256.New()
 	h.Write([]byte(strings.TrimSpace(strings.ToLower(email.Address))))
@@ -215,6 +210,8 @@ func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Se
 		if err != nil {
 			return err
 		}
+		fmt.Println("args")
+		spew.Dump(settings)
 
 		if err := mergo.Merge(&account.Settings, settings, mergo.WithOverride); err != nil {
 			return err
@@ -223,6 +220,7 @@ func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Se
 		if err := Validation.Apply(account.Settings); err != nil {
 			return err
 		}
+		spew.Dump(account.Settings)
 
 		data, err := json.Marshal(account.Settings)
 		if err != nil {
@@ -244,7 +242,7 @@ func (a account) SaveSettings(ctx context.Context, id int64, settings *models.Se
 }
 
 func (s account) Geolocation(ctx context.Context, m *models.Account) (float64, float64, error) {
-	call := m.Callsign()
+	call := m.Callsign(ctx)
 	return call.Latitude, call.Longitude, nil
 }
 

@@ -9,14 +9,25 @@ import (
 	"github.com/ryanfaerman/netctl/internal/models/finders"
 )
 
+type MembershipStatus int
+
+const (
+	MembershipStatusPending MembershipStatus = iota
+	MembershipStatusActive
+	MembershipStatusDenied
+	MembershipStatusBanned
+	MembershipStatusInactive
+)
+
 type Membership struct {
+	CreatedAt time.Time
 	AccountID int64
 
 	TargetID int64
 	RoleID   int64
 
-	CreatedAt time.Time
-	ID        int64
+	ID     int64
+	Status MembershipStatus
 }
 
 func (m *Membership) Account(ctx context.Context) *Account {

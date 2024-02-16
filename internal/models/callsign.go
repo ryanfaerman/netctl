@@ -1,7 +1,10 @@
 package models
 
 import (
+	"fmt"
 	"time"
+
+	"github.com/ryanfaerman/netctl/hamdb"
 )
 
 type Callsign struct {
@@ -25,4 +28,9 @@ type Callsign struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+func (m Callsign) LicenseClass() string {
+	fmt.Println(m.Class)
+	return hamdb.LicenseClass(m.Class).String()
 }

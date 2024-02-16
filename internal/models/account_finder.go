@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/ryanfaerman/netctl/internal/dao"
 	"github.com/ryanfaerman/netctl/internal/models/finders"
 )
@@ -136,24 +138,20 @@ func (m Account) Find(ctx context.Context, queries finders.QuerySet) (any, error
 			return nil, err
 		}
 
+		spew.Dump(a.Settings)
+
 		a.Name = a.Settings.ProfileSettings.Name
 		a.About = a.Settings.ProfileSettings.About
+		a.Slug = a.Settings.ProfileSettings.Slug
 
 		if !a.Settings.LocationSettings.HasLocation() {
-			callsigns, err := a.Callsigns()
+			callsigns, err := a.Callsigns(ctx)
 			if err == nil {
 				if len(callsigns) > 0 {
 					callsign := callsigns[0]
 					a.Settings.LocationSettings.Latitude = callsign.Latitude
 					a.Settings.LocationSettings.Longitude = callsign.Longitude
 				}
-			}
-		}
-
-		switch {
-		case queries.HasField("callsigns"):
-			if _, err := (&a).Callsigns(); err != nil {
-				return nil, err
 			}
 		}
 

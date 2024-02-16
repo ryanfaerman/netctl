@@ -17,7 +17,7 @@ type Account struct {
 
 func (v Account) Nav() Menu {
 	return Menu{
-		{Value: "Profile", URL: named.URLFor("account-profile", v.Account.Callsign().Call), Icon: IconAttrs{Name: "file-lines"}},
+		{Value: "Profile", URL: named.URLFor("account-profile", v.Account.Callsign(context.Background()).Call), Icon: IconAttrs{Name: "file-lines"}},
 	}
 }
 
@@ -35,7 +35,7 @@ templ (v Account) Profile() {
             },
           })
 					<h1 class="account-name">{ v.Account.Name }</h1>
-					<h2 class="callsign">{ v.Account.Callsign().Call }</h2>
+					<h2 class="callsign">{ v.Account.Callsign(ctx).Call }</h2>
 					@Can("edit", v.Account) {
 						if CurrentAccount(ctx) != v.Account {
 							<a href={ templ.URL(named.URLFor("delegated-settings", strings.ToLower(v.Account.Slug), "profile")) } class="button">
@@ -50,18 +50,20 @@ templ (v Account) Profile() {
 					<ul>
 						<li>
 							@Icon(IconAttrs{Name: "at", FixedWidth: true})
-							ryan@faerman.net
+							{ v.Account.PrimaryEmail().Address }
 						</li>
-						@Can("view-location", v.Account) {
+						if v.Account.Callsign(ctx).Call != "" {
+							@Can("view-location", v.Account) {
+								<li>
+									@Icon(IconAttrs{Name: "location-dot", FixedWidth: true})
+									{ StateAbbreviationToName(v.Account.Callsign(ctx).State) }, { v.Account.Callsign(ctx).Country }
+								</li>
+							}
 							<li>
-								@Icon(IconAttrs{Name: "location-dot", FixedWidth: true})
-								{ StateAbbreviationToName(v.Account.Callsign().State) }, { v.Account.Callsign().Country }
+								@Icon(IconAttrs{Name: "id-card", FixedWidth: true})
+								{ v.Account.Callsign(ctx).LicenseClass() }
 							</li>
 						}
-						<li>
-							@Icon(IconAttrs{Name: "id-card", FixedWidth: true})
-							Technician
-						</li>
 					</ul>
 				</div>
 				<div class="section clubs">
@@ -97,7 +99,7 @@ templ (v Account) Profile() {
                 },
               })
 								<h4 class="account-name">{ m.Account(ctx).Name }</h4>
-								<h5 class="callsign">{ m.Account(ctx).Callsign().Call }</h5>
+								<h5 class="callsign">{ m.Account(ctx).Callsign(ctx).Call }</h5>
 							</div>
 						}
 					</div>

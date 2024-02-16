@@ -22,6 +22,7 @@ where id IN (sqlc.slice('ids'));
 SELECT 
   events_recovery.id as recovery_id,
   events_recovery.registered_fn as registered_fn,
+  events_recovery.session_token as session_token,
   events.*
 FROM events_recovery
 JOIN events ON events.id = events_recovery.events_id;
@@ -29,9 +30,10 @@ JOIN events ON events.id = events_recovery.events_id;
 -- name: CreateEventRecovery :one
 INSERT INTO events_recovery (
   events_id,
-  registered_fn
+  registered_fn,
+  session_token
 ) VALUES (
-  ?1, ?2
+  ?1, ?2, ?3
 ) RETURNING id;
 
 -- name: DeleteEventRecovery :exec

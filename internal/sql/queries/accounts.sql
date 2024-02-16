@@ -10,7 +10,7 @@ LIMIT 1;
 -- name: GetAccountBySlug :one
 SELECT accounts.*
 FROM accounts
-WHERE UPPER(slug) = UPPER(@slug)
+WHERE UPPER(settings->>'$.profile.slug') = UPPER(@slug)
 LIMIT 1;
 
 

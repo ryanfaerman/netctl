@@ -15,7 +15,7 @@ type Settings struct {
 
 func (v Settings) TopNav() Menu {
 	return Menu{
-		{Value: "Profile", URL: named.URLFor("account-profile", v.Account.Callsign().Call), Icon: IconAttrs{Name: "file-lines"}},
+		{Value: "Profile", URL: named.URLFor("account-profile", v.Account.Callsign(context.Background()).Call), Icon: IconAttrs{Name: "file-lines"}},
 	}
 }
 

@@ -230,7 +230,7 @@ templ RightNavHeader() {
           })
 	</span>
 	<span class="title name">{ CurrentAccount(ctx).Name }</span>
-	<span class="subtitle callsign">{ CurrentAccount(ctx).Callsign().Call }</span>
+	<span class="subtitle callsign">{ CurrentAccount(ctx).Callsign(ctx).Call }</span>
 }
 
 func RightNav(ctx context.Context) SideMenu {
